@@ -1,19 +1,4 @@
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <unistd.h>
-#include <errno.h>
-
-int network_create_server(uint16_t, int);
-int network_accept_client(int);
-int network_connect(const char *, uint16_t);
-ssize_t network_send_all(int, const char *, size_t);
-void network_recv_exact();
-void network_shutdown();
+#include "network.h"
 
 int network_create_server(uint16_t porta, int backlog)
 {
@@ -116,30 +101,69 @@ int network_connect(const char *ip, uint16_t porta)
 
 ssize_t network_send_all(int sock, const char *buffer, size_t tam)
 {
-    const char *data = buffer;
     size_t total_sent = 0;
 
     while(total_sent < tam)
     {
-	size_t sent_now = send(sock, data + total_sent, tam - total_sent, 0);
-	total_sent += sent_now;
-
+	ssize_t sent_now = send(sock, buffer + total_sent, tam - total_sent, 0);
 	if(sent_now > 0)
 	{
-	    total_sent += sent_now;
+	    total_sent += (size_t)sent_now;
+	    continue;
 	}
-	else if(sent_now == -1 && errno == EINTR)
+	if(sent_now == -1)
 	{
-	    sent_now = send(sock, data + total_sent, tam - total_sent, 0);
+	    if(errno == EINTR)
+	    {
+		continue;
+	    }
+	    perror("send");
+	    return -1;
 	}
+
+	fprintf(stderr, "send retornou zero bytes\n");
+	return -1;
     }
     return (ssize_t)total_sent;
 }
 
-void network_recv_exact()
+ssize_t network_recv_exact(int sock, void *buffer, size_t tam)
 {
+    size_t total_received = 0;
+    char *data = buffer;
+
+    while(total_received < tam)
+    {
+	ssize_t received_now = recv(sock, data + total_received, tam - total_received, 0);
+	if(received_now > 0)
+	{
+	    total_received += (size_t)received_now;
+	    continue;
+	}
+	if(received_now == 0)
+	{
+	    return (ssize_t)total_received;
+	}
+	if(errno == EINTR)
+	{
+	    continue;
+	}
+	perror("recv");
+	return -1;
+    }
+    return (ssize_t)total_received;
 }
 
-void network_shutdown()
+int network_shutdown(int sock)
 {
+    if(shutdown(sock, SHUT_RDWR) == -1)
+    {
+	perror("shutdown");
+    }
+    if(close(sock) == -1)
+    {
+	perror("close");
+	return -1;
+    }
+    return 0;
 }

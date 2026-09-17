@@ -1,16 +1,14 @@
 #ifndef NODE_H
 #define NODE_H
 
-#include <netinet/in.h>
+#include "common.h"
+
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/types.h>
 
-#define NODE_ID_SIZE 32U
 #define NODE_ID_HEX_SIZE ((NODE_ID_SIZE * 2U) + 1U)
-#define NODE_UUID_SIZE 16U
 #define NODE_UUID_HEX_SIZE ((NODE_UUID_SIZE * 2U) + 1U)
-#define NODE_ADDRESS_SIZE INET6_ADDRSTRLEN
 
 typedef struct
 {

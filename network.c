@@ -1,5 +1,13 @@
 #include "network.h"
 
+#include <arpa/inet.h>
+#include <errno.h>
+#include <netinet/in.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <unistd.h>
+
 int network_create_server(uint16_t porta, int backlog)
 {
     int sock;
@@ -99,13 +107,14 @@ int network_connect(const char *ip, uint16_t porta)
     return sock;
 }
 
-ssize_t network_send_all(int sock, const char *buffer, size_t tam)
+ssize_t network_send_all(int sock, const void *buffer, size_t tam)
 {
+    const char *data = buffer;
     size_t total_sent = 0;
 
     while(total_sent < tam)
     {
-	ssize_t sent_now = send(sock, buffer + total_sent, tam - total_sent, 0);
+	ssize_t sent_now = send(sock, data + total_sent, tam - total_sent, 0);
 	if(sent_now > 0)
 	{
 	    total_sent += (size_t)sent_now;

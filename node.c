@@ -13,10 +13,9 @@
  * desenvolvimento do OpenSSL. Esta é a assinatura pública de SHA256(); a
  * implementação continua sendo fornecida pela biblioteca externa.
  */
-extern unsigned char *SHA256(const unsigned char *data,
-                             size_t size,
-                             unsigned char *digest);
+extern unsigned char *SHA256(const unsigned char *data, size_t size, unsigned char *digest);
 
+/* Valida IPv4/IPv6 e normaliza o texto do endereço. */
 static int normalize_ip(const char *ip, char normalized[NODE_ADDRESS_SIZE])
 {
     struct in_addr ipv4;
@@ -52,6 +51,7 @@ static int normalize_ip(const char *ip, char normalized[NODE_ADDRESS_SIZE])
     return -1;
 }
 
+/* Lê 16 bytes de /dev/urandom, trata leitura parcial/EINTR e ajusta UUID v4. */
 int node_generate_uuid(uint8_t uuid[NODE_UUID_SIZE])
 {
     int random_fd;
@@ -72,9 +72,7 @@ int node_generate_uuid(uint8_t uuid[NODE_UUID_SIZE])
 
     while (total_read < NODE_UUID_SIZE)
     {
-        ssize_t bytes_read = read(random_fd,
-                                  uuid + total_read,
-                                  NODE_UUID_SIZE - total_read);
+        ssize_t bytes_read = read(random_fd, uuid + total_read, NODE_UUID_SIZE - total_read);
 
         if (bytes_read > 0)
         {
@@ -105,6 +103,7 @@ int node_generate_uuid(uint8_t uuid[NODE_UUID_SIZE])
     return 0;
 }
 
+/* Exige porta não nula e IP válido com terminador dentro do buffer. */
 int node_config_validate(const NodeConfig *config)
 {
     char normalized[NODE_ADDRESS_SIZE];
@@ -123,10 +122,8 @@ int node_config_validate(const NodeConfig *config)
     return normalize_ip(config->ip, normalized);
 }
 
-int node_config_init_with_uuid(NodeConfig *config,
-                               const char *ip,
-                               uint16_t port,
-                               const uint8_t uuid[NODE_UUID_SIZE])
+/* Preserva o UUID fornecido para reconstruir uma identidade conhecida. */
+int node_config_init_with_uuid(NodeConfig *config, const char *ip, uint16_t port, const uint8_t uuid[NODE_UUID_SIZE])
 {
     char normalized[NODE_ADDRESS_SIZE];
 
@@ -147,6 +144,7 @@ int node_config_init_with_uuid(NodeConfig *config,
     return 0;
 }
 
+/* Gera UUID novo e normaliza a configuração; não persiste identidade em disco. */
 int node_config_init(NodeConfig *config, const char *ip, uint16_t port)
 {
     uint8_t uuid[NODE_UUID_SIZE];
@@ -164,6 +162,7 @@ int node_config_init(NodeConfig *config, const char *ip, uint16_t port)
     return node_config_init_with_uuid(config, ip, port, uuid);
 }
 
+/* Calcula SHA-256(IP binário || porta em ordem de rede || UUID); exclui PID e papel. */
 int node_compute_id(const NodeConfig *config, NodeID *id)
 {
     struct in_addr ipv4;
@@ -217,6 +216,7 @@ int node_compute_id(const NodeConfig *config, NodeID *id)
     return 0;
 }
 
+/* Calcula ID, copia configuração e registra getpid(), inicialmente com papel peer. */
 int node_init(Node *node, const NodeConfig *config)
 {
     if (node == NULL || config == NULL)
@@ -235,13 +235,12 @@ int node_init(Node *node, const NodeConfig *config)
     return 0;
 }
 
+/* Recalcula ID e valida PID/papel; verifica consistência, não autenticação. */
 int node_validate(const Node *node)
 {
     NodeID expected_id;
 
-    if (node == NULL || node->process_id <= 0 ||
-        node_compute_id(&node->config, &expected_id) == -1 ||
-        !node_id_equal(&node->id, &expected_id))
+    if (node == NULL || node->process_id <= 0 || node_compute_id(&node->config, &expected_id) == -1 || !node_id_equal(&node->id, &expected_id))
     {
         errno = EINVAL;
         return -1;
@@ -256,6 +255,7 @@ int node_validate(const Node *node)
     return 0;
 }
 
+/* Converte 32 bytes em 64 dígitos hexadecimais mais terminador zero. */
 int node_id_to_hex(const NodeID *id, char *output, size_t output_size)
 {
     static const char hexadecimal[] = "0123456789abcdef";
@@ -281,6 +281,7 @@ int node_id_to_hex(const NodeID *id, char *output, size_t output_size)
     return 0;
 }
 
+/* Decodifica um dígito hexadecimal, incluindo letras maiúsculas. */
 static int hexadecimal_value(char character)
 {
     if (character >= '0' && character <= '9')
@@ -298,6 +299,7 @@ static int hexadecimal_value(char character)
     return -1;
 }
 
+/* Exige exatamente 64 dígitos válidos e reconstrói o ID binário. */
 int node_id_from_hex(NodeID *id, const char *hex)
 {
     size_t i;
@@ -323,6 +325,7 @@ int node_id_from_hex(NodeID *id, const char *hex)
     return 0;
 }
 
+/* Compara IDs lexicograficamente; retorna -1, 0 ou 1. Não implementa eleição. */
 int node_id_compare(const NodeID *left, const NodeID *right)
 {
     int comparison;
@@ -352,12 +355,13 @@ int node_id_compare(const NodeID *left, const NodeID *right)
     return 0;
 }
 
+/* Compara os 32 bytes; ponteiros nulos não são considerados IDs iguais. */
 int node_id_equal(const NodeID *left, const NodeID *right)
 {
-    return left != NULL && right != NULL &&
-           memcmp(left->bytes, right->bytes, NODE_ID_SIZE) == 0;
+    return left != NULL && right != NULL && memcmp(left->bytes, right->bytes, NODE_ID_SIZE) == 0;
 }
 
+/* Consulta o PID armazenado; retorna -1 para nó nulo. */
 pid_t node_get_process_id(const Node *node)
 {
     return node == NULL ? (pid_t)-1 : node->process_id;

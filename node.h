@@ -40,10 +40,7 @@ typedef struct
 int node_config_init(NodeConfig *config, const char *ip, uint16_t port);
 
 /* Creates a valid configuration with a caller-provided UUID. */
-int node_config_init_with_uuid(NodeConfig *config,
-                               const char *ip,
-                               uint16_t port,
-                               const uint8_t uuid[NODE_UUID_SIZE]);
+int node_config_init_with_uuid(NodeConfig *config, const char *ip, uint16_t port, const uint8_t uuid[NODE_UUID_SIZE]);
 
 /* Fills uuid with a version 4 UUID generated from the OS random source. */
 int node_generate_uuid(uint8_t uuid[NODE_UUID_SIZE]);

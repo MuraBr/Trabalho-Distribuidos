@@ -11,6 +11,7 @@
 #include "node.h"
 #include "superpeer.h"
 
+/* Confere hash esperado para IP, porta e UUID fixos. */
 static void test_node_id_is_deterministic(void)
 {
     static const uint8_t uuid[NODE_UUID_SIZE] = {
@@ -24,11 +25,10 @@ static void test_node_id_is_deterministic(void)
     assert(node_config_init_with_uuid(&config, "127.0.0.1", 8080, uuid) == 0);
     assert(node_compute_id(&config, &node_id) == 0);
     assert(node_id_to_hex(&node_id, node_id_hex, sizeof(node_id_hex)) == 0);
-    assert(strcmp(node_id_hex,
-                  "9bc987770f04725d8afac342e3eaa1d2"
-                  "ef4bc1f4587841f8dd4b8b0fca39f84f") == 0);
+    assert(strcmp(node_id_hex, "9bc987770f04725d8afac342e3eaa1d2" "ef4bc1f4587841f8dd4b8b0fca39f84f") == 0);
 }
 
+/* Testa PID, papel, IPv6, conversão hexadecimal reversível e buffer pequeno. */
 static void test_node_records_process_and_round_trips_id(void)
 {
     static const uint8_t uuid[NODE_UUID_SIZE] = {
@@ -55,6 +55,7 @@ static void test_node_records_process_and_round_trips_id(void)
     assert(errno == ENOSPC);
 }
 
+/* Testa IP inválido, porta zero, falta de terminador e geração de UUID. */
 static void test_node_rejects_invalid_configuration(void)
 {
     static const uint8_t uuid[NODE_UUID_SIZE] = {0};
@@ -71,6 +72,7 @@ static void test_node_rejects_invalid_configuration(void)
     assert(node_config_validate(&malformed_config) == -1);
 }
 
+/* Testa autorregistro, expansão, inclusão, consulta e atualização sem duplicação. */
 static void test_superpeer_registers_and_finds_members(void)
 {
     static const uint8_t local_uuid[NODE_UUID_SIZE] = {
@@ -88,25 +90,17 @@ static void test_superpeer_registers_and_finds_members(void)
     SuperPeerMember found_member;
     NodeConfig member_config;
 
-    assert(superpeer_config_init_with_uuid(&config,
-                                           "127.0.0.1",
-                                           7000,
-                                           local_uuid) == 0);
+    assert(superpeer_config_init_with_uuid(&config, "127.0.0.1", 7000, local_uuid) == 0);
     config.initial_member_capacity = 1U;
     assert(superpeer_create(&config, &superpeer) == 0);
     assert(superpeer_get_node(superpeer, &local_node) == 0);
     assert(local_node.role == NODE_ROLE_SUPERPEER);
     assert(node_validate(&local_node) == 0);
     assert(superpeer_member_count(superpeer) == 1U);
-    assert(superpeer_find_member(superpeer,
-                                 &local_node.id,
-                                 &found_member) == 0);
+    assert(superpeer_find_member(superpeer, &local_node.id, &found_member) == 0);
     assert(found_member.state == SUPERPEER_MEMBER_ALIVE);
 
-    assert(node_config_init_with_uuid(&member_config,
-                                      "127.0.0.2",
-                                      7001,
-                                      member_uuid) == 0);
+    assert(node_config_init_with_uuid(&member_config, "127.0.0.2", 7001, member_uuid) == 0);
     assert(node_init(&member, &member_config) == 0);
     assert(superpeer_register_node(superpeer, &member) == SUPERPEER_MEMBER_ADDED);
     assert(superpeer_member_count(superpeer) == 2U);
@@ -119,6 +113,7 @@ static void test_superpeer_registers_and_finds_members(void)
     superpeer_destroy(superpeer);
 }
 
+/* Testa ID adulterado, proteção local, remoção e membro ausente. */
 static void test_superpeer_rejects_inconsistent_nodes_and_unregisters(void)
 {
     static const uint8_t local_uuid[NODE_UUID_SIZE] = {1};
@@ -130,25 +125,18 @@ static void test_superpeer_rejects_inconsistent_nodes_and_unregisters(void)
     NodeConfig member_config;
     NodeID unknown_id = {{0}};
 
-    assert(superpeer_config_init_with_uuid(&config,
-                                           "127.0.0.1",
-                                           7100,
-                                           local_uuid) == 0);
+    assert(superpeer_config_init_with_uuid(&config, "127.0.0.1", 7100, local_uuid) == 0);
     assert(superpeer_create(&config, &superpeer) == 0);
     assert(superpeer_get_node(superpeer, &local_node) == 0);
     errno = 0;
     assert(superpeer_unregister_node(superpeer, &local_node.id) == -1);
     assert(errno == EPERM);
     assert(superpeer_member_count(superpeer) == 1U);
-    assert(node_config_init_with_uuid(&member_config,
-                                      "127.0.0.2",
-                                      7101,
-                                      member_uuid) == 0);
+    assert(node_config_init_with_uuid(&member_config, "127.0.0.2", 7101, member_uuid) == 0);
     assert(node_init(&member, &member_config) == 0);
 
     member.id.bytes[0] ^= 0xffU;
-    assert(superpeer_register_node(superpeer, &member) ==
-           SUPERPEER_REGISTER_ERROR);
+    assert(superpeer_register_node(superpeer, &member) == SUPERPEER_REGISTER_ERROR);
     assert(superpeer_member_count(superpeer) == 1U);
 
     assert(node_init(&member, &member_config) == 0);
@@ -175,6 +163,7 @@ typedef struct
     int failed;
 } RegistrationContext;
 
+/* Cada thread registra 25 nós distintos no Super Peer compartilhado. */
 static void *register_members(void *argument)
 {
     RegistrationContext *context = argument;
@@ -185,18 +174,11 @@ static void *register_members(void *argument)
         uint8_t uuid[NODE_UUID_SIZE] = {0};
         NodeConfig node_config;
         Node node;
-        uint16_t port = (uint16_t)(7200U +
-                                   context->thread_number * 100U + i);
+        uint16_t port = (uint16_t)(7200U + context->thread_number * 100U + i);
 
         uuid[0] = (uint8_t)context->thread_number;
         uuid[1] = (uint8_t)i;
-        if (node_config_init_with_uuid(&node_config,
-                                       "127.0.0.1",
-                                       port,
-                                       uuid) == -1 ||
-            node_init(&node, &node_config) == -1 ||
-            superpeer_register_node(context->superpeer, &node) !=
-                SUPERPEER_MEMBER_ADDED)
+        if (node_config_init_with_uuid(&node_config, "127.0.0.1", port, uuid) == -1 || node_init(&node, &node_config) == -1 || superpeer_register_node(context->superpeer, &node) != SUPERPEER_MEMBER_ADDED)
         {
             context->failed = 1;
             return NULL;
@@ -205,6 +187,7 @@ static void *register_members(void *argument)
     return NULL;
 }
 
+/* Quatro threads devem produzir 101 membros; exercita concorrência sem provar ausência de toda corrida. */
 static void test_superpeer_members_are_thread_safe(void)
 {
     static const uint8_t local_uuid[NODE_UUID_SIZE] = {3};
@@ -214,10 +197,7 @@ static void test_superpeer_members_are_thread_safe(void)
     pthread_t threads[REGISTRATION_THREAD_COUNT];
     unsigned int i;
 
-    assert(superpeer_config_init_with_uuid(&config,
-                                           "127.0.0.1",
-                                           7300,
-                                           local_uuid) == 0);
+    assert(superpeer_config_init_with_uuid(&config, "127.0.0.1", 7300, local_uuid) == 0);
     config.initial_member_capacity = 1U;
     assert(superpeer_create(&config, &superpeer) == 0);
 
@@ -234,11 +214,11 @@ static void test_superpeer_members_are_thread_safe(void)
         assert(contexts[i].failed == 0);
     }
 
-    assert(superpeer_member_count(superpeer) ==
-           1U + REGISTRATION_THREAD_COUNT * REGISTRATIONS_PER_THREAD);
+    assert(superpeer_member_count(superpeer) == 1U + REGISTRATION_THREAD_COUNT * REGISTRATIONS_PER_THREAD);
     superpeer_destroy(superpeer);
 }
 
+/* Executa seis cenários com assert; só imprime sucesso se todos terminarem. */
 int main(void)
 {
     test_node_id_is_deterministic();

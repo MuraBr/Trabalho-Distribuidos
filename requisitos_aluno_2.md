@@ -2,6 +2,31 @@
 
 Este documento separa as responsabilidades do Aluno 2 a partir do enunciado do trabalho de Programação Distribuída.
 
+## Acompanhamento da implementação — 17/09/2026
+
+Padronização de estilo: assinaturas, protótipos, chamadas e condições mantidos em uma única linha em `node.c`, `node.h`, `superpeer.c`, `superpeer.h` e `test_node_superpeer.c`, sem mudança de lógica.
+
+Atualizar este documento a cada avanço do aluno 2, mantendo requisitos, implementação e evidências separados. Guia para apresentação: [explicacao_codigo_aluno_2.md](explicacao_codigo_aluno_2.md).
+
+| Item | Estado atual | Evidência ou pendência |
+| --- | --- | --- |
+| Configuração, validação IPv4/IPv6, UUID e NodeID SHA-256 | Implementado | `node.c`; teste com hash esperado e entradas inválidas |
+| PID e papéis peer/Super Peer | Implementado | `node_init`, `superpeer_create` e testes locais |
+| Autorregistro e tabela de membros | Implementado | Vetor dinâmico, contagem inicial 1 |
+| Inclusão, atualização e consulta | Implementado | Testes confirmam inclusão e duplicata sem aumentar contagem |
+| Remoção pela API local | Implementado | Testes de remoção e proteção do próprio Super Peer |
+| Concorrência na tabela | Implementado, cobertura parcial | Mutex; teste de 4 threads com 25 registros cada, total 101; não é prova de ausência de corridas |
+| JOIN por TCP e validação do NodeID | Implementado na integração | `peer.c` reconstrói identidade e registra antes do ACK; não reexecutado nesta revisão documental |
+| Remoção via LEAVE | Pendente na integração | `peer.c` responde ACK sem chamar `superpeer_unregister_node` |
+| Resposta ERROR para CRC inválido | Pendente em relação ao requisito | Recepção falha e conexão é encerrada; não envia ERROR nesse caminho |
+| Metadados, ObjectID e chunks (C2) | Pendente | Não implementados nos módulos atuais do aluno 2 |
+| Chord, Gossip, heartbeat e estados de falha (C3) | Pendente | Apenas ALIVE e last_seen existem; sem temporizador de falhas |
+| Log, SMR e estado de eleição (C4) | Pendente | Comparação de NodeIDs disponível, mas sem consenso implementado |
+| 2PC e IST (C5) | Pendente | Sem implementação |
+| Integração final e metas de desempenho (C6) | Pendente | Sem validação das metas não funcionais |
+
+A configuração gerada automaticamente recebe UUID novo a cada inicialização. Persistência de identidade entre execuções ainda não existe. O teste atual não cobre explicitamente a alteração individual de IP, porta e UUID nem todos os caminhos de erro.
+
 ## 1. Requisitos comuns da dupla
 
 O projeto deve:
@@ -206,4 +231,8 @@ Execução:
 ./test_node_superpeer
 ```
 
-Esse teste valida `node.c` e `superpeer.c` isoladamente. A integração real ainda precisa exercitar o envio de `JOIN` pelo peer e o registro no Super Peer.
+Esse teste valida `node.c` e `superpeer.c` isoladamente. Em 17/09/2026, os seis cenários passaram com a mensagem `node/superpeer tests: ok`. Os comentários e a documentação foram revisados sem alterar a lógica.
+
+Para não sobrescrever o executável versionado, pode-se usar `-o /tmp/aluno2-test` e executar `/tmp/aluno2-test`.
+
+O `script_testes.sh` exercita protocolo e comunicação C1, incluindo JOIN/ACK, mas não executa `test_node_superpeer.c`. Seu teste LEAVE/ACK não comprova remoção da tabela. Execute as duas suítes para cobrir os dois escopos; a suíte de rede não foi reexecutada nesta revisão documental.

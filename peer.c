@@ -20,6 +20,7 @@
 
 typedef struct PeerContext PeerContext;
 
+/* Conexão atendida por uma thread e encadeada na lista de clientes ativos. */
 typedef struct ClientContext
 {
     PeerContext *peer;
@@ -27,6 +28,7 @@ typedef struct ClientContext
     struct ClientContext *next;
 } ClientContext;
 
+/* Estado compartilhado: identidade, cadastro de membros e sincronização das conexões. */
 struct PeerContext
 {
     int server_fd;
@@ -44,18 +46,21 @@ typedef struct
     uint16_t remote_port;
     const char *config_path;
     const char *node_name;
-} NodeArguments;
+} NodeArguments; /* Opções de inicialização; config_path ainda não tem conteúdo interpretado. */
 
 static volatile sig_atomic_t g_running = 1;
 
+/* Compõe 16 bytes com horário, PID e sequência local para correlacionar pedido e resposta. */
 static void fill_transaction_id(uint8_t transaction_id[TRANSACTION_ID_SIZE]);
 
+/* Solicita parada alterando apenas a flag sig_atomic_t no tratador de sinal. */
 static void handle_signal(int signal_number)
 {
     (void)signal_number;
     g_running = 0;
 }
 
+/* Converte porta decimal e rejeita texto inválido ou valor fora de 1 a 65535. */
 static int parse_port(const char *text, uint16_t *port)
 {
     char *end = NULL;
@@ -68,8 +73,7 @@ static int parse_port(const char *text, uint16_t *port)
 
     errno = 0;
     value = strtoul(text, &end, 10);
-    if (errno != 0 || end == text || *end != '\0' || value == 0UL ||
-        value > UINT16_MAX)
+    if (errno != 0 || end == text || *end != '\0' || value == 0UL || value > UINT16_MAX)
     {
         return -1;
     }
@@ -78,6 +82,7 @@ static int parse_port(const char *text, uint16_t *port)
     return 0;
 }
 
+/* Aceita argumentos posicionais ou opções; --config só verifica acesso ao arquivo, sem ler seu conteúdo. */
 static int parse_node_arguments(int argc, char **argv, NodeArguments *arguments)
 {
     int index;
@@ -91,7 +96,7 @@ static int parse_node_arguments(int argc, char **argv, NodeArguments *arguments)
     memset(arguments, 0, sizeof(*arguments));
     arguments->node_name = "peer";
 
-    /* Keep the original positional interface: peer <port> [<ip> <port>]. */
+    /* Preserva a interface posicional original: peer <porta> [<ip> <porta>]. */
     if (argv[1][0] != '-')
     {
         if (argc != 2 && argc != 4)
@@ -146,14 +151,14 @@ static int parse_node_arguments(int argc, char **argv, NodeArguments *arguments)
     {
         return -1;
     }
-    if (arguments->config_path != NULL &&
-        access(arguments->config_path, R_OK) != 0)
+    if (arguments->config_path != NULL && access(arguments->config_path, R_OK) != 0)
     {
         return -1;
     }
     return 0;
 }
 
+/* Exibe os 32 bytes do NodeID como 64 dígitos hexadecimais. */
 static void print_node_id(const uint8_t node_id[NODE_ID_SIZE])
 {
     size_t index;
@@ -164,6 +169,7 @@ static void print_node_id(const uint8_t node_id[NODE_ID_SIZE])
     }
 }
 
+/* Identifica destino zerado, usado no JOIN quando o ID remoto ainda não é conhecido. */
 static int node_id_is_zero(const uint8_t node_id[NODE_ID_SIZE])
 {
     size_t index;
@@ -179,24 +185,21 @@ static int node_id_is_zero(const uint8_t node_id[NODE_ID_SIZE])
 }
 
 /*
- * JOIN payload wire format (64 bytes):
+ * Formato do payload de JOIN na rede (64 bytes):
  *
- *   bytes  0..45: IP textual, including '\0' and zero padding
- *   bytes 46..47: port in network byte order
+ *   bytes  0..45: IP textual, incluindo '\0' e preenchimento com zeros
+ *   bytes 46..47: porta em ordem de bytes de rede
  *   bytes 48..63: UUID
  *
- * A Node/NodeConfig struct is deliberately not sent directly because it may
- * contain padding and host-dependent representations.
+ * Uma struct Node/NodeConfig não é enviada diretamente porque pode conter
+ * preenchimento e representações dependentes da máquina.
  */
-static int encode_join_payload(const NodeConfig *config,
-                               uint8_t *payload,
-                               size_t payload_size)
+/* Serializa IP textual, porta em ordem de rede e UUID no descritor de 64 bytes. */
+static int encode_join_payload(const NodeConfig *config, uint8_t *payload, size_t payload_size)
 {
     uint16_t network_port;
 
-    if (config == NULL || payload == NULL ||
-        payload_size != JOIN_PAYLOAD_WIRE_SIZE ||
-        node_config_validate(config) < 0)
+    if (config == NULL || payload == NULL || payload_size != JOIN_PAYLOAD_WIRE_SIZE || node_config_validate(config) < 0)
     {
         return -1;
     }
@@ -205,15 +208,13 @@ static int encode_join_payload(const NodeConfig *config,
     memcpy(payload, config->ip, NODE_ADDRESS_SIZE);
 
     network_port = htons(config->port);
-    memcpy(payload + NODE_ADDRESS_SIZE, &network_port,
-           sizeof(network_port));
-    memcpy(payload + NODE_ADDRESS_SIZE + sizeof(network_port), config->uuid,
-           NODE_UUID_SIZE);
+    memcpy(payload + NODE_ADDRESS_SIZE, &network_port, sizeof(network_port));
+    memcpy(payload + NODE_ADDRESS_SIZE + sizeof(network_port), config->uuid, NODE_UUID_SIZE);
     return 0;
 }
 
-static int encode_join_payload_alloc(const NodeConfig *config,
-                                     uint8_t **payload_output)
+/* Aloca o descritor de JOIN e transfere sua propriedade ao chamador; libera em caso de erro. */
+static int encode_join_payload_alloc(const NodeConfig *config, uint8_t **payload_output)
 {
     uint8_t *payload;
 
@@ -238,9 +239,8 @@ static int encode_join_payload_alloc(const NodeConfig *config,
     return 0;
 }
 
-static int decode_join_payload(const uint8_t *payload,
-                               size_t payload_size,
-                               NodeConfig *config)
+/* Confere tamanho, terminador e preenchimento zero antes de reconstruir a configuração do nó. */
+static int decode_join_payload(const uint8_t *payload, size_t payload_size, NodeConfig *config)
 {
     char ip[NODE_ADDRESS_SIZE];
     const uint8_t *terminator;
@@ -248,8 +248,7 @@ static int decode_join_payload(const uint8_t *payload,
     uint16_t port;
     size_t index;
 
-    if (payload == NULL || config == NULL ||
-        payload_size != JOIN_PAYLOAD_WIRE_SIZE)
+    if (payload == NULL || config == NULL || payload_size != JOIN_PAYLOAD_WIRE_SIZE)
     {
         errno = EINVAL;
         return -1;
@@ -262,7 +261,7 @@ static int decode_join_payload(const uint8_t *payload,
         return -1;
     }
 
-    /* The padding after the terminator must be canonical zero padding. */
+    /* O preenchimento após o terminador deve conter apenas zeros. */
     index = (size_t)(terminator - payload) + 1U;
     while (index < NODE_ADDRESS_SIZE)
     {
@@ -275,38 +274,29 @@ static int decode_join_payload(const uint8_t *payload,
     }
 
     memcpy(ip, payload, sizeof(ip));
-    memcpy(&network_port, payload + NODE_ADDRESS_SIZE,
-           sizeof(network_port));
+    memcpy(&network_port, payload + NODE_ADDRESS_SIZE, sizeof(network_port));
     port = ntohs(network_port);
 
-    if (node_config_init_with_uuid(
-            config,
-            ip,
-            port,
-            payload + NODE_ADDRESS_SIZE + sizeof(network_port)) < 0)
+    if (node_config_init_with_uuid( config, ip, port, payload + NODE_ADDRESS_SIZE + sizeof(network_port)) < 0)
     {
         return -1;
     }
     return 0;
 }
 
+/* Cria identidade local e tabela de Super Peer reutilizando o mesmo UUID e NodeID. */
 static int initialize_local_identity(PeerContext *peer, uint16_t local_port)
 {
     NodeConfig config;
     SuperPeerConfig superpeer_config;
 
-    if (node_config_init(&config, DEFAULT_LOCAL_IP, local_port) < 0 ||
-        node_init(&peer->local_node, &config) < 0)
+    if (node_config_init(&config, DEFAULT_LOCAL_IP, local_port) < 0 || node_init(&peer->local_node, &config) < 0)
     {
         return -1;
     }
 
-    /* Use the same UUID so the local Node and SuperPeer have the same ID. */
-    if (superpeer_config_init_with_uuid(&superpeer_config,
-                                        config.ip,
-                                        config.port,
-                                        config.uuid) < 0 ||
-        superpeer_create(&superpeer_config, &peer->superpeer) < 0)
+    /* Reutiliza o UUID para que Node e SuperPeer locais tenham o mesmo ID. */
+    if (superpeer_config_init_with_uuid(&superpeer_config, config.ip, config.port, config.uuid) < 0 || superpeer_create(&superpeer_config, &peer->superpeer) < 0)
     {
         return -1;
     }
@@ -314,11 +304,8 @@ static int initialize_local_identity(PeerContext *peer, uint16_t local_port)
     return 0;
 }
 
-static int send_reply(const PeerContext *peer,
-                      int client_fd,
-                      const Message *request,
-                      Message_Type type,
-                      int include_node_descriptor)
+/* Preserva TransactionID, responde à origem e inclui o descritor local quando solicitado. */
+static int send_reply(const PeerContext *peer, int client_fd, const Message *request, Message_Type type, int include_node_descriptor)
 {
     Message reply;
     int result;
@@ -333,19 +320,15 @@ static int send_reply(const PeerContext *peer,
         return -1;
     }
     reply.header.message_type = (uint8_t)type;
-    memcpy(reply.header.source_node, peer->local_node.id.bytes,
-           NODE_ID_SIZE);
-    memcpy(reply.header.destination_node, request->header.source_node,
-           NODE_ID_SIZE);
-    memcpy(reply.header.transaction_id, request->header.transaction_id,
-           TRANSACTION_ID_SIZE);
+    memcpy(reply.header.source_node, peer->local_node.id.bytes, NODE_ID_SIZE);
+    memcpy(reply.header.destination_node, request->header.source_node, NODE_ID_SIZE);
+    memcpy(reply.header.transaction_id, request->header.transaction_id, TRANSACTION_ID_SIZE);
     reply.header.timestamp = (uint64_t)time(NULL);
 
     if (include_node_descriptor != 0)
     {
         reply.header.payload_size = JOIN_PAYLOAD_WIRE_SIZE;
-        if (encode_join_payload_alloc(&peer->local_node.config,
-                                      &reply.payload) < 0)
+        if (encode_join_payload_alloc(&peer->local_node.config, &reply.payload) < 0)
         {
             message_free(&reply);
             return -1;
@@ -362,6 +345,7 @@ static int send_reply(const PeerContext *peer,
     return result;
 }
 
+/* Valida destino e identidade recalculada, rejeita o próprio nó e registra antes de permitir ACK. */
 static int register_join(PeerContext *peer, const Message *message)
 {
     NodeConfig remote_config;
@@ -374,26 +358,18 @@ static int register_join(PeerContext *peer, const Message *message)
         return -1;
     }
 
-    if (!node_id_is_zero(message->header.destination_node) &&
-        memcmp(message->header.destination_node,
-               peer->local_node.id.bytes,
-               NODE_ID_SIZE) != 0)
+    if (!node_id_is_zero(message->header.destination_node) && memcmp(message->header.destination_node, peer->local_node.id.bytes, NODE_ID_SIZE) != 0)
     {
         errno = EHOSTUNREACH;
         return -1;
     }
 
-    if (decode_join_payload(message->payload,
-                            message->header.payload_size,
-                            &remote_config) < 0 ||
-        node_init(&remote_node, &remote_config) < 0)
+    if (decode_join_payload(message->payload, message->header.payload_size, &remote_config) < 0 || node_init(&remote_node, &remote_config) < 0)
     {
         return -1;
     }
 
-    if (memcmp(remote_node.id.bytes,
-               message->header.source_node,
-               NODE_ID_SIZE) != 0)
+    if (memcmp(remote_node.id.bytes, message->header.source_node, NODE_ID_SIZE) != 0)
     {
         errno = EINVAL;
         return -1;
@@ -413,12 +389,11 @@ static int register_join(PeerContext *peer, const Message *message)
 
     printf("JOIN validado: NodeID=");
     print_node_id(remote_node.id.bytes);
-    printf(", resultado=%s, membros=%zu\n",
-           registration == SUPERPEER_MEMBER_ADDED ? "ADDED" : "UPDATED",
-           superpeer_member_count(peer->superpeer));
+    printf(", resultado=%s, membros=%zu\n", registration == SUPERPEER_MEMBER_ADDED ? "ADDED" : "UPDATED", superpeer_member_count(peer->superpeer));
     return 0;
 }
 
+/* Insere a conexão na lista protegida pelo mutex para acompanhar seu ciclo de vida. */
 static void track_client(PeerContext *peer, ClientContext *client)
 {
     (void)pthread_mutex_lock(&peer->clients_mutex);
@@ -427,6 +402,7 @@ static void track_client(PeerContext *peer, ClientContext *client)
     (void)pthread_mutex_unlock(&peer->clients_mutex);
 }
 
+/* Remove a conexão sob mutex e sinaliza quem espera o esvaziamento da lista. */
 static void untrack_client(ClientContext *client)
 {
     PeerContext *peer = client->peer;
@@ -446,6 +422,7 @@ static void untrack_client(ClientContext *client)
     (void)pthread_mutex_unlock(&peer->clients_mutex);
 }
 
+/* Fecha os sockets acompanhados sob mutex e marca os descritores como indisponíveis. */
 static void close_tracked_clients(PeerContext *peer)
 {
     ClientContext *client;
@@ -464,6 +441,7 @@ static void close_tracked_clients(PeerContext *peer)
     (void)pthread_mutex_unlock(&peer->clients_mutex);
 }
 
+/* Espera a lista esvaziar; pthread_cond_wait libera o mutex enquanto aguarda e o readquire ao retornar. */
 static void wait_for_clients(PeerContext *peer)
 {
     (void)pthread_mutex_lock(&peer->clients_mutex);
@@ -474,6 +452,7 @@ static void wait_for_clients(PeerContext *peer)
     (void)pthread_mutex_unlock(&peer->clients_mutex);
 }
 
+/* Processa mensagens da conexão: JOIN registra, PING recebe PONG e LEAVE apenas recebe ACK. */
 static void *handle_client(void *argument)
 {
     ClientContext *client = (ClientContext *)argument;
@@ -497,26 +476,19 @@ static void *handle_client(void *argument)
             break;
         }
 
-        printf("Mensagem recebida: tipo=%u, origem=",
-               (unsigned)message.header.message_type);
+        printf("Mensagem recebida: tipo=%u, origem=", (unsigned)message.header.message_type);
         print_node_id(message.header.source_node);
-        printf(", payload=%" PRIu32 " bytes\n",
-               message.header.payload_size);
+        printf(", payload=%" PRIu32 " bytes\n", message.header.payload_size);
 
         if (message.header.message_type == (uint8_t)M_JOIN)
         {
-            Message_Type response_type =
-                register_join(peer, &message) == 0 ? M_ACK : M_ERROR;
+            Message_Type response_type = register_join(peer, &message) == 0 ? M_ACK : M_ERROR;
 
             if (response_type == M_ERROR)
             {
                 fprintf(stderr, "JOIN rejeitado.\n");
             }
-            if (send_reply(peer,
-                           client_fd,
-                           &message,
-                           response_type,
-                           response_type == M_ACK) < 0)
+            if (send_reply(peer, client_fd, &message, response_type, response_type == M_ACK) < 0)
             {
                 fprintf(stderr, "Falha ao enviar resposta ao JOIN.\n");
                 message_free(&message);
@@ -580,6 +552,7 @@ static void *handle_client(void *argument)
     return NULL;
 }
 
+/* Aceita conexões e cria uma thread destacada por cliente; desfaz o cadastro se a criação falhar. */
 static void *accept_clients(void *argument)
 {
     PeerContext *peer = (PeerContext *)argument;
@@ -630,9 +603,8 @@ static void *accept_clients(void *argument)
     return NULL;
 }
 
-static int connect_and_join(const PeerContext *peer,
-                            const char *ip,
-                            uint16_t remote_port)
+/* Envia JOIN, valida ACK e identidade remota e registra o outro nó na tabela local. */
+static int connect_and_join(const PeerContext *peer, const char *ip, uint16_t remote_port)
 {
     int socket_fd = network_connect(ip, remote_port);
     Message join;
@@ -649,8 +621,7 @@ static int connect_and_join(const PeerContext *peer,
 
     message_init(&join);
     join.header.message_type = (uint8_t)M_JOIN;
-    memcpy(join.header.source_node, peer->local_node.id.bytes,
-           NODE_ID_SIZE);
+    memcpy(join.header.source_node, peer->local_node.id.bytes, NODE_ID_SIZE);
     memset(join.header.destination_node, 0, NODE_ID_SIZE);
     fill_transaction_id(join.header.transaction_id);
     join.header.timestamp = (uint64_t)time(NULL);
@@ -678,46 +649,27 @@ static int connect_and_join(const PeerContext *peer,
     {
         if (response.header.message_type != (uint8_t)M_ACK)
         {
-            fprintf(stderr, "O peer remoto rejeitou o JOIN (tipo=%u).\n",
-                    (unsigned)response.header.message_type);
+            fprintf(stderr, "O peer remoto rejeitou o JOIN (tipo=%u).\n", (unsigned)response.header.message_type);
             result = PROTOCOL_ERROR;
         }
-        else if (memcmp(response.header.transaction_id,
-                        join.header.transaction_id,
-                        TRANSACTION_ID_SIZE) != 0 ||
-                 memcmp(response.header.destination_node,
-                        peer->local_node.id.bytes,
-                        NODE_ID_SIZE) != 0)
+        else if (memcmp(response.header.transaction_id, join.header.transaction_id, TRANSACTION_ID_SIZE) != 0 || memcmp(response.header.destination_node, peer->local_node.id.bytes, NODE_ID_SIZE) != 0)
         {
             fprintf(stderr, "A resposta possui identificadores diferentes.\n");
             result = PROTOCOL_ERROR;
         }
-        else if (decode_join_payload(response.payload,
-                                     response.header.payload_size,
-                                     &remote_config) < 0 ||
-                 node_init(&remote_node, &remote_config) < 0 ||
-                 memcmp(remote_node.id.bytes,
-                        response.header.source_node,
-                        NODE_ID_SIZE) != 0 ||
-                 node_id_equal(&remote_node.id, &peer->local_node.id))
+        else if (decode_join_payload(response.payload, response.header.payload_size, &remote_config) < 0 || node_init(&remote_node, &remote_config) < 0 || memcmp(remote_node.id.bytes, response.header.source_node, NODE_ID_SIZE) != 0 || node_id_equal(&remote_node.id, &peer->local_node.id))
         {
             fprintf(stderr, "A identidade do peer remoto e invalida.\n");
             result = PROTOCOL_ERROR;
         }
-        else if ((registration = superpeer_register_node(peer->superpeer,
-                                                         &remote_node)) ==
-                 SUPERPEER_REGISTER_ERROR)
+        else if ((registration = superpeer_register_node(peer->superpeer, &remote_node)) == SUPERPEER_REGISTER_ERROR)
         {
             fprintf(stderr, "Nao foi possivel registrar o peer remoto.\n");
             result = PROTOCOL_ERROR;
         }
         else
         {
-            printf("JOIN aceito pelo peer remoto: tipo=%u, membro=%s, "
-                   "membros=%zu\n",
-                   (unsigned)response.header.message_type,
-                   registration == SUPERPEER_MEMBER_ADDED ? "ADDED" : "UPDATED",
-                   superpeer_member_count(peer->superpeer));
+            printf("JOIN aceito pelo peer remoto: tipo=%u, membro=%s, " "membros=%zu\n", (unsigned)response.header.message_type, registration == SUPERPEER_MEMBER_ADDED ? "ADDED" : "UPDATED", superpeer_member_count(peer->superpeer));
         }
     }
     else if (result == PROTOCOL_CLOSED)
@@ -735,6 +687,7 @@ static int connect_and_join(const PeerContext *peer,
     return result == PROTOCOL_OK ? 0 : -1;
 }
 
+/* Compõe 16 bytes com horário, PID e sequência local para correlacionar pedido e resposta. */
 static void fill_transaction_id(uint8_t transaction_id[TRANSACTION_ID_SIZE])
 {
     static uint32_t sequence = 0U;
@@ -754,15 +707,13 @@ static void fill_transaction_id(uint8_t transaction_id[TRANSACTION_ID_SIZE])
     memcpy(transaction_id + 12U, &sequence_value, sizeof(sequence_value));
 }
 
+/* Mostra as duas formas aceitas para iniciar o processo. */
 static void print_usage(const char *program_name)
 {
-    fprintf(stderr,
-            "Uso: %s <porta-local> [<ip-remoto> <porta-remota>]\n"
-            "   ou: %s --config <arquivo> --port <porta> --name <nome>\n",
-            program_name,
-            program_name);
+    fprintf(stderr, "Uso: %s <porta-local> [<ip-remoto> <porta-remota>]\n" "   ou: %s --config <arquivo> --port <porta> --name <nome>\n", program_name, program_name);
 }
 
+/* Inicializa identidade, sincronização e servidor; no encerramento espera clientes antes de destruir o estado. */
 int main(int argc, char **argv)
 {
     NodeArguments arguments;
@@ -819,11 +770,9 @@ int main(int argc, char **argv)
     printf("NodeID: ");
     print_node_id(peer.local_node.id.bytes);
     printf("\n");
-    printf("Peer ouvindo na porta %" PRIu16 ", NodeID=",
-           arguments.local_port);
+    printf("Peer ouvindo na porta %" PRIu16 ", NodeID=", arguments.local_port);
     print_node_id(peer.local_node.id.bytes);
-    printf(", membros locais=%zu\n",
-           superpeer_member_count(peer.superpeer));
+    printf(", membros locais=%zu\n", superpeer_member_count(peer.superpeer));
     fflush(stdout);
 
     thread_result = pthread_create(&accept_thread, NULL, accept_clients, &peer);
@@ -837,10 +786,7 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
     }
 
-    if (arguments.remote_ip != NULL &&
-        connect_and_join(&peer,
-                         arguments.remote_ip,
-                         arguments.remote_port) < 0)
+    if (arguments.remote_ip != NULL && connect_and_join(&peer, arguments.remote_ip, arguments.remote_port) < 0)
     {
         fprintf(stderr, "Nao foi possivel concluir o JOIN remoto.\n");
     }
@@ -851,6 +797,7 @@ int main(int argc, char **argv)
         (void)sleep(1U);
     }
 
+    /* Interrompe novas conexões antes de encerrar clientes e liberar o estado compartilhado. */
     (void)network_shutdown(peer.server_fd);
     (void)pthread_join(accept_thread, NULL);
     close_tracked_clients(&peer);

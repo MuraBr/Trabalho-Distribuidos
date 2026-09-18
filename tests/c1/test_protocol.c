@@ -9,6 +9,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+/* Preenche um TransactionID fixo para tornar a comparação do teste reproduzível. */
 static void fill_transaction_id(uint8_t transaction_id[TRANSACTION_ID_SIZE])
 {
     size_t index;
@@ -19,6 +20,7 @@ static void fill_transaction_id(uint8_t transaction_id[TRANSACTION_ID_SIZE])
     }
 }
 
+/* Usa socketpair local para conferir envio e recepção com payload; não testa conexão TCP real. */
 static void test_message_round_trip(void)
 {
     static const uint8_t payload[] = {'c', '1', '-', 'o', 'k'};
@@ -48,9 +50,7 @@ static void test_message_round_trip(void)
     assert(received.header.message_type == (uint8_t)M_PING);
     assert(received.header.timestamp == sent.header.timestamp);
     assert(received.header.payload_size == sizeof(payload));
-    assert(memcmp(received.header.transaction_id,
-                  sent.header.transaction_id,
-                  TRANSACTION_ID_SIZE) == 0);
+    assert(memcmp(received.header.transaction_id, sent.header.transaction_id, TRANSACTION_ID_SIZE) == 0);
     assert(memcmp(received.payload, payload, sizeof(payload)) == 0);
 
     message_free(&sent);
@@ -59,6 +59,7 @@ static void test_message_round_trip(void)
     assert(close(sockets[1]) == 0);
 }
 
+/* Executa o teste de ida e volta; assert encerra o processo se uma condição falhar. */
 int main(void)
 {
     test_message_round_trip();

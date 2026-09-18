@@ -36,15 +36,10 @@ typedef enum
 } SuperPeerRegistrationResult;
 
 /* Initializes a Super Peer configuration with a generated UUID. */
-int superpeer_config_init(SuperPeerConfig *config,
-                          const char *ip,
-                          uint16_t port);
+int superpeer_config_init(SuperPeerConfig *config, const char *ip, uint16_t port);
 
 /* Initializes a Super Peer configuration with a caller-provided UUID. */
-int superpeer_config_init_with_uuid(SuperPeerConfig *config,
-                                    const char *ip,
-                                    uint16_t port,
-                                    const uint8_t uuid[NODE_UUID_SIZE]);
+int superpeer_config_init_with_uuid(SuperPeerConfig *config, const char *ip, uint16_t port, const uint8_t uuid[NODE_UUID_SIZE]);
 
 /* Creates a Super Peer and registers its local node in its member table. */
 int superpeer_create(const SuperPeerConfig *config, SuperPeer **output);
@@ -59,16 +54,13 @@ void superpeer_destroy(SuperPeer *superpeer);
 int superpeer_get_node(const SuperPeer *superpeer, Node *output);
 
 /* Adds a member or refreshes the existing member with the same NodeID. */
-SuperPeerRegistrationResult superpeer_register_node(SuperPeer *superpeer,
-                                                    const Node *node);
+SuperPeerRegistrationResult superpeer_register_node(SuperPeer *superpeer, const Node *node);
 
 /* Removes a non-local member identified by its NodeID. */
 int superpeer_unregister_node(SuperPeer *superpeer, const NodeID *node_id);
 
 /* Copies a registered member into output. */
-int superpeer_find_member(const SuperPeer *superpeer,
-                          const NodeID *node_id,
-                          SuperPeerMember *output);
+int superpeer_find_member(const SuperPeer *superpeer, const NodeID *node_id, SuperPeerMember *output);
 
 /* Returns the current number of registered members. */
 size_t superpeer_member_count(const SuperPeer *superpeer);

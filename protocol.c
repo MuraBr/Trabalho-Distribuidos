@@ -8,6 +8,7 @@
 #include <limits.h>
 #include <zlib.h>
 
+/* Grava quatro bytes do mais significativo ao menos significativo, independentemente da arquitetura. */
 static void write_u32_be(uint8_t *destination, uint32_t value)
 {
     destination[0] = (uint8_t)(value >> 24);
@@ -16,14 +17,13 @@ static void write_u32_be(uint8_t *destination, uint32_t value)
     destination[3] = (uint8_t)value;
 }
 
+/* Reconstrói um inteiro de 32 bits a partir de bytes em ordem de rede. */
 static uint32_t read_u32_be(const uint8_t *source)
 {
-    return ((uint32_t)source[0] << 24) |
-	((uint32_t)source[1] << 16) |
-	((uint32_t)source[2] << 8) |
-	(uint32_t)source[3];
+    return ((uint32_t)source[0] << 24) | ((uint32_t)source[1] << 16) | ((uint32_t)source[2] << 8) | (uint32_t)source[3];
 }
 
+/* Serializa oito bytes do inteiro de 64 bits em ordem de rede. */
 static void write_u64_be(uint8_t *destination, uint64_t value)
 {
     for (int shift = 56; shift >= 0; shift -= 8)
@@ -32,6 +32,7 @@ static void write_u64_be(uint8_t *destination, uint64_t value)
     }
 }
 
+/* Reconstrói o inteiro de 64 bits deslocando e incorporando cada byte recebido. */
 static uint64_t read_u64_be(const uint8_t *source)
 {
     uint64_t value = 0;
@@ -44,6 +45,7 @@ static uint64_t read_u64_be(const uint8_t *source)
     return value;
 }
 
+/* Atualiza o CRC com zlib em blocos que cabem em uInt, mesmo quando size_t é maior. */
 static uint32_t crc32_update(uint32_t crc, const uint8_t *data, size_t size)
 {
     uLong result = (uLong)crc;
@@ -60,6 +62,7 @@ static uint32_t crc32_update(uint32_t crc, const uint8_t *data, size_t size)
     return (uint32_t)result;
 }
 
+/* Calcula CRC do header serializado com checksum zerado, seguido pelo payload. */
 static uint32_t protocol_message_crc32(const Header *header, const uint8_t *payload)
 {
     Header canonical_header = *header;
@@ -82,6 +85,7 @@ static uint32_t protocol_message_crc32(const Header *header, const uint8_t *payl
     return crc;
 }
 
+/* Zera a mensagem e define a versão; não libera um payload anteriormente alocado. */
 int message_init(Message *message)
 {
     if (message == NULL)
@@ -94,6 +98,7 @@ int message_init(Message *message)
     return PROTOCOL_OK;
 }
 
+/* Libera o payload pertencente à mensagem e zera seus campos; aceita ponteiro nulo. */
 void message_free(Message *message)
 {
     if (message == NULL)
@@ -106,9 +111,8 @@ void message_free(Message *message)
     memset(&message->header, 0, sizeof(message->header));
 }
 
-int protocol_serialize_header(const Header *header,
-                              uint8_t *buffer,
-                              size_t buffer_size)
+/* Valida e escreve os 98 bytes do header campo a campo, sem transmitir padding da struct. */
+int protocol_serialize_header(const Header *header, uint8_t *buffer, size_t buffer_size)
 {
     if (header == NULL || buffer == NULL || buffer_size < HEADER_WIRE_SIZE)
     {
@@ -146,9 +150,8 @@ int protocol_serialize_header(const Header *header,
     return (int)offset;
 }
 
-int protocol_deserialize_header(Header *header,
-                                const uint8_t *buffer,
-                                size_t buffer_size)
+/* Lê os campos dos 98 bytes; a validação semântica do header deve ser feita separadamente. */
+int protocol_deserialize_header(Header *header, const uint8_t *buffer, size_t buffer_size)
 {
     if (header == NULL || buffer == NULL || buffer_size < HEADER_WIRE_SIZE)
     {
@@ -183,6 +186,7 @@ int protocol_deserialize_header(Header *header,
     return (int)offset;
 }
 
+/* Calcula CRC32 de um buffer; zero também é retorno para ponteiro nulo com tamanho positivo. */
 uint32_t protocol_calculate_crc32(const uint8_t *data, size_t size)
 {
     if (data == NULL && size > 0)
@@ -193,6 +197,7 @@ uint32_t protocol_calculate_crc32(const uint8_t *data, size_t size)
     return crc32_update(0U, data, size);
 }
 
+/* Exige versão conhecida, tipo permitido e payload de até 4 MiB; não verifica CRC. */
 int protocol_validate_header(const Header *header)
 {
     if (header == NULL)
@@ -226,11 +231,10 @@ int protocol_validate_header(const Header *header)
     return PROTOCOL_OK;
 }
 
+/* Valida a mensagem, calcula CRC em uma cópia do header e envia header seguido pelo payload. */
 int protocol_send_message(int sock, const Message *message)
 {
-    if (message == NULL ||
-        protocol_validate_header(&message->header) < 0 ||
-        (message->header.payload_size > 0 && message->payload == NULL))
+    if (message == NULL || protocol_validate_header(&message->header) < 0 || (message->header.payload_size > 0 && message->payload == NULL))
     {
         return PROTOCOL_ERROR;
     }
@@ -239,29 +243,19 @@ int protocol_send_message(int sock, const Message *message)
     uint8_t serialized_header[HEADER_WIRE_SIZE];
 
     wire_header.checksum = 0;
-    wire_header.checksum = protocol_message_crc32(&wire_header,
-                                                  message->payload);
+    wire_header.checksum = protocol_message_crc32(&wire_header, message->payload);
 
-    if (protocol_serialize_header(&wire_header,
-                                  serialized_header,
-                                  sizeof(serialized_header)) < 0)
+    if (protocol_serialize_header(&wire_header, serialized_header, sizeof(serialized_header)) < 0)
     {
         return PROTOCOL_ERROR;
     }
 
-    if (network_send_all(sock,
-                         serialized_header,
-                         sizeof(serialized_header)) !=
-        (ssize_t)sizeof(serialized_header))
+    if (network_send_all(sock, serialized_header, sizeof(serialized_header)) != (ssize_t)sizeof(serialized_header))
     {
         return PROTOCOL_ERROR;
     }
 
-    if (wire_header.payload_size > 0 &&
-        network_send_all(sock,
-                         message->payload,
-                         wire_header.payload_size) !=
-	(ssize_t)wire_header.payload_size)
+    if (wire_header.payload_size > 0 && network_send_all(sock, message->payload, wire_header.payload_size) != (ssize_t)wire_header.payload_size)
     {
         return PROTOCOL_ERROR;
     }
@@ -269,6 +263,7 @@ int protocol_send_message(int sock, const Message *message)
     return PROTOCOL_OK;
 }
 
+/* Lê header e payload completos, valida limites e CRC e entrega o payload alocado ao chamador. */
 int protocol_receive_message(int sock, Message *message)
 {
     if (message == NULL)
@@ -278,9 +273,7 @@ int protocol_receive_message(int sock, Message *message)
 
     uint8_t serialized_header[HEADER_WIRE_SIZE];
     Header received_header;
-    ssize_t received = network_recv_exact(sock,
-                                          serialized_header,
-                                          sizeof(serialized_header));
+    ssize_t received = network_recv_exact(sock, serialized_header, sizeof(serialized_header));
 
     if (received == 0)
     {
@@ -292,10 +285,7 @@ int protocol_receive_message(int sock, Message *message)
         return PROTOCOL_ERROR;
     }
 
-    if (protocol_deserialize_header(&received_header,
-                                    serialized_header,
-                                    sizeof(serialized_header)) < 0 ||
-        protocol_validate_header(&received_header) < 0)
+    if (protocol_deserialize_header(&received_header, serialized_header, sizeof(serialized_header)) < 0 || protocol_validate_header(&received_header) < 0)
     {
         return PROTOCOL_ERROR;
     }
@@ -310,12 +300,9 @@ int protocol_receive_message(int sock, Message *message)
             return PROTOCOL_ERROR;
         }
 
-        received = network_recv_exact(sock,
-                                      payload,
-                                      received_header.payload_size);
+        received = network_recv_exact(sock, payload, received_header.payload_size);
 
-        if (received < 0 ||
-            received != (ssize_t)received_header.payload_size)
+        if (received < 0 || received != (ssize_t)received_header.payload_size)
         {
             free(payload);
             return PROTOCOL_ERROR;
@@ -323,8 +310,7 @@ int protocol_receive_message(int sock, Message *message)
     }
 
     uint32_t expected_checksum = received_header.checksum;
-    uint32_t actual_checksum = protocol_message_crc32(&received_header,
-                                                      payload);
+    uint32_t actual_checksum = protocol_message_crc32(&received_header, payload);
 
     if (expected_checksum != actual_checksum)
     {

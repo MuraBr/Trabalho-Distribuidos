@@ -8,6 +8,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+/* Cria servidor TCP IPv4 em todas as interfaces; configura reutilização de endereço, bind e fila listen. */
 int network_create_server(uint16_t porta, int backlog)
 {
     int sock;
@@ -46,6 +47,7 @@ int network_create_server(uint16_t porta, int backlog)
     return sock;
 }
 
+/* Aceita uma conexão e retorna seu descritor; erros, inclusive EINTR, são tratados pelo chamador. */
 int network_accept_client(int server_fd)
 {
     int client_fd;
@@ -62,6 +64,7 @@ int network_accept_client(int server_fd)
     return client_fd;
 }
 
+/* Conecta a um IPv4 numérico e porta; fecha o socket se a validação ou conexão falhar. */
 int network_connect(const char *ip, uint16_t porta)
 {
     int sock;
@@ -107,6 +110,7 @@ int network_connect(const char *ip, uint16_t porta)
     return sock;
 }
 
+/* Repete send para completar o buffer e retoma após EINTR; retorna total enviado ou -1. */
 ssize_t network_send_all(int sock, const void *buffer, size_t tam)
 {
     const char *data = buffer;
@@ -136,6 +140,7 @@ ssize_t network_send_all(int sock, const void *buffer, size_t tam)
     return (ssize_t)total_sent;
 }
 
+/* Acumula recv até o tamanho pedido; retorna total parcial no fechamento, zero sem dados ou -1 em erro. */
 ssize_t network_recv_exact(int sock, void *buffer, size_t tam)
 {
     size_t total_received = 0;
@@ -163,6 +168,7 @@ ssize_t network_recv_exact(int sock, void *buffer, size_t tam)
     return (ssize_t)total_received;
 }
 
+/* Tenta encerrar os dois sentidos e sempre chama close; o retorno reflete o resultado de close. */
 int network_shutdown(int sock)
 {
     if(shutdown(sock, SHUT_RDWR) == -1)

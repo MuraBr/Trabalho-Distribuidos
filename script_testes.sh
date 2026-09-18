@@ -119,8 +119,8 @@ fi
 python3 - "$PORT" <<'PY'
 import socket, struct, sys
 port = int(sys.argv[1])
-# version=99; type=PING; zero IDs; timestamp=0; payload=0; crc=0
-hdr = struct.pack('!BH', 99, 1) + bytes(32+32+16) + bytes(8+4+4)
+# version=99; type=PING (3); zero IDs; timestamp=0; payload=0; crc=0
+hdr = struct.pack('!BH', 99, 3) + bytes(32+32+16) + bytes(8+4+4)
 s = socket.create_connection(('127.0.0.1', port), timeout=2)
 s.sendall(hdr)
 s.settimeout(2)

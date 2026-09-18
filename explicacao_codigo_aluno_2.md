@@ -146,9 +146,9 @@ Se o CRC falhar durante a recepção, a implementação atual encerra o tratamen
 | Teste | O que demonstra |
 | --- | --- |
 | `test_node_id_is_deterministic` | Hash conhecido para configuração fixa |
-| `test_node_records_process_and_round_trips_id` | PID, papel, identidade IPv6, ida e volta em hexadecimal e buffer insuficiente |
+| `test_node_records_process_and_round_trips_id` | PID, papel, identidade IPv6, ida e volta em hexadecimal, comparação de IDs e buffer insuficiente |
 | `test_node_rejects_invalid_configuration` | IP inválido, porta zero, IP sem terminador e configuração com UUID gerado |
-| `test_superpeer_registers_and_finds_members` | Autorregistro, expansão, inclusão, consulta e duplicata |
+| `test_superpeer_registers_and_finds_members` | Configuração com UUID aleatório, autorregistro, expansão, inclusão, consulta e duplicata |
 | `test_superpeer_rejects_inconsistent_nodes_and_unregisters` | ID adulterado, proteção do nó local, remoção e ausência |
 | `test_superpeer_members_are_thread_safe` | Quatro threads registram 25 membros cada; total esperado 101 |
 
@@ -170,7 +170,7 @@ make -B CFLAGS='-std=c2x -Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion
 bash script_testes.sh
 ```
 
-O script inicia e encerra seu próprio servidor. Ele testa o protocolo C1, incluindo JOIN/ACK, mas não executa a suíte do aluno 2. Não foi reexecutado nesta revisão de comentários. O arquivo de log padrão é `tests/c1/logs/node_55101.log`.
+O script inicia e encerra seu próprio servidor. Ele testa o protocolo C1, incluindo JOIN/ACK, mas não executa a suíte do aluno 2. Nesta revisão, o script oficial terminou com 10 testes aprovados e o script peer-to-peer terminou com 14 testes aprovados. O arquivo de log padrão é `tests/c1/logs/node_55101.log`.
 
 Para mostrar dois processos registrando um ao outro, use dois terminais, sem o script rodando nas mesmas portas:
 

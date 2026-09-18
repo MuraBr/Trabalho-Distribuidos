@@ -23,7 +23,7 @@ static void fill_transaction_id(uint8_t transaction_id[TRANSACTION_ID_SIZE])
 /* Usa socketpair local para conferir envio e recepção com payload; não testa conexão TCP real. */
 static void test_message_round_trip(void)
 {
-    static const uint8_t payload[] = {'c', '1', '-', 'o', 'k'};
+    static const uint8_t payload[] = {'P', 'I', 'N', 'G'};
     Message sent;
     Message received;
     int sockets[2];
@@ -59,10 +59,19 @@ static void test_message_round_trip(void)
     assert(close(sockets[1]) == 0);
 }
 
+/* Confere o vetor de referência mais conhecido do CRC32 usado pela zlib. */
+static void test_crc32_reference_vector(void)
+{
+    static const uint8_t data[] = "123456789";
+
+    assert(protocol_calculate_crc32(data, sizeof(data) - 1U) == UINT32_C(0xcbf43926));
+}
+
 /* Executa o teste de ida e volta; assert encerra o processo se uma condição falhar. */
 int main(void)
 {
     test_message_round_trip();
+    test_crc32_reference_vector();
     puts("protocol tests: ok");
     return 0;
 }

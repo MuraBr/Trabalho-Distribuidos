@@ -5,6 +5,7 @@
 
 #include <arpa/inet.h>
 #include <errno.h>
+#include <getopt.h>
 #include <inttypes.h>
 #include <pthread.h>
 #include <signal.h>
@@ -17,6 +18,8 @@
 
 #define PEER_BACKLOG 10
 #define DEFAULT_LOCAL_IP "127.0.0.1"
+#define PING_PAYLOAD "PING"
+#define PONG_PAYLOAD "PONG"
 
 typedef struct PeerContext PeerContext;
 
@@ -46,6 +49,8 @@ typedef struct
     uint16_t remote_port;
     const char *config_path;
     const char *node_name;
+    Message_Type command_type;
+    int command_mode;
 } NodeArguments; /* Opções de inicialização; config_path ainda não tem conteúdo interpretado. */
 
 static volatile sig_atomic_t g_running = 1;
@@ -82,11 +87,47 @@ static int parse_port(const char *text, uint16_t *port)
     return 0;
 }
 
-/* Aceita argumentos posicionais ou opções; --config só verifica acesso ao arquivo, sem ler seu conteúdo. */
+/* Converte o texto de --cmd no tipo de mensagem enviado pelo modo de comando. */
+static int parse_command_type(const char *text, Message_Type *type)
+{
+    if (text == NULL || type == NULL)
+    {
+        return -1;
+    }
+    if (strcmp(text, "ping") == 0)
+    {
+        *type = M_PING;
+        return 0;
+    }
+    if (strcmp(text, "join") == 0)
+    {
+        *type = M_JOIN;
+        return 0;
+    }
+    if (strcmp(text, "leave") == 0)
+    {
+        *type = M_LEAVE;
+        return 0;
+    }
+    return -1;
+}
+
+/* Aceita a forma posicional e as opções longas/curtas processadas por getopt_long. */
 static int parse_node_arguments(int argc, char **argv, NodeArguments *arguments)
 {
-    int index;
+    static const struct option long_options[] = {
+        {"cmd", required_argument, NULL, 'c'},
+        {"host", required_argument, NULL, 'h'},
+        {"port", required_argument, NULL, 'p'},
+        {"config", required_argument, NULL, 'f'},
+        {"name", required_argument, NULL, 'n'},
+        {NULL, 0, NULL, 0}
+    };
+    int option;
+    int have_command = 0;
+    int have_host = 0;
     int have_port = 0;
+    int have_name = 0;
 
     if (arguments == NULL || argc < 2)
     {
@@ -119,35 +160,64 @@ static int parse_node_arguments(int argc, char **argv, NodeArguments *arguments)
         return 0;
     }
 
-    for (index = 1; index < argc; ++index)
+    opterr = 0;
+    optind = 1;
+    while ((option = getopt_long(argc, argv, "c:h:p:f:n:", long_options, NULL)) != -1)
     {
-        if (strcmp(argv[index], "--config") == 0 && index + 1 < argc)
+        switch (option)
         {
-            arguments->config_path = argv[++index];
-        }
-        else if (strcmp(argv[index], "--port") == 0 && index + 1 < argc)
-        {
-            if (parse_port(argv[++index], &arguments->local_port) < 0)
+        case 'c':
+            if (parse_command_type(optarg, &arguments->command_type) < 0)
+            {
+                return -1;
+            }
+            have_command = 1;
+            break;
+        case 'h':
+            arguments->remote_ip = optarg;
+            have_host = optarg[0] != '\0';
+            break;
+        case 'p':
+            if (parse_port(optarg, &arguments->local_port) < 0)
             {
                 return -1;
             }
             have_port = 1;
-        }
-        else if (strcmp(argv[index], "--name") == 0 && index + 1 < argc)
-        {
-            arguments->node_name = argv[++index];
+            break;
+        case 'f':
+            arguments->config_path = optarg;
+            break;
+        case 'n':
+            arguments->node_name = optarg;
             if (arguments->node_name[0] == '\0')
             {
                 return -1;
             }
-        }
-        else
-        {
+            have_name = 1;
+            break;
+        default:
             return -1;
         }
     }
 
-    if (!have_port)
+    if (optind != argc || !have_port)
+    {
+        return -1;
+    }
+
+    if (have_command)
+    {
+        if (!have_host || arguments->config_path != NULL || have_name)
+        {
+            return -1;
+        }
+        arguments->command_mode = 1;
+        arguments->remote_port = arguments->local_port;
+        arguments->local_port = 0U;
+        return 0;
+    }
+
+    if (have_host)
     {
         return -1;
     }
@@ -167,6 +237,70 @@ static void print_node_id(const uint8_t node_id[NODE_ID_SIZE])
     {
         printf("%02x", (unsigned)node_id[index]);
     }
+}
+
+/* Retorna o nome exibido nos registros TX/RX dos comandos do protocolo. */
+static const char *message_type_name(Message_Type type)
+{
+    switch (type)
+    {
+    case M_JOIN:
+        return "JOIN";
+    case M_ACK:
+        return "ACK";
+    case M_ERROR:
+        return "ERROR";
+    case M_PING:
+        return "PING";
+    case M_PONG:
+        return "PONG";
+    case M_LEAVE:
+        return "LEAVE";
+    default:
+        return "UNKNOWN";
+    }
+}
+
+/* Aloca e copia um payload textual sem transmitir o terminador NUL. */
+static int set_text_payload(Message *message, const char *text)
+{
+    size_t text_size;
+
+    if (message == NULL || text == NULL)
+    {
+        errno = EINVAL;
+        return -1;
+    }
+
+    text_size = strlen(text);
+    if (text_size == 0U || text_size > UINT32_MAX)
+    {
+        errno = EINVAL;
+        return -1;
+    }
+
+    message->payload = malloc(text_size);
+    if (message->payload == NULL)
+    {
+        return -1;
+    }
+    memcpy(message->payload, text, text_size);
+    message->header.payload_size = (uint32_t)text_size;
+    return 0;
+}
+
+/* Compara tamanho e bytes do payload com o texto esperado. */
+static int message_payload_equals(const Message *message, const char *text)
+{
+    size_t text_size;
+
+    if (message == NULL || text == NULL)
+    {
+        return 0;
+    }
+
+    text_size = strlen(text);
+    return message->header.payload_size == text_size && message->payload != NULL && memcmp(message->payload, text, text_size) == 0;
 }
 
 /* Identifica destino zerado, usado no JOIN quando o ID remoto ainda não é conhecido. */
@@ -304,8 +438,8 @@ static int initialize_local_identity(PeerContext *peer, uint16_t local_port)
     return 0;
 }
 
-/* Preserva TransactionID, responde à origem e inclui o descritor local quando solicitado. */
-static int send_reply(const PeerContext *peer, int client_fd, const Message *request, Message_Type type, int include_node_descriptor)
+/* Preserva TransactionID e responde com descritor local ou payload fornecido pelo chamador. */
+static int send_reply(const PeerContext *peer, int client_fd, const Message *request, Message_Type type, const uint8_t *payload, uint32_t payload_size, int include_node_descriptor)
 {
     Message reply;
     int result;
@@ -333,6 +467,23 @@ static int send_reply(const PeerContext *peer, int client_fd, const Message *req
             message_free(&reply);
             return -1;
         }
+    }
+    else if (payload_size > 0U)
+    {
+        if (payload == NULL)
+        {
+            message_free(&reply);
+            errno = EINVAL;
+            return -1;
+        }
+        reply.payload = malloc(payload_size);
+        if (reply.payload == NULL)
+        {
+            message_free(&reply);
+            return -1;
+        }
+        memcpy(reply.payload, payload, payload_size);
+        reply.header.payload_size = payload_size;
     }
     else
     {
@@ -488,7 +639,7 @@ static void *handle_client(void *argument)
             {
                 fprintf(stderr, "JOIN rejeitado.\n");
             }
-            if (send_reply(peer, client_fd, &message, response_type, response_type == M_ACK) < 0)
+            if (send_reply(peer, client_fd, &message, response_type, NULL, 0U, response_type == M_ACK) < 0)
             {
                 fprintf(stderr, "Falha ao enviar resposta ao JOIN.\n");
                 message_free(&message);
@@ -497,18 +648,30 @@ static void *handle_client(void *argument)
         }
         else if (message.header.message_type == (uint8_t)M_PING)
         {
-            printf("RX PING\n");
-            fflush(stdout);
-            if (send_reply(peer, client_fd, &message, M_PONG, 0) < 0)
+            if (!message_payload_equals(&message, PING_PAYLOAD))
             {
-                fprintf(stderr, "Falha ao enviar PONG.\n");
-                message_free(&message);
-                break;
+                fprintf(stderr, "PING rejeitado: payload invalido.\n");
+                if (send_reply(peer, client_fd, &message, M_ERROR, NULL, 0U, 0) < 0)
+                {
+                    message_free(&message);
+                    break;
+                }
+            }
+            else
+            {
+                printf("RX PING\n");
+                fflush(stdout);
+                if (send_reply(peer, client_fd, &message, M_PONG, (const uint8_t *)PONG_PAYLOAD, (uint32_t)(sizeof(PONG_PAYLOAD) - 1U), 0) < 0)
+                {
+                    fprintf(stderr, "Falha ao enviar PONG.\n");
+                    message_free(&message);
+                    break;
+                }
             }
         }
         else if (message.header.message_type == (uint8_t)M_LEAVE)
         {
-            if (send_reply(peer, client_fd, &message, M_ACK, 0) < 0)
+            if (send_reply(peer, client_fd, &message, M_ACK, NULL, 0U, 0) < 0)
             {
                 fprintf(stderr, "Falha ao enviar ACK de LEAVE.\n");
                 message_free(&message);
@@ -518,7 +681,7 @@ static void *handle_client(void *argument)
         else
         {
             /* Mensagens ainda nao tratadas pelo checkpoint recebem ERROR. */
-            if (send_reply(peer, client_fd, &message, M_ERROR, 0) < 0)
+            if (send_reply(peer, client_fd, &message, M_ERROR, NULL, 0U, 0) < 0)
             {
                 fprintf(stderr, "Falha ao enviar ERROR.\n");
                 message_free(&message);
@@ -687,6 +850,102 @@ static int connect_and_join(const PeerContext *peer, const char *ip, uint16_t re
     return result == PROTOCOL_OK ? 0 : -1;
 }
 
+/* Executa PING, JOIN ou LEAVE uma vez e encerra, usando o mesmo binário do peer. */
+static int execute_command(const NodeArguments *arguments)
+{
+    int socket_fd;
+    int result = -1;
+    Message request;
+    Message response;
+    Message_Type expected_type;
+    NodeConfig config;
+    Node node;
+
+    if (arguments == NULL || !arguments->command_mode || arguments->remote_ip == NULL)
+    {
+        errno = EINVAL;
+        return -1;
+    }
+
+    socket_fd = network_connect(arguments->remote_ip, arguments->remote_port);
+    if (socket_fd < 0)
+    {
+        return -1;
+    }
+
+    if (message_init(&request) != PROTOCOL_OK || message_init(&response) != PROTOCOL_OK)
+    {
+        (void)network_shutdown(socket_fd);
+        return -1;
+    }
+
+    request.header.message_type = (uint8_t)arguments->command_type;
+    if (arguments->command_type == M_PING)
+    {
+        expected_type = M_PONG;
+        if (set_text_payload(&request, PING_PAYLOAD) < 0)
+        {
+            goto cleanup;
+        }
+    }
+    else if (arguments->command_type == M_JOIN)
+    {
+        expected_type = M_ACK;
+        if (node_config_init(&config, DEFAULT_LOCAL_IP, 1U) < 0 || node_init(&node, &config) < 0 || encode_join_payload_alloc(&config, &request.payload) < 0)
+        {
+            goto cleanup;
+        }
+        request.header.payload_size = JOIN_PAYLOAD_WIRE_SIZE;
+        memcpy(request.header.source_node, node.id.bytes, NODE_ID_SIZE);
+    }
+    else if (arguments->command_type == M_LEAVE)
+    {
+        expected_type = M_ACK;
+    }
+    else
+    {
+        errno = EINVAL;
+        goto cleanup;
+    }
+
+    fill_transaction_id(request.header.transaction_id);
+    request.header.timestamp = (uint64_t)time(NULL);
+    printf("TX %s\n", message_type_name(arguments->command_type));
+    fflush(stdout);
+
+    if (protocol_send_message(socket_fd, &request) != PROTOCOL_OK)
+    {
+        fprintf(stderr, "Falha ao enviar %s.\n", message_type_name(arguments->command_type));
+        goto cleanup;
+    }
+
+    if (protocol_receive_message(socket_fd, &response) != PROTOCOL_OK)
+    {
+        fprintf(stderr, "Falha ao receber a resposta.\n");
+        goto cleanup;
+    }
+    if (response.header.message_type != (uint8_t)expected_type || memcmp(response.header.transaction_id, request.header.transaction_id, TRANSACTION_ID_SIZE) != 0)
+    {
+        fprintf(stderr, "Resposta invalida: esperado %s, recebido %s.\n", message_type_name(expected_type), message_type_name((Message_Type)response.header.message_type));
+        goto cleanup;
+    }
+    if (expected_type == M_PONG && !message_payload_equals(&response, PONG_PAYLOAD))
+    {
+        fprintf(stderr, "PONG recebido com payload invalido.\n");
+        goto cleanup;
+    }
+
+    printf("RX %s\n", message_type_name(expected_type));
+    fflush(stdout);
+    result = 0;
+
+cleanup:
+    message_free(&request);
+    message_free(&response);
+    (void)network_shutdown(socket_fd);
+    return result;
+}
+
 /* Compõe 16 bytes com horário, PID e sequência local para correlacionar pedido e resposta. */
 static void fill_transaction_id(uint8_t transaction_id[TRANSACTION_ID_SIZE])
 {
@@ -707,10 +966,10 @@ static void fill_transaction_id(uint8_t transaction_id[TRANSACTION_ID_SIZE])
     memcpy(transaction_id + 12U, &sequence_value, sizeof(sequence_value));
 }
 
-/* Mostra as duas formas aceitas para iniciar o processo. */
+/* Mostra os modos servidor, conexão entre peers e comando de teste. */
 static void print_usage(const char *program_name)
 {
-    fprintf(stderr, "Uso: %s <porta-local> [<ip-remoto> <porta-remota>]\n" "   ou: %s --config <arquivo> --port <porta> --name <nome>\n", program_name, program_name);
+    fprintf(stderr, "Uso: %s <porta-local> [<ip-remoto> <porta-remota>]\n" "   ou: %s --config <arquivo> --port <porta> --name <nome>\n" "   ou: %s --cmd <ping|join|leave> --host <ip> --port <porta>\n", program_name, program_name, program_name);
 }
 
 /* Inicializa identidade, sincronização e servidor; no encerramento espera clientes antes de destruir o estado. */
@@ -729,9 +988,15 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
     }
 
+    (void)signal(SIGPIPE, SIG_IGN);
+
+    if (arguments.command_mode)
+    {
+        return execute_command(&arguments) == 0 ? EXIT_SUCCESS : EXIT_FAILURE;
+    }
+
     (void)signal(SIGINT, handle_signal);
     (void)signal(SIGTERM, handle_signal);
-    (void)signal(SIGPIPE, SIG_IGN);
 
     memset(&peer, 0, sizeof(peer));
     peer.server_fd = -1;

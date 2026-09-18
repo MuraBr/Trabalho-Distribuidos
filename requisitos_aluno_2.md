@@ -16,12 +16,12 @@ Atualizar este documento a cada avanço do aluno 2, mantendo requisitos, impleme
 | Inclusão, atualização e consulta | Implementado | Testes confirmam inclusão e duplicata sem aumentar contagem |
 | Remoção pela API local | Implementado | Testes de remoção e proteção do próprio Super Peer |
 | Concorrência na tabela | Implementado, cobertura parcial | Mutex; teste de 4 threads com 25 registros cada, total 101; não é prova de ausência de corridas |
-| JOIN por TCP e validação do NodeID | Implementado na integração | `peer.c` reconstrói identidade e registra antes do ACK; não reexecutado nesta revisão documental |
+| JOIN por TCP e validação do NodeID | Implementado na integração | `peer.c` reconstrói identidade e registra antes do ACK; scripts oficial e peer-to-peer aprovados nesta revisão |
 | Remoção via LEAVE | Pendente na integração | `peer.c` responde ACK sem chamar `superpeer_unregister_node` |
 | Resposta ERROR para CRC inválido | Pendente em relação ao requisito | Recepção falha e conexão é encerrada; não envia ERROR nesse caminho |
 | Metadados, ObjectID e chunks (C2) | Pendente | Não implementados nos módulos atuais do aluno 2 |
 | Chord, Gossip, heartbeat e estados de falha (C3) | Pendente | Apenas ALIVE e last_seen existem; sem temporizador de falhas |
-| Log, SMR e estado de eleição (C4) | Pendente | Comparação de NodeIDs disponível, mas sem consenso implementado |
+| Log, SMR e estado de eleição (C4) | Pendente | Comparação de NodeIDs disponível e testada, mas sem consenso implementado |
 | 2PC e IST (C5) | Pendente | Sem implementação |
 | Integração final e metas de desempenho (C6) | Pendente | Sem validação das metas não funcionais |
 

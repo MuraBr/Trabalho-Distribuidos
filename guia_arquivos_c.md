@@ -1,3 +1,5 @@
+> Nota de integração: o Makefile agora gera `bin/client` como link para `bin/node`; os comandos do cliente são executados por `peer.c`. O arquivo `client.c` foi preservado como referência da implementação anterior e não participa da compilação padrão.
+
 
 ## `peer.c` — execução do servidor e integração
 

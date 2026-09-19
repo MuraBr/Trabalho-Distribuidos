@@ -1,3 +1,5 @@
+> Nota de integração: o Makefile agora gera `bin/client` como link para `bin/node`; os comandos do cliente são executados por `peer.c`. O arquivo `client.c` foi preservado como referência da implementação anterior e não participa da compilação padrão.
+
 # Explicação dos códigos — Aluno 1
 
 Este documento explica a implementação presente no código-fonte em 18/09/2026, com foco no checkpoint 1: comunicação TCP, serialização, framing, CRC32 e atendimento concorrente. Os recursos previstos para checkpoints posteriores são apresentados como pendências, não como funcionalidades concluídas.

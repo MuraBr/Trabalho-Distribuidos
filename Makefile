@@ -20,10 +20,8 @@ $(BIN_DIR)/node: network.c network.h protocol.c protocol.h \
 		superpeer.c peer.c \
 		-o $@ $(LDLIBS)
 
-$(BIN_DIR)/client: network.c network.h protocol.c protocol.h \
-                   node.c node.h common.h client.c | $(BIN_DIR)
-	$(CC) $(CFLAGS) -pthread network.c protocol.c node.c client.c \
-		-o $@ $(LDLIBS)
+$(BIN_DIR)/client: $(BIN_DIR)/node Makefile | $(BIN_DIR)
+	ln -sf node $@
 
 test: all
 	$(MAKE) -C tests/c1

@@ -38,6 +38,8 @@ static void test_node_records_process_and_round_trips_id(void)
     NodeConfig config;
     Node node;
     NodeID parsed_id;
+    NodeID lower_id = {{0}};
+    NodeID higher_id = {{0}};
     char node_id_hex[NODE_ID_HEX_SIZE];
     char too_small[NODE_ID_HEX_SIZE - 1U];
 
@@ -49,6 +51,10 @@ static void test_node_records_process_and_round_trips_id(void)
     assert(node_id_to_hex(&node.id, node_id_hex, sizeof(node_id_hex)) == 0);
     assert(node_id_from_hex(&parsed_id, node_id_hex) == 0);
     assert(node_id_equal(&node.id, &parsed_id));
+    assert(node_id_compare(&node.id, &parsed_id) == 0);
+    higher_id.bytes[NODE_ID_SIZE - 1U] = 1U;
+    assert(node_id_compare(&lower_id, &higher_id) < 0);
+    assert(node_id_compare(&higher_id, &lower_id) > 0);
 
     errno = 0;
     assert(node_id_to_hex(&node.id, too_small, sizeof(too_small)) == -1);
@@ -75,10 +81,6 @@ static void test_node_rejects_invalid_configuration(void)
 /* Testa autorregistro, expansão, inclusão, consulta e atualização sem duplicação. */
 static void test_superpeer_registers_and_finds_members(void)
 {
-    static const uint8_t local_uuid[NODE_UUID_SIZE] = {
-        0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
-        0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10
-    };
     static const uint8_t member_uuid[NODE_UUID_SIZE] = {
         0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
         0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x20
@@ -90,7 +92,7 @@ static void test_superpeer_registers_and_finds_members(void)
     SuperPeerMember found_member;
     NodeConfig member_config;
 
-    assert(superpeer_config_init_with_uuid(&config, "127.0.0.1", 7000, local_uuid) == 0);
+    assert(superpeer_config_init(&config, "127.0.0.1", 7000) == 0);
     config.initial_member_capacity = 1U;
     assert(superpeer_create(&config, &superpeer) == 0);
     assert(superpeer_get_node(superpeer, &local_node) == 0);

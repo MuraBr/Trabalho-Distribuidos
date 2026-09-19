@@ -1,50 +1,50 @@
 Node C1SP1 started
-NodeID: 3cb82be73383cc5cae3cf8ae88a85fa7f5342e65ed8e827642f305ea2ab49129
-Peer ouvindo na porta 55101, NodeID=3cb82be73383cc5cae3cf8ae88a85fa7f5342e65ed8e827642f305ea2ab49129, membros locais=1
-Mensagem recebida: tipo=3, origem=0000000000000000000000000000000000000000000000000000000000000000, payload=0 bytes
+NodeID: 5382dad3e07ee32ed90896f8b68e5037009fe93a25bfbbd3441885cdca2789b3
+Peer ouvindo na porta 55101, NodeID=5382dad3e07ee32ed90896f8b68e5037009fe93a25bfbbd3441885cdca2789b3, membros locais=1
+Mensagem recebida: tipo=3, payload=4 bytes
 RX PING
-Mensagem recebida: tipo=0, origem=9f3fb27ee5213bfeadedb516b2bee9f331d710cabbba77f1a285f17608b6a4f7, payload=64 bytes
-JOIN validado: NodeID=9f3fb27ee5213bfeadedb516b2bee9f331d710cabbba77f1a285f17608b6a4f7, resultado=ADDED, membros=2
+Mensagem recebida: tipo=0, origem=d1266d98992386b0f1a96fe5dc171e9e226e2f3c01b54034a0bf6f0ad480af90, payload=64 bytes
+JOIN validado: NodeID=d1266d98992386b0f1a96fe5dc171e9e226e2f3c01b54034a0bf6f0ad480af90, resultado=ADDED, membros=2
 Mensagem recebida: tipo=5, origem=0000000000000000000000000000000000000000000000000000000000000000, payload=0 bytes
-Mensagem recebida: tipo=3, origem=0000000000000000000000000000000000000000000000000000000000000000, payload=0 bytes
+Mensagem recebida: tipo=3, payload=4 bytes
 RX PING
-Mensagem recebida: tipo=3, origem=0000000000000000000000000000000000000000000000000000000000000000, payload=0 bytes
+Mensagem recebida: tipo=3, payload=4 bytes
 RX PING
-Mensagem recebida: tipo=3, origem=0000000000000000000000000000000000000000000000000000000000000000, payload=0 bytes
+Mensagem recebida: tipo=3, payload=4 bytes
 RX PING
-Mensagem recebida: tipo=3, origem=0000000000000000000000000000000000000000000000000000000000000000, payload=0 bytes
+Mensagem recebida: tipo=3, payload=4 bytes
 RX PING
-Mensagem recebida: tipo=3, origem=0000000000000000000000000000000000000000000000000000000000000000, payload=0 bytes
+Mensagem recebida: tipo=3, payload=4 bytes
 RX PING
-Mensagem recebida: tipo=3, origem=0000000000000000000000000000000000000000000000000000000000000000, payload=0 bytes
+Mensagem recebida: tipo=3, payload=4 bytes
 RX PING
-Mensagem recebida: tipo=3, origem=0000000000000000000000000000000000000000000000000000000000000000, payload=0 bytes
+Mensagem recebida: tipo=3, payload=4 bytes
 RX PING
-Mensagem recebida: tipo=3, origem=0000000000000000000000000000000000000000000000000000000000000000, payload=0 bytes
+Mensagem recebida: tipo=3, payload=4 bytes
 RX PING
-Mensagem recebida: tipo=3, origem=0000000000000000000000000000000000000000000000000000000000000000, payload=0 bytes
+Mensagem recebida: tipo=3, payload=4 bytes
 RX PING
-Mensagem recebida: tipo=3, origem=0000000000000000000000000000000000000000000000000000000000000000, payload=0 bytes
+Mensagem recebida: tipo=3, payload=4 bytes
 RX PING
-Mensagem recebida: tipo=3, origem=0000000000000000000000000000000000000000000000000000000000000000, payload=0 bytes
+Mensagem recebida: tipo=3, payload=4 bytes
 RX PING
-Mensagem recebida: tipo=3, origem=0000000000000000000000000000000000000000000000000000000000000000, payload=0 bytes
+Mensagem recebida: tipo=3, payload=4 bytes
 RX PING
-Mensagem recebida: tipo=3, origem=0000000000000000000000000000000000000000000000000000000000000000, payload=0 bytes
+Mensagem recebida: tipo=3, payload=4 bytes
 RX PING
-Mensagem recebida: tipo=3, origem=0000000000000000000000000000000000000000000000000000000000000000, payload=0 bytes
+Mensagem recebida: tipo=3, payload=4 bytes
 RX PING
-Mensagem recebida: tipo=3, origem=0000000000000000000000000000000000000000000000000000000000000000, payload=0 bytes
+Mensagem recebida: tipo=3, payload=4 bytes
 RX PING
-Mensagem recebida: tipo=3, origem=0000000000000000000000000000000000000000000000000000000000000000, payload=0 bytes
+Mensagem recebida: tipo=3, payload=4 bytes
 RX PING
-Mensagem recebida: tipo=3, origem=0000000000000000000000000000000000000000000000000000000000000000, payload=0 bytes
+Mensagem recebida: tipo=3, payload=4 bytes
 RX PING
-Mensagem recebida: tipo=3, origem=0000000000000000000000000000000000000000000000000000000000000000, payload=0 bytes
+Mensagem recebida: tipo=3, payload=4 bytes
 RX PING
-Mensagem recebida: tipo=3, origem=0000000000000000000000000000000000000000000000000000000000000000, payload=0 bytes
+Mensagem recebida: tipo=3, payload=4 bytes
 RX PING
-Mensagem recebida: tipo=3, origem=0000000000000000000000000000000000000000000000000000000000000000, payload=0 bytes
+Mensagem recebida: tipo=3, payload=4 bytes
 RX PING
 Falha ao receber uma mensagem do cliente.
 accept: Invalid argument

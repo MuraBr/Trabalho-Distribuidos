@@ -35,6 +35,8 @@ O receptor deve usar o tamanho do payload para determinar exatamente onde uma me
 
 Na integração atual, `JOIN` e `ACK` utilizam um payload de 64 bytes com IP
 textual (46 bytes), porta em ordem de rede (2 bytes) e UUID (16 bytes).
+`PING` e `PONG` utilizam, respectivamente, os quatro bytes textuais `PING`
+e `PONG`, sem transmitir o terminador NUL.
 
 ### Integridade e identificadores
 
@@ -57,6 +59,11 @@ textual (46 bytes), porta em ordem de rede (2 bytes) e UUID (16 bytes).
 - `network.c`: operações de socket TCP;
 - `protocol.c`: header, serialização, framing e CRC32;
 - `peer.c`: processo principal do peer e fluxo cliente/servidor.
+
+O mesmo executável produzido de `peer.c` possui modo servidor e modo de
+comando (`--cmd ping|join|leave --host IP --port PORTA`). O caminho
+`bin/client` é somente um link simbólico para `bin/node`; não existe um
+módulo `client.c` separado.
 
 ## 3. Checkpoint 1 — comunicação básica
 
@@ -87,7 +94,10 @@ Para a primeira demonstração, devem funcionar pelo menos:
 
 - `JOIN`;
 - `ACK`;
-- `ERROR`.
+- `ERROR`;
+- `PING` com payload textual `PING`;
+- `PONG` com payload textual `PONG`;
+- `LEAVE` com resposta `ACK`.
 
 ### Verificações do checkpoint 1
 
@@ -207,4 +217,12 @@ Execução de dois peers:
 ```bash
 ./peer 5000
 ./peer 5001 127.0.0.1 5000
+```
+
+Execução dos testes automatizados:
+
+```bash
+make
+bash script_testes.sh
+bash script_testes_peer.sh
 ```

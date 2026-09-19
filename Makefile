@@ -1,5 +1,5 @@
 CC ?= gcc
-CFLAGS ?= -std=c23 -Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion
+CFLAGS ?= -std=c2x -Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion
 CRYPTO_LIB ?= -Wl,-l:libcrypto.so.3
 LDLIBS ?= -pthread $(CRYPTO_LIB) -lz
 

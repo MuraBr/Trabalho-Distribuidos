@@ -47,7 +47,7 @@ static int unlock_members(SuperPeer *superpeer)
 static int find_member_index_locked(const SuperPeer *superpeer, const NodeID *node_id, size_t *index)
 {
     size_t i;
-
+    // O index é opcional, então não precisamos inicializá-lo aqui.
     for (i = 0U; i < superpeer->member_count; ++i)
     {
         if (node_id_equal(&superpeer->members[i].node.id, node_id))
@@ -68,11 +68,13 @@ static int grow_members_locked(SuperPeer *superpeer)
     size_t new_capacity;
     SuperPeerMember *new_members;
 
+    // Se ainda há espaço, não é necessário crescer.
     if (superpeer->member_count < superpeer->member_capacity)
     {
         return 0;
     }
-
+    
+    // Se a capacidade atual for zero, inicializamos com a capacidade padrão. Caso contrário, dobramos a capacidade.
     if (superpeer->member_capacity == 0U)
     {
         new_capacity = SUPERPEER_DEFAULT_MEMBER_CAPACITY;
@@ -87,12 +89,14 @@ static int grow_members_locked(SuperPeer *superpeer)
         new_capacity = superpeer->member_capacity * 2U;
     }
 
+    // Verifica se a nova capacidade multiplicada pelo tamanho do elemento não causa overflow.
     if (new_capacity > SIZE_MAX / sizeof(*new_members))
     {
         errno = ENOMEM;
         return -1;
     }
 
+    // Realoca a memória para os membros com a nova capacidade.
     new_members = realloc(superpeer->members, new_capacity * sizeof(*new_members));
     if (new_members == NULL)
     {
@@ -116,16 +120,18 @@ static void set_member(SuperPeerMember *member, const Node *node)
 /* Configura identidade conhecida e capacidade inicial padrão de 16 membros. */
 int superpeer_config_init_with_uuid(SuperPeerConfig *config, const char *ip, uint16_t port, const uint8_t uuid[NODE_UUID_SIZE])
 {
+    // Valida parâmetros de entrada.
     if (config == NULL)
     {
         errno = EINVAL;
         return -1;
     }
+    // Configura o nó com o UUID fornecido.
     if (node_config_init_with_uuid(&config->node, ip, port, uuid) == -1)
     {
         return -1;
     }
-
+    
     config->initial_member_capacity = SUPERPEER_DEFAULT_MEMBER_CAPACITY;
     return 0;
 }
@@ -150,6 +156,7 @@ int superpeer_config_init(SuperPeerConfig *config, const char *ip, uint16_t port
 /* Aloca tabela/mutex e autorregistra o Super Peer: contagem inicial 1. Desfaz alocações em falha. */
 int superpeer_create(const SuperPeerConfig *config, SuperPeer **output)
 {
+    // Valida parâmetros de entrada e inicializa o nó local.
     SuperPeer *superpeer;
     size_t initial_capacity;
     int mutex_error;
@@ -201,6 +208,7 @@ int superpeer_create(const SuperPeerConfig *config, SuperPeer **output)
         return -1;
     }
 
+    // Inicializa o nó local com papel de Super Peer e registra-o como o primeiro membro.
     local_node.role = NODE_ROLE_SUPERPEER;
     superpeer->local_node = local_node;
     superpeer->member_capacity = initial_capacity;

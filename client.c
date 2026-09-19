@@ -197,6 +197,16 @@ int main(int argc, char **argv)
     if (arguments.command == CLIENT_PING)
     {
         request.header.message_type = (uint8_t)M_PING;
+        /* Envia os quatro caracteres de PING, sem o terminador de string. */
+        request.header.payload_size = 4U;
+        request.payload = malloc(request.header.payload_size);
+        if (request.payload == NULL)
+        {
+            message_free(&request);
+            (void)network_shutdown(socket_fd);
+            return EXIT_FAILURE;
+        }
+        memcpy(request.payload, "PING", request.header.payload_size);
         expected_type = M_PONG;
     }
     else if (arguments.command == CLIENT_JOIN)

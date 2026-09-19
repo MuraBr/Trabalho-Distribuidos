@@ -476,8 +476,12 @@ static void *handle_client(void *argument)
             break;
         }
 
-        printf("Mensagem recebida: tipo=%u, origem=", (unsigned)message.header.message_type);
-        print_node_id(message.header.source_node);
+        printf("Mensagem recebida: tipo=%u", (unsigned)message.header.message_type);
+        if (message.header.message_type != (uint8_t)M_PING)
+        {
+            printf(", origem=");
+            print_node_id(message.header.source_node);
+        }
         printf(", payload=%" PRIu32 " bytes\n", message.header.payload_size);
 
         if (message.header.message_type == (uint8_t)M_JOIN)

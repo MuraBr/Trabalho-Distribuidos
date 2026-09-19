@@ -8,11 +8,6 @@
 #include <string.h>
 #include <unistd.h>
 
-/*
- * A execução atual fornece libcrypto.so.3, mas não os headers de
- * desenvolvimento do OpenSSL. Esta é a assinatura pública de SHA256(); a
- * implementação continua sendo fornecida pela biblioteca externa.
- */
 extern unsigned char *SHA256(const unsigned char *data, size_t size, unsigned char *digest);
 
 /* Valida IPv4/IPv6 e normaliza o texto do endereço. */
@@ -21,14 +16,17 @@ static int normalize_ip(const char *ip, char normalized[NODE_ADDRESS_SIZE])
     struct in_addr ipv4;
     struct in6_addr ipv6;
 
+    // Valida parâmetros de entrada.
     if (ip == NULL || normalized == NULL || ip[0] == '\0')
     {
         errno = EINVAL;
         return -1;
     }
 
+    // Inicializa o buffer de saída com zeros para evitar lixo de memória.
     memset(normalized, 0, NODE_ADDRESS_SIZE);
 
+    // Tenta interpretar o endereço como IPv4 e, se falhar, tenta como IPv6.
     if (inet_pton(AF_INET, ip, &ipv4) == 1)
     {
         if (inet_ntop(AF_INET, &ipv4, normalized, NODE_ADDRESS_SIZE) == NULL)
@@ -63,13 +61,13 @@ int node_generate_uuid(uint8_t uuid[NODE_UUID_SIZE])
         return -1;
     }
 
-    /* The assignment targets Linux, where /dev/urandom is available. */
     random_fd = open("/dev/urandom", O_RDONLY);
     if (random_fd == -1)
     {
         return -1;
     }
 
+    // Lê 16 bytes de /dev/urandom, tratando leituras parciais e interrupções.
     while (total_read < NODE_UUID_SIZE)
     {
         ssize_t bytes_read = read(random_fd, uuid + total_read, NODE_UUID_SIZE - total_read);
@@ -97,7 +95,7 @@ int node_generate_uuid(uint8_t uuid[NODE_UUID_SIZE])
         return -1;
     }
 
-    /* RFC 4122 version 4 and variant bits. */
+    // Ajusta os bits do UUID para a versão 4 e variante correta.
     uuid[6] = (uint8_t)((uuid[6] & 0x0fU) | 0x40U);
     uuid[8] = (uint8_t)((uuid[8] & 0x3fU) | 0x80U);
     return 0;
@@ -137,6 +135,7 @@ int node_config_init_with_uuid(NodeConfig *config, const char *ip, uint16_t port
         return -1;
     }
 
+    // Inicializa a estrutura de configuração com o IP normalizado, porta e UUID fornecido.
     memset(config, 0, sizeof(*config));
     memcpy(config->ip, normalized, sizeof(config->ip));
     config->port = port;
@@ -159,12 +158,14 @@ int node_config_init(NodeConfig *config, const char *ip, uint16_t port)
         return -1;
     }
 
+    // Inicializa a configuração com o IP, porta e UUID gerado.
     return node_config_init_with_uuid(config, ip, port, uuid);
 }
 
 /* Calcula SHA-256(IP binário || porta em ordem de rede || UUID); exclui PID e papel. */
 int node_compute_id(const NodeConfig *config, NodeID *id)
 {
+    // Valida parâmetros de entrada.
     struct in_addr ipv4;
     struct in6_addr ipv6;
     const uint8_t *address_bytes;
@@ -199,6 +200,7 @@ int node_compute_id(const NodeConfig *config, NodeID *id)
         return -1;
     }
 
+    // Constrói o buffer de entrada para o hash: IP binário + porta em ordem de rede + UUID.
     network_port = htons(config->port);
     memcpy(input + input_size, address_bytes, address_size);
     input_size += address_size;
@@ -272,6 +274,7 @@ int node_id_to_hex(const NodeID *id, char *output, size_t output_size)
         return -1;
     }
 
+    // Converte cada byte em dois dígitos hexadecimais e adiciona o terminador nulo.
     for (i = 0U; i < NODE_ID_SIZE; ++i)
     {
         output[i * 2U] = hexadecimal[id->bytes[i] >> 4U];
@@ -310,6 +313,7 @@ int node_id_from_hex(NodeID *id, const char *hex)
         return -1;
     }
 
+    // Converte cada par de dígitos hexadecimais em um byte binário, validando caracteres.
     for (i = 0U; i < NODE_ID_SIZE; ++i)
     {
         int high = hexadecimal_value(hex[i * 2U]);

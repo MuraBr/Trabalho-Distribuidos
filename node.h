@@ -36,40 +36,40 @@ typedef struct
     NodeRole role;
 } Node;
 
-/* Creates a valid configuration and assigns a random UUID to it. */
+// Inicialização de configuração com IP, porta e UUID gerado aleatoriamente.
 int node_config_init(NodeConfig *config, const char *ip, uint16_t port);
 
-/* Creates a valid configuration with a caller-provided UUID. */
+// Inicialização de configuração com IP, porta e UUID fornecido pelo chamador.
 int node_config_init_with_uuid(NodeConfig *config, const char *ip, uint16_t port, const uint8_t uuid[NODE_UUID_SIZE]);
 
-/* Fills uuid with a version 4 UUID generated from the OS random source. */
+// Gera um UUID aleatório de 16 bytes, retornando zero em sucesso e -1 em erro.
 int node_generate_uuid(uint8_t uuid[NODE_UUID_SIZE]);
 
-/* Returns zero when the configuration has a valid IP address and port. */
+// Valida a configuração do nó, incluindo IP, porta e UUID.
 int node_config_validate(const NodeConfig *config);
 
-/* Computes SHA-256(IP bytes || port in network order || UUID bytes). */
+// Calcula o NodeID a partir da configuração do nó, usando SHA-256 de IP binário + porta em ordem de rede + UUID.
 int node_compute_id(const NodeConfig *config, NodeID *id);
 
-/* Initializes a node and records the current process identifier. */
+// Inicializa o nó com a configuração fornecida, calculando o NodeID e registrando o PID.
 int node_init(Node *node, const NodeConfig *config);
 
-/* Returns zero when the node data and its derived NodeID are consistent. */
+// Valida o nó, verificando consistência do NodeID, PID e papel; não autentica.
 int node_validate(const Node *node);
 
-/* Converts a binary NodeID to its lowercase hexadecimal representation. */
+// Converte o NodeID binário em uma string hexadecimal; retorna -1 em erro.
 int node_id_to_hex(const NodeID *id, char *output, size_t output_size);
 
-/* Parses exactly NODE_ID_HEX_SIZE - 1 hexadecimal characters. */
+// Converte uma string hexadecimal em NodeID binário; retorna -1 em erro.
 int node_id_from_hex(NodeID *id, const char *hex);
 
-/* Lexicographic comparison of two binary NodeIDs. */
+// Compara dois NodeIDs lexicograficamente; retorna -1, 0 ou 1.
 int node_id_compare(const NodeID *left, const NodeID *right);
 
-/* Returns one when both NodeIDs are equal, and zero otherwise. */
+// Compara dois NodeIDs para igualdade; ponteiros nulos não são considerados iguais.
 int node_id_equal(const NodeID *left, const NodeID *right);
 
-/* Returns the process identifier recorded in node, or -1 for a null node. */
+// Retorna o PID armazenado no nó; retorna -1 se o nó for nulo.
 pid_t node_get_process_id(const Node *node);
 
 #endif

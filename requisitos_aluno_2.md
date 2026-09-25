@@ -19,7 +19,7 @@ Atualizar este documento a cada avanço do aluno 2, mantendo requisitos, impleme
 | JOIN por TCP e validação do NodeID | Implementado na integração | `peer.c` reconstrói identidade e registra antes do ACK; scripts oficial e peer-to-peer aprovados nesta revisão |
 | Remoção via LEAVE | Pendente na integração | `peer.c` responde ACK sem chamar `superpeer_unregister_node` |
 | Resposta ERROR para CRC inválido | Pendente em relação ao requisito | Recepção falha e conexão é encerrada; não envia ERROR nesse caminho |
-| Metadados, ObjectID e chunks (C2) | Pendente | Não implementados nos módulos atuais do aluno 2 |
+| Metadados, ObjectID e chunks (C2) | Implementados na API local | `metadata.c` / `metadata.h`; testes em `tests/c2/test_metadata.c`; integração via rede pendente |
 | Chord, Gossip, heartbeat e estados de falha (C3) | Pendente | Apenas ALIVE e last_seen existem; sem temporizador de falhas |
 | Log, SMR e estado de eleição (C4) | Pendente | Comparação de NodeIDs disponível e testada, mas sem consenso implementado |
 | 2PC e IST (C5) | Pendente | Sem implementação |
@@ -243,3 +243,12 @@ O `script_testes.sh` exercita protocolo e comunicação C1, incluindo JOIN/ACK, 
 - `bash script_testes.sh`: integração TCP, 10 verificações aprovadas.
 - `bash script_testes_peer.sh`: primeira execução com 13 aprovações e uma falha na contagem de logs de PINGs concorrentes; repetição com 14 aprovações. Pendente investigar a intermitência dessa verificação; não considerar estabilidade comprovada.
 - A suíte específica da API local de node/superpeer não foi executada nesta integração.
+
+## Checkpoint 2 — implementação local em 24/09/2026
+
+- Implementados: ObjectID SHA-256 incremental de arquivo, hash table com resolução de colisões, cadastro/consulta/remoção de documentos, associação de chunks a múltiplos peers, deduplicação e exclusão de disponibilidade.
+- A API usa mutex, cópias de saída e armazenamento esparso. Os chunks usam 4 MiB de conteúdo original; tamanho e quantidade são representados com `uint64_t`.
+- O módulo de metadados é independente; o consumidor deve criar uma instância duradoura junto ao serviço do Super Peer e resolver NodeIDs pela API de membership existente.
+- Evidências: `make test-aluno2` e `make test` passaram; suíte C2 com AddressSanitizer/UndefinedBehaviorSanitizer passou fora do sandbox. Na verificação final, o sandbox bloqueou o socket da suíte de protocolo; `make test` passou fora dele. SHA-256 conhecido, colisões, duplicatas, remoção, fronteiras e oito threads cobertos. Não equivale a prova de ausência de corridas.
+- Pendências de integração: chamar a API nos handlers do aluno 1, definir/validar payloads, anunciar disponibilidade após armazenamento e testar upload/consulta/download pela rede. Sem persistência ou consistência distribuída nesta entrega.
+- Handoff e contrato detalhado: [integracao_checkpoint_2_aluno_2.md](integracao_checkpoint_2_aluno_2.md). Nenhum fluxo de upload/download ou protocolo do aluno 1 foi implementado aqui.

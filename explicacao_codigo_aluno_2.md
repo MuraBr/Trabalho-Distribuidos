@@ -1,6 +1,6 @@
 # Guia de apresentação — código do aluno 2
 
-Revisão: 17/09/2026. Este guia descreve o código existente, principalmente o checkpoint 1. As pendências estão em [requisitos_aluno_2.md](requisitos_aluno_2.md).
+Revisão: 24/09/2026. Este guia descreve o checkpoint 1 e a API local de metadados do checkpoint 2. As pendências estão em [requisitos_aluno_2.md](requisitos_aluno_2.md).
 
 ## 1. O que minha parte faz
 
@@ -194,4 +194,18 @@ Procure `JOIN validado` no receptor e `JOIN aceito pelo peer remoto` no iniciado
 
 “Na integração, o aluno 1 recebe e desserializa a mensagem. A configuração recebida permite recalcular o NodeID e compará-lo com o header. Só após validar e registrar o membro a aplicação responde ACK.”
 
-“Os testes verificam identidade, validação, duplicatas, remoção e registros concorrentes. O que está pronto é a base de identidade e cadastro do checkpoint 1. A remoção via rede ainda precisa ser ligada à API. Metadados, Chord, Gossip, detecção de falhas, eleição, SMR, 2PC e IST continuam pendentes.”
+“Os testes verificam identidade, validação, duplicatas, remoção e registros concorrentes. Estão prontas a base de identidade e cadastro do checkpoint 1 e a API local de metadados do checkpoint 2, com ObjectID SHA-256, hash table e associação de chunks a peers. A remoção de membros via rede e os handlers de metadados ainda precisam ser ligados às APIs. Chord, Gossip, detecção de falhas, eleição, SMR, 2PC e IST continuam pendentes.”
+
+## Checkpoint 2 — metadados (24/09/2026)
+
+Agora a parte do aluno 2 também oferece `metadata.c` e `metadata.h`. A tabela associa o ObjectID de um documento aos seus dados e aos peers que anunciam cada chunk. Ela é uma API local independente da tabela de membros; sua conexão ao servidor de rede ainda deve ser feita pelo aluno 1.
+
+`object_id_file` calcula SHA-256 com EVP em blocos de 64 KiB, evitando carregar todo o PDF na memória. `metadata_register_document` registra nome, tamanho original e quantidade de chunks de 4 MiB. Repetir o mesmo conteúdo/tamanho preserva o cadastro; tamanho conflitante produz erro.
+
+A hash table tem 257 buckets. O hash escolhe o bucket, mas a igualdade compara todos os 32 bytes do ObjectID; documentos diferentes que colidem permanecem em uma lista encadeada. A tabela não redimensiona automaticamente. Cada documento tem uma lista esparsa de associações entre índice e NodeID: registrar um documento grande não aloca antecipadamente todos os seus chunks.
+
+`metadata_register_chunk` anuncia uma cópia disponível, sem duplicá-la. `metadata_chunk_peers` copia a lista de peers de um chunk para memória do chamador, que deve chamar `free`. `metadata_unregister_chunk` remove uma cópia e `metadata_remove_document` apaga o cadastro com todas as associações. Essas operações não manipulam arquivos físicos.
+
+O mutex protege cada operação da tabela. Isso é proteção local entre threads, não consenso distribuído. O chamador deve encerrar as threads antes de destruir a tabela. Identidades anunciadas precisam ser validadas pelo consumidor; para obter IP e porta de um NodeID, usar `superpeer_find_member`.
+
+Os testes novos estão em `tests/c2/test_metadata.c`; `make test-aluno2` executa esses testes e os de node/superpeer. Em 24/09/2026, passaram, assim como `make test` e a suíte C2 com sanitizadores de memória/comportamento indefinido. A integração C2 por TCP permanece pendente. Consulte [o contrato de integração](integracao_checkpoint_2_aluno_2.md) para retornos, memória, convenções e evidências detalhadas.

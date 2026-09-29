@@ -18,10 +18,14 @@ fi
 PDFS=()
 for f in "$DATA_DIR"/*.pdf "$PROJECT_ROOT"/*.pdf; do
     [[ -f "$f" ]] || continue
-    PDFS+=("$f")
+    if head -c 1024 "$f" | LC_ALL=C grep -a -q '%PDF-'; then
+        PDFS+=("$f")
+    else
+        log "Ignorando $(basename "$f"): não contém assinatura PDF nos primeiros 1024 bytes"
+    fi
 done
 if [[ "${#PDFS[@]}" -eq 0 ]]; then
-    fail "Nenhum arquivo .pdf encontrado em $DATA_DIR ou $PROJECT_ROOT"
+    fail "Nenhum PDF válido encontrado em $DATA_DIR ou $PROJECT_ROOT"
     summary
     exit 1
 fi
@@ -52,13 +56,13 @@ fi
 
 for f in "${PDFS[@]}"; do
     name="$(basename "$f")"
-    if "$CLIENT_BIN" --local-peer-port "$PEER_PORT" upload "$f" 127.0.0.1 "$PEER_PORT" >>"$LOG" 2>&1; then
+    if "$CLIENT_BIN" upload "$f" 127.0.0.1 "$PEER_PORT" >>"$LOG" 2>&1; then
         ok "Upload de $name"
     else
         fail "Upload de $name"
         continue
     fi
-    if "$CLIENT_BIN" --local-peer-port "$PEER_PORT" download "$name" "$DOWNLOAD_DIR/$name" 127.0.0.1 "$SUPERPEER_PORT" >>"$LOG" 2>&1; then
+    if "$CLIENT_BIN" download "$name" "$DOWNLOAD_DIR/$name" 127.0.0.1 "$SUPERPEER_PORT" >>"$LOG" 2>&1; then
         ok "Download de $name"
         assert_file_equal "$f" "$DOWNLOAD_DIR/$name"
     else

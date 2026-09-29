@@ -24,15 +24,18 @@ int directory_announce(Directory *directory, const TransferDocument *document, c
     if (directory == NULL || document == NULL || owner == NULL || document->compression != COMPRESSION_LZ4) { errno = EINVAL; return -1; }
     size_t length = strlen(document->name);
     if (length < 4U || strcasecmp(document->name + length - 4U, ".pdf") != 0) { errno = EINVAL; return -1; }
-    MetadataDocument metadata = {.id = document->id, .file_size = document->file_size, .chunk_count = document->chunk_count, .version = 1U, .owner = *owner, .compression = document->compression};
-    memcpy(metadata.name, document->name, sizeof(metadata.name));
+    if (document->chunk_count > UINT32_MAX) { errno = EOVERFLOW; return -1; }
+    FileMetadata metadata = {.size = document->file_size, .chunk_count = (uint32_t)document->chunk_count, .version = 1U};
+    memcpy(metadata.object_id, document->id.bytes, OBJECT_ID_SIZE);
+    memcpy(metadata.filename, document->name, sizeof(metadata.filename));
+    metadata.owner = ((uint32_t)owner->bytes[0] << 24) | ((uint32_t)owner->bytes[1] << 16) | ((uint32_t)owner->bytes[2] << 8) | owner->bytes[3];
     return metadata_announce(directory->metadata, &metadata, chunks, owner);
 }
 
 int directory_lookup(Directory *directory, TransferSelectorType type, const ObjectID *id, const char *name, TransferLookupResult *result)
 {
     ObjectID selected;
-    MetadataDocument metadata_document;
+    FileMetadata metadata_document;
     uint64_t chunk_index;
 
     if (directory == NULL || result == NULL || (type == TRANSFER_SELECTOR_OBJECT_ID && id == NULL) || (type == TRANSFER_SELECTOR_NAME && name == NULL))
@@ -49,15 +52,16 @@ int directory_lookup(Directory *directory, TransferSelectorType type, const Obje
     {
         return -1;
     }
-    if (metadata_find_document(directory->metadata, &selected, &metadata_document) < 0 || metadata_document.chunk_count > SIZE_MAX / sizeof(*result->chunks))
+    if (metadata_find_document(directory->metadata, &selected, &metadata_document) < 0)
     {
         return -1;
     }
-    result->document.id = metadata_document.id;
-    strcpy(result->document.name, metadata_document.name);
-    result->document.file_size = metadata_document.file_size;
+    memcpy(result->document.id.bytes, metadata_document.object_id, OBJECT_ID_SIZE);
+    strcpy(result->document.name, metadata_document.filename);
+    result->document.file_size = metadata_document.size;
     result->document.chunk_count = metadata_document.chunk_count;
     result->document.compression = COMPRESSION_LZ4;
+    file_metadata_free(&metadata_document);
     if (metadata_document.chunk_count != 0U)
     {
         result->chunks = calloc((size_t)metadata_document.chunk_count, sizeof(*result->chunks));

@@ -1,6 +1,6 @@
 # Guia completo das funções do projeto
 
-Este guia descreve o código refatorado em 28–29/09/2026. O objetivo é permitir estudar a implementação, do fluxo geral até cada função. A primeira parte explica as responsabilidades; o catálogo detalhado ao final traz assinaturas, relações de chamada, mecanismos importantes, retornos, erros e o corpo de cada função em uma seção expansível. Este documento foi conferido contra os fontes em 29/09/2026; não é uma promessa de funcionalidades futuras. Abrange todos os arquivos C de produção, os testes C, os scripts de teste e os headers. Funções da biblioteca C/POSIX, OpenSSL, zlib e LZ4 são chamadas pelo projeto, mas não são implementadas nele.
+Este guia registra a revisão anterior do código em 28–29/09/2026. O catálogo detalhado inclui cópias históricas de corpos de função e assinaturas; após a mudança para `FileMetadata` em 29/09, suas seções de `metadata.h`, `metadata.c`, `directory.c` e `tests/c2/test_metadata.c` não correspondem mais aos fontes. Para o modelo vigente, leia [explicacao_codigo_aluno_2.md](explicacao_codigo_aluno_2.md), [requisitos_aluno_2.md](requisitos_aluno_2.md) e os arquivos C atuais. O restante oferece um mapa das responsabilidades e das chamadas da revisão anterior.
 
 ## Navegação rápida
 

@@ -1,11 +1,19 @@
 # Requisitos do trabalho — Aluno 2
 
+## Estado vigente — 29/09/2026
+
+`metadata.h` expõe exatamente o `FileMetadata` solicitado: ObjectID de 32 bytes, nome de 256 bytes, tamanho de 64 bits, contagem de chunks de 32 bits, vetor de hashes, versão e proprietário de 32 bits. `metadata.c` usa essa estrutura na hash table e mantém os descritores e as localizações por NodeID em dados separados. `directory.c` adapta ANNOUNCE/LOOKUP da rede; o valor numérico de `owner` usa os quatro primeiros bytes do NodeID em ordem big-endian, enquanto a localização mantém os 32 bytes completos. Esse número é um resumo e pode colidir; não é usado para encaminhar downloads.
+
+Na API local, `metadata_find_document` entrega cópia independente dos hashes; o chamador usa `file_metadata_free`. O registro esparso deixa `chunk_hashes` nulo até um anúncio completo. Como `chunk_count` é `uint32_t`, um arquivo que exigiria mais que `UINT32_MAX` chunks recebe `EOVERFLOW`. O protocolo de rede continua com descritores e contagem próprios; structs e ponteiros não são enviados diretamente.
+
+Evidências desta alteração: build C11 com `-Werror`, `make test-aluno2` e `make test-c2` aprovados; `tests/c2/integration.py` aprovou 46 verificações TCP; `script_testes_c2.sh` passou 20/20 em cópia temporária após `make -B all`. O teste negativo de protocolo precisou de acesso a sockets locais fora do sandbox. O teste local cobre o layout dos campos, cópia independente dos hashes, registro esparso seguido de anúncio e limite de contagem. Os scripts C1 e peer-to-peer não foram repetidos nesta alteração; suas cifras abaixo pertencem à revisão de 28/09. Persistem as pendências de CRC/ERROR e dos checkpoints posteriores já listadas abaixo.
+
 
 ## Revisão integrada — 28/09/2026
 
 Estado vigente: [refatoração C1/C2](refatoracao_checkpoint_2.md). Upload/download agora são executados pelo **Peer ativo**, selecionado por `--local-peer-port` (padrão 55102), mediante canal Unix privado. A CLI não envia LOOKUP anônimo. PDF é validado pela extensão, sem exigir assinatura, para aceitar as fixtures sintéticas.
 
-`peer.c` e `superpeer.c` têm main exclusivos; a API de membros está em `membership.c`. Ambos os processos persistem UUID e leem configuração real. LEAVE remove membro/disponibilidade. Metadados foram ampliados com proprietário NodeID, versão, compressão e descritores/hashes; ANNOUNCE publica o cadastro completo atomicamente.
+`peer.c` e `superpeer.c` têm main exclusivos; a API de membros está em `membership.c`. Ambos os processos persistem UUID e leem configuração real. LEAVE remove membro/disponibilidade. Na revisão de 28/09, os metadados incluíam proprietário NodeID, versão, compressão e descritores/hashes; ANNOUNCE publica o cadastro completo atomicamente. O modelo vigente está descrito acima.
 
 Evidências funcionais: C1 10/10, regressão legada 14/14, C2 20/20, runner disponível do professor 16/16 e integração independente 46 verificações. APIs locais e testes de falha de manifest passaram. Checkpoints 3–6 e suas metas globais permanecem **fora desta implementação**.
 
@@ -268,7 +276,7 @@ O `script_testes.sh` exercita protocolo e comunicação C1, incluindo JOIN/ACK, 
 
 ## Verificação da integração atual — 25/09/2026
 
-A lista anterior registra o estado da entrega local em 24/09. Na integração atual, `directory.c` usa a API de metadados sem alterar `metadata.c`; os handlers do Super Peer aceitam `ANNOUNCE` e `LOOKUP`. `script_testes_c2.sh` passou 20/20, `script_testes.sh` passou 10/10 e `script_testes_peer.sh` passou 14/14. O índice do Super Peer permanece volátil, sem replicação distribuída.
+A lista anterior registra o estado da entrega local em 24/09. Na revisão de 28/09, os handlers do Super Peer aceitaram `ANNOUNCE` e `LOOKUP`; `script_testes_c2.sh` passou 20/20, `script_testes.sh` passou 10/10 e `script_testes_peer.sh` passou 14/14. Em 29/09, `metadata.c` e `directory.c` foram adaptados para `FileMetadata`, com os testes vigentes descritos no início deste documento. O índice do Super Peer permanece volátil, sem replicação distribuída.
 
 ## Organização dos executáveis — 27/09/2026
 

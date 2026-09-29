@@ -11,16 +11,15 @@
 
 typedef struct { uint8_t bytes[OBJECT_ID_SIZE]; } ObjectID;
 typedef struct MetadataStore MetadataStore;
-typedef struct
-{
-    ObjectID id;
-    char name[METADATA_NAME_SIZE];
-    uint64_t file_size;
-    uint64_t chunk_count;
-    uint64_t version;
-    NodeID owner;
-    uint8_t compression;
-} MetadataDocument;
+typedef struct {
+    uint8_t object_id[32];
+    char filename[256];
+    uint64_t size;
+    uint32_t chunk_count;
+    uint8_t **chunk_hashes;
+    uint32_t version;
+    uint32_t owner;
+} FileMetadata;
 
 typedef struct
 {
@@ -29,10 +28,12 @@ typedef struct
     uint8_t hash[OBJECT_ID_SIZE];
 } MetadataChunk;
 
-int metadata_announce(MetadataStore *store, const MetadataDocument *document, const MetadataChunk *chunks, const NodeID *owner);
+int metadata_announce(MetadataStore *store, const FileMetadata *document, const MetadataChunk *chunks, const NodeID *owner);
 int metadata_find_name(MetadataStore *store, const char *name, ObjectID *id);
 int metadata_chunk_descriptor(MetadataStore *store, const ObjectID *id, uint64_t index, MetadataChunk *output);
 int metadata_remove_peer(MetadataStore *store, const NodeID *peer);
+/* Libera os hashes devolvidos por metadata_find_document; aceita documento sem hashes. */
+void file_metadata_free(FileMetadata *document);
 
 /* Retornos: 0 em sucesso, -1 com errno em erro. Saídas preservadas em erro, salvo indicação. */
 /* SHA-256 em leitura incremental; o chamador deve impedir alterações no arquivo durante a leitura. */
@@ -44,7 +45,8 @@ int metadata_create(MetadataStore **output);
 void metadata_destroy(MetadataStore *store);
 /* Registro idempotente por ID/tamanho; nomes alternativos preservam o primeiro nome. Tamanho divergente: EEXIST. */
 int metadata_register_document(MetadataStore *store, const ObjectID *id, const char *name, uint64_t file_size);
-int metadata_find_document(MetadataStore *store, const ObjectID *id, MetadataDocument *output);
+/* Devolve cópia independente; após sucesso, chamar file_metadata_free(output). */
+int metadata_find_document(MetadataStore *store, const ObjectID *id, FileMetadata *output);
 int metadata_remove_document(MetadataStore *store, const ObjectID *id);
 /* Índice começa em zero. Registro repetido do mesmo peer é idempotente. Não valida membership. */
 int metadata_register_chunk(MetadataStore *store, const ObjectID *id, uint64_t chunk_index, const NodeID *peer);

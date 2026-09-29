@@ -18,7 +18,7 @@ typedef struct Availability
 } Availability;
 typedef struct Entry
 {
-    MetadataDocument document;
+    FileMetadata document;
     Availability *available;
     MetadataChunk *chunks;
     struct Entry *next;
@@ -92,15 +92,23 @@ static int lock_store(MetadataStore *store)
 static Entry **find_entry(MetadataStore *store, const ObjectID *id)
 {
     Entry **entry = &store->buckets[bucket(id)];
-    while (*entry != NULL && memcmp((*entry)->document.id.bytes, id->bytes, OBJECT_ID_SIZE) != 0) entry = &(*entry)->next;
+    while (*entry != NULL && memcmp((*entry)->document.object_id, id->bytes, OBJECT_ID_SIZE) != 0) entry = &(*entry)->next;
     return entry;
 }
 
 static void free_entry(Entry *entry)
 {
     while (entry->available != NULL) { Availability *next = entry->available->next; free(entry->available); entry->available = next; }
+    free(entry->document.chunk_hashes);
     free(entry->chunks);
     free(entry);
+}
+
+void file_metadata_free(FileMetadata *document)
+{
+    if (document == NULL) return;
+    free(document->chunk_hashes);
+    document->chunk_hashes = NULL;
 }
 
 int metadata_create(MetadataStore **output)
@@ -126,20 +134,23 @@ void metadata_destroy(MetadataStore *store)
 int metadata_register_document(MetadataStore *store, const ObjectID *id, const char *name, uint64_t file_size)
 {
     if (store == NULL || id == NULL || name == NULL || name[0] == '\0' || strnlen(name, METADATA_NAME_SIZE) == METADATA_NAME_SIZE) return fail(EINVAL);
+    uint64_t chunk_count = file_size / METADATA_CHUNK_SIZE + (file_size % METADATA_CHUNK_SIZE != 0U);
+    if (chunk_count > UINT32_MAX) return fail(EOVERFLOW);
     if (lock_store(store) != 0) return -1;
     Entry **slot = find_entry(store, id);
     int error = 0;
-    if (*slot != NULL) { if ((*slot)->document.file_size != file_size) error = EEXIST; }
+    if (*slot != NULL) { if ((*slot)->document.size != file_size) error = EEXIST; }
     else
     {
         Entry *entry = calloc(1, sizeof(*entry));
         if (entry == NULL) error = ENOMEM;
         else
         {
-            entry->document.id = *id;
-            strcpy(entry->document.name, name);
-            entry->document.file_size = file_size;
-            entry->document.chunk_count = file_size / METADATA_CHUNK_SIZE + (file_size % METADATA_CHUNK_SIZE != 0);
+            memcpy(entry->document.object_id, id->bytes, OBJECT_ID_SIZE);
+            strcpy(entry->document.filename, name);
+            entry->document.size = file_size;
+            entry->document.chunk_count = (uint32_t)chunk_count;
+            entry->document.version = 1U;
             *slot = entry;
         }
     }
@@ -147,15 +158,40 @@ int metadata_register_document(MetadataStore *store, const ObjectID *id, const c
     return error == 0 ? 0 : fail(error);
 }
 
-int metadata_find_document(MetadataStore *store, const ObjectID *id, MetadataDocument *output)
+int metadata_find_document(MetadataStore *store, const ObjectID *id, FileMetadata *output)
 {
     if (store == NULL || id == NULL || output == NULL) return fail(EINVAL);
     if (lock_store(store) != 0) return -1;
     Entry *entry = *find_entry(store, id);
-    int found = entry != NULL;
-    if (found) *output = entry->document;
+    int error = entry == NULL ? ENOENT : 0;
+    FileMetadata copy;
+    if (error == 0)
+    {
+        copy = entry->document;
+        copy.chunk_hashes = NULL;
+        size_t count = copy.chunk_count;
+        if (entry->document.chunk_hashes != NULL)
+        {
+            if (count > SIZE_MAX / (sizeof(*copy.chunk_hashes) + OBJECT_ID_SIZE)) error = EOVERFLOW;
+            else
+            {
+                copy.chunk_hashes = malloc(count * (sizeof(*copy.chunk_hashes) + OBJECT_ID_SIZE));
+                if (copy.chunk_hashes == NULL) error = ENOMEM;
+                else
+                {
+                    uint8_t *hashes = (uint8_t *)(copy.chunk_hashes + count);
+                    for (size_t i = 0U; i < count; ++i)
+                    {
+                        copy.chunk_hashes[i] = hashes + i * OBJECT_ID_SIZE;
+                        memcpy(copy.chunk_hashes[i], entry->document.chunk_hashes[i], OBJECT_ID_SIZE);
+                    }
+                }
+            }
+        }
+        if (error == 0) *output = copy;
+    }
     pthread_mutex_unlock(&store->mutex);
-    return found ? 0 : fail(ENOENT);
+    return error == 0 ? 0 : fail(error);
 }
 
 int metadata_remove_document(MetadataStore *store, const ObjectID *id)
@@ -237,22 +273,25 @@ int metadata_chunk_peers(MetadataStore *store, const ObjectID *id, uint64_t chun
 }
 
 /* Publicação atômica: aloca e valida uma cópia completa antes de trocar o bucket. */
-int metadata_announce(MetadataStore *store, const MetadataDocument *document, const MetadataChunk *chunks, const NodeID *owner)
+int metadata_announce(MetadataStore *store, const FileMetadata *document, const MetadataChunk *chunks, const NodeID *owner)
 {
-    if (store == NULL || document == NULL || chunks == NULL || owner == NULL || document->chunk_count == 0U || document->chunk_count > SIZE_MAX / sizeof(*chunks) || document->chunk_count != document->file_size / METADATA_CHUNK_SIZE + (document->file_size % METADATA_CHUNK_SIZE != 0U) || strnlen(document->name, METADATA_NAME_SIZE) == METADATA_NAME_SIZE) return fail(EINVAL);
+    if (store == NULL || document == NULL || chunks == NULL || owner == NULL || document->chunk_count == 0U || document->chunk_count != document->size / METADATA_CHUNK_SIZE + (document->size % METADATA_CHUNK_SIZE != 0U) || document->filename[0] == '\0' || strnlen(document->filename, METADATA_NAME_SIZE) == METADATA_NAME_SIZE) return fail(EINVAL);
     Entry *candidate = calloc(1U, sizeof(*candidate));
     if (candidate == NULL) return -1;
     candidate->document = *document;
-    candidate->document.owner = *owner;
+    candidate->document.chunk_hashes = NULL;
     candidate->document.version = 1U;
     candidate->chunks = malloc((size_t)document->chunk_count * sizeof(*chunks));
     if (candidate->chunks == NULL) { free_entry(candidate); return -1; }
     memcpy(candidate->chunks, chunks, (size_t)document->chunk_count * sizeof(*chunks));
+    candidate->document.chunk_hashes = calloc((size_t)document->chunk_count, sizeof(*candidate->document.chunk_hashes));
+    if (candidate->document.chunk_hashes == NULL) { free_entry(candidate); return -1; }
     for (uint64_t i = 0U; i < document->chunk_count; ++i)
     {
         uint64_t offset = i * METADATA_CHUNK_SIZE;
-        uint64_t remaining = document->file_size - offset;
-        if (chunks[i].index != i || chunks[i].offset != offset || chunks[i].raw_size != (remaining > METADATA_CHUNK_SIZE ? METADATA_CHUNK_SIZE : remaining) || chunks[i].compressed_size == 0U) { free_entry(candidate); return fail(EINVAL); }
+        uint64_t remaining = document->size - offset;
+        if (chunks[i].index != i || chunks[i].offset != offset || chunks[i].raw_size != (remaining > METADATA_CHUNK_SIZE ? METADATA_CHUNK_SIZE : remaining) || chunks[i].compressed_size == 0U || (document->chunk_hashes != NULL && (document->chunk_hashes[i] == NULL || memcmp(document->chunk_hashes[i], chunks[i].hash, OBJECT_ID_SIZE) != 0))) { free_entry(candidate); return fail(EINVAL); }
+        candidate->document.chunk_hashes[i] = candidate->chunks[i].hash;
         Availability *item = calloc(1U, sizeof(*item));
         if (item == NULL) { free_entry(candidate); return -1; }
         item->index = i;
@@ -261,12 +300,14 @@ int metadata_announce(MetadataStore *store, const MetadataDocument *document, co
         candidate->available = item;
     }
     if (lock_store(store) < 0) { free_entry(candidate); return -1; }
-    Entry **slot = find_entry(store, &document->id);
+    ObjectID id;
+    memcpy(id.bytes, document->object_id, OBJECT_ID_SIZE);
+    Entry **slot = find_entry(store, &id);
     Entry *old = *slot;
     int error = 0;
     if (old != NULL)
     {
-        if (old->document.file_size != document->file_size || old->document.chunk_count != document->chunk_count) error = EEXIST;
+        if (old->document.size != document->size || old->document.chunk_count != document->chunk_count) error = EEXIST;
         for (uint64_t i = 0U; error == 0 && old->chunks != NULL && i < document->chunk_count; ++i)
             if (old->chunks[i].raw_size != chunks[i].raw_size || memcmp(old->chunks[i].hash, chunks[i].hash, OBJECT_ID_SIZE) != 0) error = EEXIST;
         for (Availability *item = old->available; error == 0 && item != NULL; item = item->next)
@@ -278,7 +319,14 @@ int metadata_announce(MetadataStore *store, const MetadataDocument *document, co
             copy->next = candidate->available;
             candidate->available = copy;
         }
-        if (error == 0) { candidate->document = old->document; candidate->next = old->next; }
+        if (error == 0)
+        {
+            uint8_t **hashes = candidate->document.chunk_hashes;
+            if (old->chunks != NULL) candidate->document = old->document;
+            else strcpy(candidate->document.filename, old->document.filename);
+            candidate->document.chunk_hashes = hashes;
+            candidate->next = old->next;
+        }
     }
     if (error == 0) { *slot = candidate; if (old != NULL) free_entry(old); }
     pthread_mutex_unlock(&store->mutex);
@@ -294,10 +342,10 @@ int metadata_find_name(MetadataStore *store, const char *name, ObjectID *id)
     ObjectID result = {{0}};
     for (size_t i = 0U; i < BUCKET_COUNT; ++i)
         for (Entry *entry = store->buckets[i]; entry != NULL; entry = entry->next)
-            if (strcmp(entry->document.name, name) == 0)
+            if (strcmp(entry->document.filename, name) == 0)
             {
                 if (found) { pthread_mutex_unlock(&store->mutex); return fail(ENOTUNIQ); }
-                result = entry->document.id;
+                memcpy(result.bytes, entry->document.object_id, OBJECT_ID_SIZE);
                 found = 1;
             }
     pthread_mutex_unlock(&store->mutex);

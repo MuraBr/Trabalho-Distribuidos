@@ -14,7 +14,7 @@ A API de metadados foi ampliada com autorização explícita. A antiga limitaç�
 - `metadata_remove_peer`: remove disponibilidades do NodeID sem apagar documentos.
 - APIs legadas de documento/chunk esparso continuam disponíveis para testes e compatibilidade local; o ANNOUNCE de rede usa a API atômica.
 
-`MetadataDocument` contém ObjectID, nome, uint64 tamanho/contagem/versão, owner NodeID completo e compressão. `MetadataChunk` contém índice/offset uint64, tamanhos uint32 e hash de 32 bytes. Versão inicial é 1; não há algoritmo de versionamento distribuído.
+`FileMetadata` contém `object_id[32]`, `filename[256]`, tamanho `uint64_t`, contagem `uint32_t`, `chunk_hashes`, versão `uint32_t` e proprietário `uint32_t`, exatamente na ordem do enunciado. `MetadataChunk` contém índice/offset `uint64_t`, tamanhos `uint32_t` e hash de 32 bytes. O número do proprietário é derivado dos quatro primeiros bytes do NodeID; localizações guardam o NodeID completo. LZ4 pertence ao documento de transferência. Versão inicial é 1; não há algoritmo de versionamento distribuído.
 
 ## Fluxo entre componentes
 
@@ -31,7 +31,7 @@ Origem zero é rejeitada no C2; somente comandos legados de diagnóstico C1 cont
 
 ## Memória, erros e compatibilidade
 
-Inteiros wire são big-endian. Structs e ponteiros não são transmitidos. Encoders alocam buffers liberados pelo chamador; consultas de peers devolvem cópias liberadas por free. Lookup composto usa transfer_lookup_result_free. Descritor de chunk decodificado aponta para bytes da mensagem recebida.
+Inteiros wire são big-endian. Structs e ponteiros não são transmitidos. Encoders alocam buffers liberados pelo chamador; consultas de peers devolvem cópias liberadas por free. `metadata_find_document` devolve cópia dos hashes, liberada por `file_metadata_free`. Lookup composto usa transfer_lookup_result_free. Descritor de chunk decodificado aponta para bytes da mensagem recebida.
 
 Erros de domínio usam payload de dois bytes (versão 1 e código estável); nunca se transmite errno bruto. Formatos: [protocolo_checkpoint_2.md](protocolo_checkpoint_2.md).
 

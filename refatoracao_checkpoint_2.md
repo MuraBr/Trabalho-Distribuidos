@@ -162,9 +162,9 @@ Download usa arquivo `.part` criado com exclusividade, verifica hashes, fsync e 
 
 ## Modelo de metadados e divergências do enunciado
 
-`MetadataDocument` representa ObjectID, nome, tamanho, chunk_count, version=1, owner NodeID completo e compression=LZ4. `MetadataChunk` representa índice, offset, tamanhos e SHA-256. Localizações são associações a NodeIDs, resolvidas na tabela de membros.
+Desde 29/09, `FileMetadata` representa ObjectID, nome, tamanho `uint64_t`, contagem `uint32_t`, vetor de hashes, versão e proprietário `uint32_t`, com os campos e a ordem exatos do enunciado. `MetadataChunk` representa índice, offset, tamanhos e SHA-256. Localizações são associações a NodeIDs completos, resolvidas na tabela de membros; LZ4 continua no documento de transferência.
 
-O exemplo simplificado do checkpoint usa proprietário inteiro, mas o modelo geral usa NodeID. A implementação preserva os 32 bytes completos. Contagens internas usam uint64_t, com limites do payload e das alocações; não há transmissão de structs C.
+`owner` usa os quatro primeiros bytes do NodeID em ordem big-endian. Como pode haver colisão, o roteamento usa o NodeID completo das localizações. A contagem de chunks do metadado tem limite de `UINT32_MAX` e excesso é rejeitado; o protocolo mantém seus próprios tipos e limites. Não há transmissão de structs C.
 
 A API legada de registro esparso continua disponível e testada. A integração TCP utiliza `metadata_announce`: prepara uma nova entrada inteira e só troca a entrada da hash table após todas as validações/alocações. Conflitos não alteram a entrada existente. Nomes iguais com ObjectIDs diferentes exigem consulta por ObjectID.
 

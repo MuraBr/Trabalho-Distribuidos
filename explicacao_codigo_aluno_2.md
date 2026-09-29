@@ -1,10 +1,12 @@
 # Guia de apresentação — código do aluno 2
 
-Revisão: 24/09/2026. Este guia descreve o checkpoint 1 e a API local de metadados do checkpoint 2. As pendências estão em [requisitos_aluno_2.md](requisitos_aluno_2.md).
+Revisão C2: 29/09/2026. As seções de checkpoint 1 e as demonstrações datadas abaixo são históricas. O estado vigente e as pendências estão em [requisitos_aluno_2.md](requisitos_aluno_2.md).
 
 ## Revisão C2 atual
 
-A API atômica `metadata_announce` substitui o cadastro parcial em várias chamadas. O índice inclui owner NodeID completo, versão inicial, LZ4, descritores e hashes. `metadata_find_name` detecta ambiguidade; `metadata_remove_peer` acompanha LEAVE. A configuração e o UUID dos dois processos são persistidos por app_config. O índice de metadados continua em memória, reconstruído por anúncios.
+A hash table guarda exatamente a estrutura pública `FileMetadata`: `object_id[32]`, `filename[256]`, `size` de 64 bits, `chunk_count` de 32 bits, `chunk_hashes` como vetor de ponteiros para hashes SHA-256, `version` e `owner` de 32 bits. `metadata_announce` valida os descritores e publica o registro completo atomicamente; a versão inicial é 1. O campo numérico `owner` é derivado dos quatro primeiros bytes do NodeID; o NodeID completo fica nas localizações dos chunks, usado por `directory.c` para resolver os membros. A compressão LZ4 continua no documento de transferência, fora de `FileMetadata`.
+
+No registro esparso, `chunk_hashes` é nulo. Após anúncio, cada ponteiro interno referencia o hash de um descritor pertencente à entrada. `metadata_find_document` devolve cópia independente com hashes próprios; o chamador libera o bloco por `file_metadata_free`. A contagem acima de `UINT32_MAX` chunks é rejeitada com `EOVERFLOW`. A API local não transmite a struct na rede: `directory.c` converte ANNOUNCE/LOOKUP, e `metadata_remove_peer` acompanha LEAVE. O índice continua volátil e é reconstruído por anúncios; os testes de integração TCP vigentes estão registrados no documento de requisitos.
 
 Explicação de cada função nova: [guia completo](guia_completo_funcoes.md). Evidências e limites: [relatório C2](refatoracao_checkpoint_2.md). Registros datados mais antigos abaixo devem ser lidos como histórico.
 

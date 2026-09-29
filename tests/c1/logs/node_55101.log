@@ -3,8 +3,8 @@ NodeID: 0db256ac781a1769677c2c8fefab5a3cde36f741c13ff99e4694f5b7e87acca4
 Peer ouvindo na porta 55101, NodeID=0db256ac781a1769677c2c8fefab5a3cde36f741c13ff99e4694f5b7e87acca4, membros locais=1
 Mensagem recebida: tipo=3, payload=4 bytes, ip_origem=127.0.0.1
 RX PING
-Mensagem recebida: tipo=0, origem=222b170491d1a934c05bbf75cbd85e6c364013ccb7f3c2a642d360418a177889, payload=64 bytes, ip_origem=127.0.0.1
-JOIN validado: NodeID=222b170491d1a934c05bbf75cbd85e6c364013ccb7f3c2a642d360418a177889, resultado=ADDED, membros=2
+Mensagem recebida: tipo=0, origem=78dd8f4d0064da95351cc8154892acf53b3f032b02a61a5e668c3655f2feb1b8, payload=64 bytes, ip_origem=127.0.0.1
+JOIN validado: NodeID=78dd8f4d0064da95351cc8154892acf53b3f032b02a61a5e668c3655f2feb1b8, resultado=ADDED, membros=2
 Mensagem recebida: tipo=5, origem=0000000000000000000000000000000000000000000000000000000000000000, payload=0 bytes, ip_origem=127.0.0.1
 Mensagem recebida: tipo=3, payload=4 bytes, ip_origem=127.0.0.1
 RX PING

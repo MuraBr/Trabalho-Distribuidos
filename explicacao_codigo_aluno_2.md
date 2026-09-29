@@ -6,7 +6,7 @@ Revisão: 24/09/2026. Este guia descreve o checkpoint 1 e a API local de metadad
 
 “Minha parte cria a identidade dos nós e mantém o cadastro de membros do Super Peer. Cada nó possui configuração, um identificador SHA-256 e informações locais do processo. O Super Peer usa esse identificador para adicionar, consultar, atualizar e remover membros, protegendo a tabela contra acessos simultâneos.”
 
-Os arquivos centrais são `node.c` e `superpeer.c`. `node.h` e `superpeer.h` apresentam as estruturas e funções públicas; `common.h` compartilha os tamanhos com o protocolo. `test_node_superpeer.c` verifica os módulos. `peer.c`, da integração com o aluno 1, conecta essas funções às mensagens TCP; ele é explicado aqui apenas para mostrar como as partes se encontram.
+Os arquivos centrais são `node.c` e `superpeer.c`. `node.h` e `superpeer.h` apresentam as estruturas e funções públicas; `common.h` compartilha os tamanhos com o protocolo. `test_node_superpeer.c` verifica os módulos. O `main` de `bin/superpeer` fica em `superpeer.c` e é ativado apenas no build desse executável; `superpeer_app.c`, da integração com o aluno 1, conecta a API às mensagens TCP.
 
 ## 2. Estruturas e conceitos
 
@@ -77,7 +77,7 @@ Mesmos IP binário, porta e UUID produzem o mesmo ID. Alterar essas entradas dev
 
 ### Encapsulamento e concorrência
 
-A definição completa de `SuperPeer` fica no `.c`; o `.h` expõe um tipo incompleto. Quem usa o módulo chama sua API sem manipular diretamente os campos internos.
+A definição completa de `SuperPeer` fica no `.c`; o `.h` expõe um tipo incompleto. Quem usa o módulo chama sua API sem manipular diretamente os campos internos. O `main` condicional chama `superpeer_run` de `superpeer_app.c`; testes unitários compilam a API sem esse `main`.
 
 `lock_members` e `unlock_members` encapsulam o mutex. Funções pthread devolvem o número do erro diretamente; esses auxiliares o colocam em `errno` e retornam -1, acompanhando a convenção do módulo.
 
@@ -127,7 +127,7 @@ Nas consultas com argumento `const`, o código faz um cast para adquirir o mutex
 
 O descritor transmitido possui 64 bytes: IP textual e preenchimento zero (46), porta em ordem de rede (2) e UUID (16). Nunca se envia a memória bruta de `Node`: ela contém informações locais e pode ter padding dependente do compilador.
 
-1. `peer.c` recebe a mensagem pela camada de protocolo do aluno 1, que cuida de framing e CRC32.
+1. `superpeer_app.c` recebe a mensagem pela camada de protocolo do aluno 1, que cuida de framing e CRC32.
 2. `register_join` verifica o destino: aceita o ID local ou destino zerado.
 3. `decode_join_payload` valida tamanho, terminador e preenchimento; reconstrói `NodeConfig` com o UUID recebido.
 4. `node_init` calcula o NodeID desse descritor.

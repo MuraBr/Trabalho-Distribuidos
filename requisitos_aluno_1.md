@@ -2,6 +2,12 @@
 
 Este documento separa as responsabilidades do Aluno 1 a partir do enunciado do trabalho de Programação Distribuída.
 
+## Estado da implementação — Checkpoint 2
+
+O Checkpoint 2 está integrado à rede. `bin/superpeer` mantém o índice de metadados e localizações; `bin/peer` armazena, comprime, transfere e valida chunks. `bin/node` aponta para `bin/superpeer` e `bin/client` aponta para `bin/peer`, preservando os comandos dos testes anteriores.
+
+Implementado e testado: upload e download de PDF, ObjectID SHA-256, chunks de 4 MiB, SHA-256 por chunk, LZ4 por chunk, manifests locais, publicação atômica, pools de transferência, lookup no Super Peer, transferência direta entre cliente e Peers, fallback entre localizações, reinicialização com novo anúncio e idempotência por ObjectID. Chord, Gossip, réplica automática, SMR, 2PC, LFU e IST permanecem reservados para checkpoints posteriores.
+
 ## 1. Requisitos comuns da dupla
 
 O projeto deve:
@@ -48,7 +54,8 @@ e `PONG`, sem transmitir o terminador NUL.
 ### Bibliotecas externas utilizadas
 
 - O CRC32 é fornecido pela biblioteca `zlib` (`crc32()`); não há mais uma implementação manual do polinômio no projeto.
-- O SHA-256 é fornecido pela `libcrypto` do OpenSSL (`SHA256()`), chamado diretamente em `node.c`, onde o `NodeID` é calculado.
+- O SHA-256 é fornecido pela `libcrypto` do OpenSSL: `node.c` calcula o NodeID, `metadata.c` calcula o ObjectID incrementalmente e `content.c` valida cada chunk.
+- Compressão e descompressão usam a ABI estável da biblioteca externa `liblz4.so.1`; não há implementação manual de LZ4.
 - Neste ambiente, o link é feito explicitamente para `libcrypto.so.3`, pois a biblioteca de execução está instalada mesmo sem os headers de desenvolvimento do OpenSSL.
 
 ## 2. Responsabilidades do Aluno 1
@@ -58,12 +65,17 @@ e `PONG`, sem transmitir o terminador NUL.
 - `common.h`: constantes compartilhadas entre identidade e protocolo;
 - `network.c`: operações de socket TCP;
 - `protocol.c`: header, serialização, framing e CRC32;
-- `peer.c`: processo principal do peer e fluxo cliente/servidor.
+- `peer.c`: processo do Super Peer e handlers de `JOIN`, `LOOKUP` e `ANNOUNCE`.
+- `peer_app.c`: comandos e inicialização do Peer de armazenamento.
+- `peer_service.c`: servidor concorrente de upload e download de chunks.
+- `concurrent_server.c`: ciclo concorrente compartilhado pelos dois servidores.
+- `file_client.c`: coordenação paralela de upload e download.
+- `transfer_protocol.c`: formatos wire do Checkpoint 2.
+- `storage.c`: manifests, diretórios `pending`/`objects` e publicação atômica.
+- `compression.c` e `content.c`: integração com LZ4 e SHA-256.
+- `directory.c`: adaptação entre mensagens de rede, `metadata.c` e membros do Super Peer.
 
-O mesmo executável produzido de `peer.c` possui modo servidor e modo de
-comando (`--cmd ping|join|leave --host IP --port PORTA`). O caminho
-`bin/client` é somente um link simbólico para `bin/node`; não existe um
-módulo `client.c` separado.
+Os processos são separados: `bin/superpeer` executa o índice e `bin/peer` executa armazenamento e comandos. Os aliases `bin/node` e `bin/client` mantêm a interface de correção do Checkpoint 1. Não existe um módulo `client.c` na compilação padrão.
 
 ## 3. Checkpoint 1 — comunicação básica
 
@@ -124,11 +136,15 @@ Responsabilidades do Aluno 1:
 
 O tamanho de chunk especificado no trabalho é 4 MB.
 
+Nesta implementação, “4 MB” é fixado em 4 MiB (`4194304` bytes), compartilhado por `METADATA_CHUNK_SIZE`. O payload máximo do protocolo é 5 MiB para comportar `LZ4_compressBound(4 MiB)` e o descritor do chunk.
+
 Pipeline esperado:
 
 ```text
 arquivo → SHA-256 → fragmentação → LZ4 → checksum → transferência
 ```
+
+Estados usados: `CREATED → QUEUED → STARTED → TRANSFERRING → VERIFYING → FINISHED`; `REPLICATED` está reservado. O Super Peer não armazena os bytes do documento. O cliente obtém localizações com `LOOKUP` e baixa os chunks diretamente dos Peers.
 
 ## 5. Checkpoint 3 — membership e falhas
 
@@ -204,19 +220,19 @@ O trabalho apresenta como metas:
 
 ## 11. Comandos iniciais de teste
 
-Compilação do Aluno 1:
+Compilação:
 
 ```bash
-gcc -std=c11 -Wall -Wextra -Wpedantic -pthread \
-    network.c protocol.c node.c superpeer.c peer.c \
-    -Wl,-l:libcrypto.so.3 -lz -o peer
+make CFLAGS='-std=c2x -Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion -Werror'
 ```
 
-Execução de dois peers:
+Execução do Checkpoint 2:
 
 ```bash
-./peer 5000
-./peer 5001 127.0.0.1 5000
+./bin/superpeer --port 55101 --name superpeer
+./bin/peer serve 55102 127.0.0.1 55101
+./bin/peer upload arquivo.pdf 127.0.0.1 55102
+./bin/peer download arquivo.pdf copia.pdf 127.0.0.1 55101
 ```
 
 Execução dos testes automatizados:
@@ -225,4 +241,5 @@ Execução dos testes automatizados:
 make
 bash script_testes.sh
 bash script_testes_peer.sh
+bash script_testes_c2.sh
 ```

@@ -9,7 +9,7 @@
 /* Versão aceita, tamanho do identificador de transação e limite de alocação por payload. */
 #define PROTOCOL_VERSION 1u
 #define TRANSACTION_ID_SIZE 16u
-#define MAX_PAYLOAD_SIZE (4u * 1024u * 1024u)
+#define MAX_PAYLOAD_SIZE (5u * 1024u * 1024u)
 
 /*
  * Layout do payload de JOIN e ACK usado na integracao:
@@ -34,6 +34,20 @@ typedef enum m_type
     M_PING = 3,
     M_PONG = 4,
     M_LEAVE = 5,
+    M_LOOKUP = 6,
+    M_STORE = 7,
+    M_DOWNLOAD_REQ = 8,
+    M_DOWNLOAD_REP = 9,
+    M_PREPARE = 10,
+    M_COMMIT = 11,
+    M_ABORT = 12,
+    M_HEARTBEAT = 13,
+    M_GOSSIP = 14,
+    M_ELECTION = 15,
+    M_OK = 16,
+    M_COORDINATOR = 17,
+    M_SNAPSHOT = 18,
+    M_STATE_TRANSFER = 19,
 } Message_Type;
 
 /* Representação em memória: a serialização define a disposição dos campos na rede. */
@@ -75,7 +89,7 @@ int protocol_serialize_header(const Header *header, uint8_t *buffer, size_t buff
 int protocol_deserialize_header(Header *header, const uint8_t *buffer, size_t buffer_size);
 /* Calcula CRC32 de um buffer; zero também é retorno para ponteiro nulo com tamanho positivo. */
 uint32_t protocol_calculate_crc32(const uint8_t *data, size_t size);
-/* Exige versão conhecida, tipo permitido e payload de até 4 MiB; não verifica CRC. */
+/* Exige versão conhecida, tipo permitido e payload de até 5 MiB; não verifica CRC. */
 int protocol_validate_header(const Header *header);
 /* Valida a mensagem, calcula CRC em uma cópia do header e envia header seguido pelo payload. */
 int protocol_send_message(int sock, const Message *message);

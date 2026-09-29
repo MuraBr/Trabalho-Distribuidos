@@ -1,0 +1,362 @@
+Availability	metadata.c	22
+Availability	metadata.c	27
+BUCKET_COUNT	metadata.c	20
+CHUNK_FIXED_SIZE	transfer_protocol.c	11
+CLIENT_JOIN	client.c	19
+CLIENT_LEAVE	client.c	20
+CLIENT_PING	client.c	18
+ClientArguments	client.c	28
+ClientCommand	client.c	21
+ConcurrentConnection	concurrent_server.c	10
+ConcurrentConnection	concurrent_server.c	15
+ConcurrentServer	concurrent_server.c	17
+DEFAULT_LOCAL_IP	superpeer_app.c	24
+DEFAULT_MAX_WORKERS	file_client.c	22
+DEFAULT_PEER_HOST	peer.c	16
+DEFAULT_PEER_PORT	peer.c	17
+DEFAULT_SUPERPEER_HOST	peer.c	14
+DEFAULT_SUPERPEER_PORT	peer.c	15
+DOCUMENT_FIXED_SIZE	transfer_protocol.c	10
+Directory	directory.c	16
+DirectoryName	directory.c	9
+DirectoryName	directory.c	14
+DownloadWork	file_client.c	51
+ENDPOINT_FIXED_SIZE	transfer_protocol.c	12
+ENGINE	metadata.c	12
+EVP_MD	metadata.c	11
+EVP_MD_CTX	metadata.c	10
+Entry	metadata.c	28
+Entry	metadata.c	33
+MANIFEST_MAGIC	storage.c	25
+MANIFEST_MAGIC_SIZE	storage.c	26
+MANIFEST_VERSION	storage.c	27
+MAX_CONFIGURED_WORKERS	file_client.c	23
+Mclient	client.c	/^int main(int argc, char **argv)$/
+MetadataStore	metadata.c	34
+Mpeer	peer.c	/^int main(int argc, char **argv)$/
+Msuperpeer	superpeer.c	/^int main(int argc, char **argv)$/
+Mtest_node_superpeer	test_node_superpeer.c	/^int main(void)$/
+Mteste	teste.c	/^int main()$/
+NDEBUG	test_node_superpeer.c	2
+NodeArguments	superpeer_app.c	48
+PART_PATH_EXTRA	file_client.c	24
+PATH_MAX	storage.c	22
+PEER_BACKLOG	peer_service.c	23
+PEER_BACKLOG	superpeer_app.c	23
+PEER_STORAGE_PATH_SIZE	peer_service.c	24
+PING_PAYLOAD	superpeer_app.c	25
+PONG_PAYLOAD	superpeer_app.c	26
+PeerContext	superpeer_app.c	37
+PeerService	peer_service.c	34
+REGISTRATIONS_PER_THREAD	test_node_superpeer.c	158
+REGISTRATION_THREAD_COUNT	test_node_superpeer.c	157
+RegistrationContext	test_node_superpeer.c	166
+Storage	storage.c	49
+StoredChunk	storage.c	37
+StoredDocument	storage.c	39
+StoredDocument	storage.c	47
+SuperPeer	superpeer.c	21
+UploadWork	file_client.c	39
+_POSIX_C_SOURCE	directory.c	1
+_POSIX_C_SOURCE	file_client.c	1
+_POSIX_C_SOURCE	metadata.c	1
+_POSIX_C_SOURCE	node.c	1
+_POSIX_C_SOURCE	peer_service.c	1
+_POSIX_C_SOURCE	storage.c	1
+_POSIX_C_SOURCE	superpeer.c	1
+accept_clients	superpeer_app.c	/^static void *accept_clients(void *argument)$/
+announce_catalog	peer_service.c	/^static int announce_catalog(PeerService *service)$/
+announce_document	peer_service.c	/^static int announce_document(PeerService *service,/
+answer_lookup	superpeer_app.c	/^static int answer_lookup(PeerContext *peer, int cl/
+available	metadata.c	31
+bounded_string_length	transfer_protocol.c	/^static size_t bounded_string_length(const char *te/
+bucket	metadata.c	/^static size_t bucket(const ObjectID *id)$/
+buckets	metadata.c	36
+change_chunk	metadata.c	/^static int change_chunk(MetadataStore *store, cons/
+chunk_path	storage.c	/^static int chunk_path(const Storage *storage, cons/
+chunks	storage.c	45
+client_fd	concurrent_server.c	13
+command	client.c	25
+command_mode	superpeer_app.c	47
+command_type	superpeer_app.c	46
+compressed_size	storage.c	34
+compressed_total	file_client.c	34
+compressed_total	file_client.c	48
+compression_lz4_bound	compression.c	/^int compression_lz4_bound(size_t input_size, size_/
+compression_lz4_compress	compression.c	/^int compression_lz4_compress(const uint8_t *input,/
+compression_lz4_decompress	compression.c	/^int compression_lz4_decompress(const uint8_t *inpu/
+concurrent_server_create	concurrent_server.c	/^int concurrent_server_create(int server_fd, Concur/
+concurrent_server_destroy	concurrent_server.c	/^void concurrent_server_destroy(ConcurrentServer *s/
+concurrent_server_run	concurrent_server.c	/^int concurrent_server_run(ConcurrentServer *server/
+concurrent_server_stop	concurrent_server.c	/^void concurrent_server_stop(ConcurrentServer *serv/
+condition	concurrent_server.c	23
+config_path	superpeer_app.c	44
+connect_and_join	superpeer_app.c	/^static int connect_and_join(const PeerContext *pee/
+connections	concurrent_server.c	24
+content_basename	content.c	/^int content_basename(const char *path, char output/
+content_sha256	content.c	/^int content_sha256(const uint8_t *data, size_t siz/
+content_validate_pdf	content.c	/^int content_validate_pdf(const char *path)$/
+context	concurrent_server.c	21
+crc32_update	protocol.c	/^static uint32_t crc32_update(uint32_t crc, const u/
+decode_document_at	transfer_protocol.c	/^static int decode_document_at(const uint8_t *paylo/
+decode_join_payload	superpeer_app.c	/^static int decode_join_payload(const uint8_t *payl/
+directory	superpeer_app.c	36
+directory_announce	directory.c	/^int directory_announce(Directory *directory, const/
+directory_create	directory.c	/^int directory_create(MetadataStore *metadata, Supe/
+directory_destroy	directory.c	/^void directory_destroy(Directory *directory)$/
+directory_lookup	directory.c	/^int directory_lookup(Directory *directory, Transfe/
+document	file_client.c	31
+document	metadata.c	30
+document	storage.c	41
+document_directory	storage.c	/^static int document_directory(const Storage *stora/
+document_wire_size	transfer_protocol.c	/^static size_t document_wire_size(const TransferDoc/
+documents	storage.c	54
+download_fail	file_client.c	/^static void download_fail(DownloadWork *work, int /
+download_one	file_client.c	/^static int download_one(DownloadWork *work, uint64/
+download_worker	file_client.c	/^static void *download_worker(void *argument)$/
+encode_document_at	transfer_protocol.c	/^static int encode_document_at(const TransferDocume/
+encode_join_payload	client.c	/^static int encode_join_payload(const NodeConfig *c/
+encode_join_payload	superpeer_app.c	/^static int encode_join_payload(const NodeConfig *c/
+encode_join_payload_alloc	superpeer_app.c	/^static int encode_join_payload_alloc(const NodeCon/
+ensure_directory_tree	storage.c	/^static int ensure_directory_tree(const char *path)/
+execute_command	superpeer_app.c	/^static int execute_command(const NodeArguments *ar/
+execute_download_workers	file_client.c	/^static int execute_download_workers(DownloadWork */
+execute_upload_workers	file_client.c	/^static int execute_upload_workers(UploadWork *work/
+fail	metadata.c	/^static int fail(int error)$/
+failed	file_client.c	36
+failed	file_client.c	46
+failed	test_node_superpeer.c	165
+file_client_benchmark_lz4	file_client.c	/^int file_client_benchmark_lz4(const char *path)$/
+file_client_download	file_client.c	/^int file_client_download(const char *selector, con/
+file_client_upload	file_client.c	/^int file_client_upload(const char *path, const cha/
+fill_transaction_id	client.c	/^static void fill_transaction_id(uint8_t transactio/
+fill_transaction_id	superpeer_app.c	/^static void fill_transaction_id(uint8_t transactio/
+find_document	storage.c	/^static StoredDocument *find_document(Storage *stor/
+find_entry	metadata.c	/^static Entry **find_entry(MetadataStore *store, co/
+find_member_index_locked	superpeer.c	/^static int find_member_index_locked(const SuperPee/
+free_entry	metadata.c	/^static void free_entry(Entry *entry)$/
+g_running	superpeer_app.c	50
+get_u16	storage.c	/^static uint16_t get_u16(const uint8_t *source)$/
+get_u16	transfer_protocol.c	/^static uint16_t get_u16(const uint8_t *source)$/
+get_u32	storage.c	/^static uint32_t get_u32(const uint8_t *source)$/
+get_u32	transfer_protocol.c	/^static uint32_t get_u32(const uint8_t *source)$/
+get_u64	storage.c	/^static uint64_t get_u64(const uint8_t *source)$/
+get_u64	transfer_protocol.c	/^static uint64_t get_u64(const uint8_t *source)$/
+grow_members_locked	superpeer.c	/^static int grow_members_locked(SuperPeer *superpee/
+handle_client	superpeer_app.c	/^static void handle_client(void *context, int clien/
+handle_download	peer_service.c	/^static int handle_download(PeerService *service, i/
+handle_signal	superpeer_app.c	/^static void handle_signal(int signal_number)$/
+handle_store	peer_service.c	/^static int handle_store(PeerService *service, int /
+handler	concurrent_server.c	20
+hash	storage.c	35
+hashes	file_client.c	32
+hexadecimal_value	node.c	/^static int hexadecimal_value(char character)$/
+host	client.c	26
+host	file_client.c	29
+id	directory.c	11
+index	metadata.c	24
+index	storage.c	31
+initialize_local_identity	superpeer_app.c	/^static int initialize_local_identity(PeerContext */
+initialize_service	peer_service.c	/^static int initialize_service(PeerService *service/
+input_fd	file_client.c	28
+join_superpeer	peer_service.c	/^static int join_superpeer(PeerService *service)$/
+legacy_command	peer.c	/^static int legacy_command(const char *command, con/
+listen_closed	concurrent_server.c	26
+load_documents	storage.c	/^static int load_documents(Storage *storage, int fi/
+load_or_create_uuid	peer_service.c	/^static int load_or_create_uuid(const char *storage/
+local_node	superpeer.c	23
+local_node	superpeer_app.c	33
+local_port	superpeer_app.c	41
+lock_members	superpeer.c	/^static int lock_members(SuperPeer *superpeer)$/
+lock_store	metadata.c	/^static int lock_store(MetadataStore *store)$/
+lookup	file_client.c	44
+lookup_document	file_client.c	/^static int lookup_document(const char *host, uint1/
+member_capacity	superpeer.c	26
+member_count	superpeer.c	25
+members	superpeer.c	24
+members_mutex	superpeer.c	27
+message_free	protocol.c	/^void message_free(Message *message)$/
+message_init	protocol.c	/^int message_init(Message *message)$/
+message_name	peer.c	/^static const char *message_name(Message_Type type)/
+message_payload_equals	superpeer_app.c	/^static int message_payload_equals(const Message *m/
+message_type_name	superpeer_app.c	/^static const char *message_type_name(Message_Type /
+metadata	directory.c	18
+metadata	superpeer_app.c	35
+metadata_chunk_peers	metadata.c	/^int metadata_chunk_peers(MetadataStore *store, con/
+metadata_create	metadata.c	/^int metadata_create(MetadataStore **output)$/
+metadata_destroy	metadata.c	/^void metadata_destroy(MetadataStore *store)$/
+metadata_find_document	metadata.c	/^int metadata_find_document(MetadataStore *store, c/
+metadata_register_chunk	metadata.c	/^int metadata_register_chunk(MetadataStore *store, /
+metadata_register_document	metadata.c	/^int metadata_register_document(MetadataStore *stor/
+metadata_remove_document	metadata.c	/^int metadata_remove_document(MetadataStore *store,/
+metadata_unregister_chunk	metadata.c	/^int metadata_unregister_chunk(MetadataStore *store/
+mutex	concurrent_server.c	22
+mutex	directory.c	20
+mutex	file_client.c	38
+mutex	file_client.c	50
+mutex	metadata.c	37
+mutex	storage.c	53
+name	directory.c	12
+names	directory.c	21
+network_accept_client	network.c	/^int network_accept_client(int server_fd)$/
+network_connect	network.c	/^int network_connect(const char *ip, uint16_t porta/
+network_create_server	network.c	/^int network_create_server(uint16_t porta, int back/
+network_recv_exact	network.c	/^ssize_t network_recv_exact(int sock, void *buffer,/
+network_send_all	network.c	/^ssize_t network_send_all(int sock, const void *buf/
+network_shutdown	network.c	/^int network_shutdown(int sock)$/
+next	concurrent_server.c	14
+next	directory.c	13
+next	metadata.c	26
+next	metadata.c	32
+next	storage.c	46
+next_index	file_client.c	33
+next_index	file_client.c	45
+node	peer_service.c	29
+node_compute_id	node.c	/^int node_compute_id(const NodeConfig *config, Node/
+node_config_init	node.c	/^int node_config_init(NodeConfig *config, const cha/
+node_config_init_with_uuid	node.c	/^int node_config_init_with_uuid(NodeConfig *config,/
+node_config_validate	node.c	/^int node_config_validate(const NodeConfig *config)/
+node_generate_uuid	node.c	/^int node_generate_uuid(uint8_t uuid[NODE_UUID_SIZE/
+node_get_process_id	node.c	/^pid_t node_get_process_id(const Node *node)$/
+node_id_compare	node.c	/^int node_id_compare(const NodeID *left, const Node/
+node_id_equal	node.c	/^int node_id_equal(const NodeID *left, const NodeID/
+node_id_from_hex	node.c	/^int node_id_from_hex(NodeID *id, const char *hex)$/
+node_id_is_zero	superpeer_app.c	/^static int node_id_is_zero(const uint8_t node_id[N/
+node_id_to_hex	node.c	/^int node_id_to_hex(const NodeID *id, char *output,/
+node_init	node.c	/^int node_init(Node *node, const NodeConfig *config/
+node_name	superpeer_app.c	45
+node_validate	node.c	/^int node_validate(const Node *node)$/
+normalize_ip	node.c	/^static int normalize_ip(const char *ip, char norma/
+object_hex	storage.c	/^static int object_hex(const ObjectID *id, char out/
+object_id_file	metadata.c	/^int object_id_file(const char *path, ObjectID *out/
+object_id_from_hex	transfer_protocol.c	/^static int object_id_from_hex(ObjectID *id, const /
+object_id_to_hex	metadata.c	/^int object_id_to_hex(const ObjectID *id, char *out/
+offset	storage.c	32
+option_command	peer.c	/^static int option_command(int argc, char **argv)$/
+output_fd	file_client.c	43
+owner	storage.c	42
+owner	storage.c	52
+parse_arguments	client.c	/^static int parse_arguments(int argc, char **argv, /
+parse_command	client.c	/^static int parse_command(const char *text, ClientC/
+parse_command_type	superpeer_app.c	/^static int parse_command_type(const char *text, Me/
+parse_node_arguments	superpeer_app.c	/^static int parse_node_arguments(int argc, char **a/
+parse_port	client.c	/^static int parse_port(const char *text, uint16_t */
+parse_port	peer.c	/^static int parse_port(const char *text, uint16_t */
+parse_port	superpeer_app.c	/^static int parse_port(const char *text, uint16_t */
+peer	metadata.c	25
+peer_service_run	peer_service.c	/^int peer_service_run(uint16_t local_port, const ch/
+port	client.c	27
+port	file_client.c	30
+pread_all	file_client.c	/^static int pread_all(int fd, uint8_t *buffer, size/
+present	storage.c	36
+print_node_id	superpeer_app.c	/^static void print_node_id(const uint8_t node_id[NO/
+print_usage	client.c	/^static void print_usage(const char *program_name)$/
+print_usage	superpeer_app.c	/^static void print_usage(const char *program_name)$/
+protocol_calculate_crc32	protocol.c	/^uint32_t protocol_calculate_crc32(const uint8_t *d/
+protocol_deserialize_header	protocol.c	/^int protocol_deserialize_header(Header *header, co/
+protocol_message_crc32	protocol.c	/^static uint32_t protocol_message_crc32(const Heade/
+protocol_receive_message	protocol.c	/^int protocol_receive_message(int sock, Message *me/
+protocol_send_message	protocol.c	/^int protocol_send_message(int sock, const Message /
+protocol_serialize_header	protocol.c	/^int protocol_serialize_header(const Header *header/
+protocol_validate_header	protocol.c	/^int protocol_validate_header(const Header *header)/
+put_u16	storage.c	/^static void put_u16(uint8_t *destination, uint16_t/
+put_u16	transfer_protocol.c	/^static void put_u16(uint8_t *destination, uint16_t/
+put_u32	storage.c	/^static void put_u32(uint8_t *destination, uint32_t/
+put_u32	transfer_protocol.c	/^static void put_u32(uint8_t *destination, uint32_t/
+put_u64	storage.c	/^static void put_u64(uint8_t *destination, uint64_t/
+put_u64	transfer_protocol.c	/^static void put_u64(uint8_t *destination, uint64_t/
+pwrite_all	file_client.c	/^static int pwrite_all(int fd, const uint8_t *buffe/
+raw_size	storage.c	33
+read_all_fd	storage.c	/^static int read_all_fd(int fd, uint8_t *data, size/
+read_manifest	storage.c	/^static int read_manifest(Storage *storage, const c/
+read_u32_be	protocol.c	/^static uint32_t read_u32_be(const uint8_t *source)/
+read_u64_be	protocol.c	/^static uint64_t read_u64_be(const uint8_t *source)/
+register_announcement	superpeer_app.c	/^static int register_announcement(PeerContext *peer/
+register_join	superpeer_app.c	/^static int register_join(PeerContext *peer, const /
+register_members	test_node_superpeer.c	/^static void *register_members(void *argument)$/
+remote_ip	superpeer_app.c	42
+remote_port	superpeer_app.c	43
+remove_connection	concurrent_server.c	/^static void remove_connection(ConcurrentConnection/
+request_expect	file_client.c	/^static int request_expect(const char *host, uint16/
+resolve_name	directory.c	/^static int resolve_name(Directory *directory, cons/
+root	storage.c	51
+rpc_call	rpc.c	/^int rpc_call(const char *host, uint16_t port, cons/
+rpc_encode_join_payload	rpc.c	/^int rpc_encode_join_payload(const NodeConfig *conf/
+runtime	peer_service.c	31
+runtime	superpeer_app.c	32
+saved_errno	file_client.c	37
+saved_errno	file_client.c	47
+send_reply	superpeer_app.c	/^static int send_reply(const PeerContext *peer, int/
+send_response	peer_service.c	/^static int send_response(PeerService *service, int/
+serve_connection	concurrent_server.c	/^static void *serve_connection(void *argument)$/
+serve_connection	peer_service.c	/^static void serve_connection(void *context, int so/
+server	concurrent_server.c	12
+server_fd	concurrent_server.c	19
+server_fd	peer_service.c	28
+server_fd	superpeer_app.c	31
+service_server_fd	peer_service.c	36
+set_member	superpeer.c	/^static void set_member(SuperPeerMember *member, co/
+set_text_payload	superpeer_app.c	/^static int set_text_payload(Message *message, cons/
+state	file_client.c	35
+state	file_client.c	49
+state	storage.c	44
+stop_service	peer_service.c	/^static void stop_service(int signal_number)$/
+stopping	concurrent_server.c	25
+storage	peer_service.c	30
+storage_begin	storage.c	/^int storage_begin(Storage *storage, const Transfer/
+storage_commit	storage.c	/^int storage_commit(Storage *storage, const ObjectI/
+storage_create	storage.c	/^int storage_create(const char *root, const NodeID /
+storage_destroy	storage.c	/^void storage_destroy(Storage *storage)$/
+storage_find	storage.c	/^int storage_find(Storage *storage, TransferSelecto/
+storage_list	storage.c	/^int storage_list(Storage *storage, TransferDocumen/
+storage_put_chunk	storage.c	/^int storage_put_chunk(Storage *storage, const Tran/
+storage_read_chunk	storage.c	/^int storage_read_chunk(Storage *storage, const Obj/
+superpeer	directory.c	19
+superpeer	superpeer_app.c	34
+superpeer	test_node_superpeer.c	163
+superpeer_config_init	superpeer.c	/^int superpeer_config_init(SuperPeerConfig *config,/
+superpeer_config_init_with_uuid	superpeer.c	/^int superpeer_config_init_with_uuid(SuperPeerConfi/
+superpeer_create	superpeer.c	/^int superpeer_create(const SuperPeerConfig *config/
+superpeer_destroy	superpeer.c	/^void superpeer_destroy(SuperPeer *superpeer)$/
+superpeer_find_member	superpeer.c	/^int superpeer_find_member(const SuperPeer *superpe/
+superpeer_get_node	superpeer.c	/^int superpeer_get_node(const SuperPeer *superpeer,/
+superpeer_host	peer_service.c	32
+superpeer_is_registered	superpeer.c	/^int superpeer_is_registered(const SuperPeer *super/
+superpeer_member_count	superpeer.c	/^size_t superpeer_member_count(const SuperPeer *sup/
+superpeer_port	peer_service.c	33
+superpeer_register_node	superpeer.c	/^SuperPeerRegistrationResult superpeer_register_nod/
+superpeer_run	superpeer_app.c	/^int superpeer_run(int argc, char **argv)$/
+superpeer_unregister_node	superpeer.c	/^int superpeer_unregister_node(SuperPeer *superpeer/
+test_node_id_is_deterministic	test_node_superpeer.c	/^static void test_node_id_is_deterministic(void)$/
+test_node_records_process_and_round_trips_id	test_node_superpeer.c	/^static void test_node_records_process_and_round_tr/
+test_node_rejects_invalid_configuration	test_node_superpeer.c	/^static void test_node_rejects_invalid_configuratio/
+test_superpeer_members_are_thread_safe	test_node_superpeer.c	/^static void test_superpeer_members_are_thread_safe/
+test_superpeer_registers_and_finds_members	test_node_superpeer.c	/^static void test_superpeer_registers_and_finds_mem/
+test_superpeer_rejects_inconsistent_nodes_and_unregisters	test_node_superpeer.c	/^static void test_superpeer_rejects_inconsistent_no/
+thread_number	test_node_superpeer.c	164
+transaction_sequence	transfer_protocol.c	14
+transfer_decode_chunk	transfer_protocol.c	/^int transfer_decode_chunk(const uint8_t *payload, /
+transfer_decode_chunk_request	transfer_protocol.c	/^int transfer_decode_chunk_request(const uint8_t *p/
+transfer_decode_document	transfer_protocol.c	/^int transfer_decode_document(const uint8_t *payloa/
+transfer_decode_lookup_request	transfer_protocol.c	/^int transfer_decode_lookup_request(const uint8_t */
+transfer_decode_lookup_result	transfer_protocol.c	/^int transfer_decode_lookup_result(const uint8_t *p/
+transfer_decode_object_operation	transfer_protocol.c	/^int transfer_decode_object_operation(const uint8_t/
+transfer_encode_chunk	transfer_protocol.c	/^int transfer_encode_chunk(const TransferChunk *chu/
+transfer_encode_chunk_request	transfer_protocol.c	/^int transfer_encode_chunk_request(const ObjectID */
+transfer_encode_document	transfer_protocol.c	/^int transfer_encode_document(const TransferDocumen/
+transfer_encode_lookup_request	transfer_protocol.c	/^int transfer_encode_lookup_request(const char *sel/
+transfer_encode_lookup_result	transfer_protocol.c	/^int transfer_encode_lookup_result(const TransferLo/
+transfer_encode_object_operation	transfer_protocol.c	/^int transfer_encode_object_operation(uint8_t opera/
+transfer_fill_transaction_id	transfer_protocol.c	/^void transfer_fill_transaction_id(uint8_t output[T/
+transfer_lookup_result_free	transfer_protocol.c	/^void transfer_lookup_result_free(TransferLookupRes/
+transfer_worker_count	file_client.c	/^static size_t transfer_worker_count(uint64_t chunk/
+unlock_members	superpeer.c	/^static int unlock_members(SuperPeer *superpeer)$/
+upload_fail	file_client.c	/^static void upload_fail(UploadWork *work, int erro/
+upload_worker	file_client.c	/^static void *upload_worker(void *argument)$/
+uploaded_at	storage.c	43
+usage	peer.c	/^static void usage(const char *program)$/
+verify_document	storage.c	/^static int verify_document(Storage *storage, Store/
+write_all_fd	storage.c	/^static int write_all_fd(int fd, const uint8_t *dat/
+write_manifest	storage.c	/^static int write_manifest(Storage *storage, Stored/
+write_u32_be	protocol.c	/^static void write_u32_be(uint8_t *destination, uin/
+write_u64_be	protocol.c	/^static void write_u64_be(uint8_t *destination, uin/

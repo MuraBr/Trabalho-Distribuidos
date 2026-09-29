@@ -70,6 +70,12 @@ int network_connect(const char *ip, uint16_t porta)
     int sock;
     struct sockaddr_in server;
 
+    if (ip == NULL || porta == 0U)
+    {
+        errno = EINVAL;
+        return -1;
+    }
+
     if((sock = socket(AF_INET, SOCK_STREAM, 0)) == -1)
     {
 	    perror("socket failed");
@@ -118,7 +124,7 @@ ssize_t network_send_all(int sock, const void *buffer, size_t tam)
 
     while(total_sent < tam)
     {
-        ssize_t sent_now = send(sock, data + total_sent, tam - total_sent, 0);
+        ssize_t sent_now = send(sock, data + total_sent, tam - total_sent, MSG_NOSIGNAL);
         if(sent_now > 0)
         {
             total_sent += (size_t)sent_now;

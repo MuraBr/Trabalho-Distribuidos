@@ -2,7 +2,7 @@
 
 Este documento separa as responsabilidades do Aluno 2 a partir do enunciado do trabalho de Programação Distribuída.
 
-## Acompanhamento da implementação — 17/09/2026
+## Acompanhamento da implementação — 25/09/2026
 
 Padronização de estilo: assinaturas, protótipos, chamadas e condições mantidos em uma única linha em `node.c`, `node.h`, `superpeer.c`, `superpeer.h` e `test_node_superpeer.c`, sem mudança de lógica.
 
@@ -19,13 +19,15 @@ Atualizar este documento a cada avanço do aluno 2, mantendo requisitos, impleme
 | JOIN por TCP e validação do NodeID | Implementado na integração | `peer.c` reconstrói identidade e registra antes do ACK; scripts oficial e peer-to-peer aprovados nesta revisão |
 | Remoção via LEAVE | Pendente na integração | `peer.c` responde ACK sem chamar `superpeer_unregister_node` |
 | Resposta ERROR para CRC inválido | Pendente em relação ao requisito | Recepção falha e conexão é encerrada; não envia ERROR nesse caminho |
-| Metadados, ObjectID e chunks (C2) | Implementados na API local | `metadata.c` / `metadata.h`; testes em `tests/c2/test_metadata.c`; integração via rede pendente |
+| Metadados, ObjectID e chunks (C2) | Implementados e integrados | API local preservada; `directory.c` adapta ANNOUNCE/LOOKUP e resolve localizações pela tabela de membros |
 | Chord, Gossip, heartbeat e estados de falha (C3) | Pendente | Apenas ALIVE e last_seen existem; sem temporizador de falhas |
 | Log, SMR e estado de eleição (C4) | Pendente | Comparação de NodeIDs disponível e testada, mas sem consenso implementado |
 | 2PC e IST (C5) | Pendente | Sem implementação |
 | Integração final e metas de desempenho (C6) | Pendente | Sem validação das metas não funcionais |
 
-A configuração gerada automaticamente recebe UUID novo a cada inicialização. Persistência de identidade entre execuções ainda não existe. O teste atual não cobre explicitamente a alteração individual de IP, porta e UUID nem todos os caminhos de erro.
+A configuração padrão de `node_config_init` recebe UUID novo a cada inicialização. O processo de armazenamento do Aluno 1 agora persiste seu UUID em `.peer_storage/<porta>/node.uuid` e reutiliza o mesmo NodeID ao reiniciar; o processo Super Peer ainda gera UUID novo. O teste local de `node.c` não cobre explicitamente a alteração individual de IP, porta e UUID nem todos os caminhos de erro.
+
+Na integração C2, o Super Peer mantém apenas índice e localização. Os Peers persistem chunks e manifests, reingressam via JOIN e anunciam novamente os documentos ao reiniciar. Essa reconstrução não substitui persistência/replicação do índice do Super Peer, que continua pendente para checkpoints posteriores.
 
 ## 1. Requisitos comuns da dupla
 
@@ -81,7 +83,7 @@ textual (46 bytes), porta em ordem de rede (2 bytes) e UUID (16 bytes).
 
 - `common.h`: constantes compartilhadas entre identidade e protocolo;
 - `node.c`: configuração, UUID, NodeID e informações do processo;
-- `superpeer.c`: criação do Super Peer e tabela de membros.
+- `superpeer.c`: criação do Super Peer, tabela de membros e `main` condicional do executável; `superpeer_app.c` implementa os handlers de rede da integração.
 
 ## 3. Checkpoint 1 — identificação e Super Peer básico
 
@@ -248,7 +250,15 @@ O `script_testes.sh` exercita protocolo e comunicação C1, incluindo JOIN/ACK, 
 
 - Implementados: ObjectID SHA-256 incremental de arquivo, hash table com resolução de colisões, cadastro/consulta/remoção de documentos, associação de chunks a múltiplos peers, deduplicação e exclusão de disponibilidade.
 - A API usa mutex, cópias de saída e armazenamento esparso. Os chunks usam 4 MiB de conteúdo original; tamanho e quantidade são representados com `uint64_t`.
-- O módulo de metadados é independente; o consumidor deve criar uma instância duradoura junto ao serviço do Super Peer e resolver NodeIDs pela API de membership existente.
+- O módulo de metadados é independente; `bin/superpeer` cria uma instância duradoura e `directory.c` resolve NodeIDs pela API de membership existente.
 - Evidências: `make test-aluno2` e `make test` passaram; suíte C2 com AddressSanitizer/UndefinedBehaviorSanitizer passou fora do sandbox. Na verificação final, o sandbox bloqueou o socket da suíte de protocolo; `make test` passou fora dele. SHA-256 conhecido, colisões, duplicatas, remoção, fronteiras e oito threads cobertos. Não equivale a prova de ausência de corridas.
-- Pendências de integração: chamar a API nos handlers do aluno 1, definir/validar payloads, anunciar disponibilidade após armazenamento e testar upload/consulta/download pela rede. Sem persistência ou consistência distribuída nesta entrega.
+- Integração posterior: `superpeer_app.c` e `directory.c` chamam a API, validam payloads de `ANNOUNCE`/`LOOKUP` e os fluxos de upload/consulta/download via rede passaram no script C2. O índice continua sem persistência ou consistência distribuída.
 - Handoff e contrato detalhado: [integracao_checkpoint_2_aluno_2.md](integracao_checkpoint_2_aluno_2.md). Nenhum fluxo de upload/download ou protocolo do aluno 1 foi implementado aqui.
+
+## Verificação da integração atual — 25/09/2026
+
+A lista anterior registra o estado da entrega local em 24/09. Na integração atual, `directory.c` usa a API de metadados sem alterar `metadata.c`; os handlers do Super Peer aceitam `ANNOUNCE` e `LOOKUP`. `script_testes_c2.sh` passou 20/20, `script_testes.sh` passou 10/10 e `script_testes_peer.sh` passou 14/14. O índice do Super Peer permanece volátil, sem replicação distribuída.
+
+## Organização dos executáveis — 27/09/2026
+
+`bin/superpeer` usa o `main` de `superpeer.c` (habilitado por `SUPERPEER_EXECUTABLE`) e a implementação do servidor em `superpeer_app.c`. `bin/peer` usa o `main` de `peer.c`. A API isolada de membros continua compilável sem `main` para `test_node_superpeer.c`. Após a reorganização, passaram `make test-aluno2`, `script_testes.sh` (10/10), `script_testes_peer.sh` (14/14) e `script_testes_c2.sh` (20/20). As pendências funcionais anteriores não mudaram.

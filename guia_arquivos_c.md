@@ -1,16 +1,20 @@
-> Nota de integração: o Makefile agora gera `bin/client` como link para `bin/node`; os comandos do cliente são executados por `peer.c`. O arquivo `client.c` foi preservado como referência da implementação anterior e não participa da compilação padrão.
+> Nota de integração: o Makefile gera `bin/node` como link para `bin/superpeer` e `bin/client` como link para `bin/peer`. O arquivo `client.c` é apenas referência histórica e não participa da compilação padrão.
 
 
-## `peer.c` — execução do servidor e integração
+## `superpeer.c` e `superpeer_app.c` — execução do servidor e integração
 
-Coordena o nó, aceita conexões TCP e trata mensagens de clientes em threads. Integra os módulos de rede, protocolo, identidade e tabela de membros.
+`superpeer.c` contém a tabela de membros e o `main` condicional de `bin/superpeer`. `superpeer_app.c` coordena o nó, aceita conexões TCP e trata mensagens de clientes em threads. Integra os módulos de rede, protocolo, identidade e tabela de membros.
 
-- `main()`: prepara a identidade local, inicia o servidor e coordena o encerramento.
+- `superpeer_run()`: prepara a identidade local, inicia o servidor e coordena o encerramento.
 - `accept_clients()`: aceita conexões e inicia uma thread para cada cliente.
 - `handle_client()`: recebe mensagens e trata JOIN, PING e LEAVE. O log de PING omite a origem.
 - `register_join()`: valida a identidade recebida no JOIN e registra o membro na tabela local.
 - `connect_and_join()`: conecta a outro nó, envia JOIN e valida o ACK e a identidade do servidor.
 - `send_reply()`: monta e envia respostas, como ACK, PONG e ERROR.
+
+## `peer.c` — entrada do Peer de armazenamento
+
+Contém o `main` de `bin/peer`, interpreta `serve`, `upload` e `download`, e chama `peer_service.c` ou `file_client.c`.
 
 ## `client.c` — cliente auxiliar de comandos
 
@@ -59,7 +63,7 @@ Fornece uma API local para representar nós. Valida endereços IPv4/IPv6 e calcu
 
 ## `superpeer.c` — tabela local de membros
 
-Gerencia uma tabela em memória protegida por mutex. É uma API local; a integração com mensagens da rede acontece em `peer.c`.
+Gerencia uma tabela em memória protegida por mutex. A API local é testada sem o `main`; a integração com mensagens da rede acontece em `superpeer_app.c`.
 
 - `superpeer_create()`: cria o Super Peer e inclui o próprio nó na tabela.
 - `superpeer_register_node()`: adiciona um membro ou atualiza um registro existente sem duplicá-lo.
@@ -96,6 +100,6 @@ Programa auxiliar independente da aplicação distribuída.
 
 ## Relação entre os módulos e verificações
 
-No envio, `peer.c` ou `client.c` monta uma mensagem, `protocol.c` a serializa e `network.c` transmite os bytes. Na recepção, o caminho se inverte. `node.c` fornece identidades e `superpeer.c` mantém o cadastro local.
+No envio, `peer.c` ou `superpeer_app.c` monta uma mensagem, `protocol.c` a serializa e `network.c` transmite os bytes. Na recepção, o caminho se inverte. `node.c` fornece identidades e `superpeer.c` mantém o cadastro local.
 
 Este guia foi conferido por leitura do código; sua criação não executou novos testes. Na alteração anterior do PING, passaram `make test` e uma verificação TCP local do payload `PING`, da resposta PONG e do log sem origem. A suíte `test_node_superpeer.c` não foi reexecutada nessa verificação.

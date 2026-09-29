@@ -8,6 +8,16 @@
 #include <string.h>
 #include <pthread.h>
 
+#ifdef SUPERPEER_EXECUTABLE
+/* O servidor usa a API deste módulo e implementa o loop de rede em superpeer_app.c. */
+int superpeer_run(int argc, char **argv);
+
+int main(int argc, char **argv)
+{
+    return superpeer_run(argc, argv);
+}
+#endif
+
 struct SuperPeer
 {
     Node local_node;

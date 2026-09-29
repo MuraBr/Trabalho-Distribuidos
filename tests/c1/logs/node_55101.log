@@ -1,50 +1,50 @@
 Node C1SP1 started
-NodeID: 5382dad3e07ee32ed90896f8b68e5037009fe93a25bfbbd3441885cdca2789b3
-Peer ouvindo na porta 55101, NodeID=5382dad3e07ee32ed90896f8b68e5037009fe93a25bfbbd3441885cdca2789b3, membros locais=1
-Mensagem recebida: tipo=3, payload=4 bytes
+NodeID: 98ccb68d46eaa5a1c85e0bd3ba04a3f03950320c7ab6e3b3289b8333c7c0b049
+Peer ouvindo na porta 55101, NodeID=98ccb68d46eaa5a1c85e0bd3ba04a3f03950320c7ab6e3b3289b8333c7c0b049, membros locais=1
+Mensagem recebida: tipo=3, payload=4 bytes, ip_origem=127.0.0.1
 RX PING
-Mensagem recebida: tipo=0, origem=d1266d98992386b0f1a96fe5dc171e9e226e2f3c01b54034a0bf6f0ad480af90, payload=64 bytes
-JOIN validado: NodeID=d1266d98992386b0f1a96fe5dc171e9e226e2f3c01b54034a0bf6f0ad480af90, resultado=ADDED, membros=2
-Mensagem recebida: tipo=5, origem=0000000000000000000000000000000000000000000000000000000000000000, payload=0 bytes
-Mensagem recebida: tipo=3, payload=4 bytes
+Mensagem recebida: tipo=0, origem=31d6762686866a3367248b28a551171fdcd2d2f2bb6baffcff43063d42fd8f2e, payload=64 bytes, ip_origem=127.0.0.1
+JOIN validado: NodeID=31d6762686866a3367248b28a551171fdcd2d2f2bb6baffcff43063d42fd8f2e, resultado=ADDED, membros=2
+Mensagem recebida: tipo=5, origem=0000000000000000000000000000000000000000000000000000000000000000, payload=0 bytes, ip_origem=127.0.0.1
+Mensagem recebida: tipo=3, payload=4 bytes, ip_origem=127.0.0.1
 RX PING
-Mensagem recebida: tipo=3, payload=4 bytes
+Mensagem recebida: tipo=3, payload=4 bytes, ip_origem=127.0.0.1
 RX PING
-Mensagem recebida: tipo=3, payload=4 bytes
+Mensagem recebida: tipo=3, payload=4 bytes, ip_origem=127.0.0.1
 RX PING
-Mensagem recebida: tipo=3, payload=4 bytes
+Mensagem recebida: tipo=3, payload=4 bytes, ip_origem=127.0.0.1
 RX PING
-Mensagem recebida: tipo=3, payload=4 bytes
+Mensagem recebida: tipo=3, payload=4 bytes, ip_origem=127.0.0.1
 RX PING
-Mensagem recebida: tipo=3, payload=4 bytes
+Mensagem recebida: tipo=3, payload=4 bytes, ip_origem=127.0.0.1
 RX PING
-Mensagem recebida: tipo=3, payload=4 bytes
+Mensagem recebida: tipo=3, payload=4 bytes, ip_origem=127.0.0.1
 RX PING
-Mensagem recebida: tipo=3, payload=4 bytes
+Mensagem recebida: tipo=3, payload=4 bytes, ip_origem=127.0.0.1
 RX PING
-Mensagem recebida: tipo=3, payload=4 bytes
+Mensagem recebida: tipo=3, payload=4 bytes, ip_origem=127.0.0.1
 RX PING
-Mensagem recebida: tipo=3, payload=4 bytes
+Mensagem recebida: tipo=3, payload=4 bytes, ip_origem=127.0.0.1
 RX PING
-Mensagem recebida: tipo=3, payload=4 bytes
+Mensagem recebida: tipo=3, payload=4 bytes, ip_origem=127.0.0.1
 RX PING
-Mensagem recebida: tipo=3, payload=4 bytes
+Mensagem recebida: tipo=3, payload=4 bytes, ip_origem=127.0.0.1
 RX PING
-Mensagem recebida: tipo=3, payload=4 bytes
+Mensagem recebida: tipo=3, payload=4 bytes, ip_origem=127.0.0.1
 RX PING
-Mensagem recebida: tipo=3, payload=4 bytes
+Mensagem recebida: tipo=3, payload=4 bytes, ip_origem=127.0.0.1
 RX PING
-Mensagem recebida: tipo=3, payload=4 bytes
+Mensagem recebida: tipo=3, payload=4 bytes, ip_origem=127.0.0.1
 RX PING
-Mensagem recebida: tipo=3, payload=4 bytes
+Mensagem recebida: tipo=3, payload=4 bytes, ip_origem=127.0.0.1
 RX PING
-Mensagem recebida: tipo=3, payload=4 bytes
+Mensagem recebida: tipo=3, payload=4 bytes, ip_origem=127.0.0.1
 RX PING
-Mensagem recebida: tipo=3, payload=4 bytes
+Mensagem recebida: tipo=3, payload=4 bytes, ip_origem=127.0.0.1
 RX PING
-Mensagem recebida: tipo=3, payload=4 bytes
+Mensagem recebida: tipo=3, payload=4 bytes, ip_origem=127.0.0.1
 RX PING
-Mensagem recebida: tipo=3, payload=4 bytes
+Mensagem recebida: tipo=3, payload=4 bytes, ip_origem=127.0.0.1
 RX PING
 Falha ao receber uma mensagem do cliente.
 accept: Invalid argument

@@ -218,6 +218,20 @@ int protocol_validate_header(const Header *header)
     case M_PING:
     case M_PONG:
     case M_LEAVE:
+    case M_LOOKUP:
+    case M_STORE:
+    case M_DOWNLOAD_REQ:
+    case M_DOWNLOAD_REP:
+    case M_PREPARE:
+    case M_COMMIT:
+    case M_ABORT:
+    case M_HEARTBEAT:
+    case M_GOSSIP:
+    case M_ELECTION:
+    case M_OK:
+    case M_COORDINATOR:
+    case M_SNAPSHOT:
+    case M_STATE_TRANSFER:
         break;
     default:
         return PROTOCOL_ERROR;

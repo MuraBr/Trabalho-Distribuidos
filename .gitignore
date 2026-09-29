@@ -1,3 +1,7 @@
 .vscode
 /bin/test_metadata
 /bin/test_node_superpeer
+/bin/test_transfer_negative
+/bin/peer
+/bin/superpeer
+/.peer_storage/

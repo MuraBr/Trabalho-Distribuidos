@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-# Teste de integração usando somente o executável construído a partir de peer.c.
-# No Makefile, bin/client é apenas um alias para esse mesmo executável.
+# Teste legado de integração usando bin/node, alias de bin/superpeer.
+# O Peer de armazenamento do C2 possui outro ponto de entrada em peer.c.
 set -u
 
 ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
@@ -159,7 +159,7 @@ PORT_B=$((PORT_A + 1))
 LOG_B="$LOG_DIR/peer_b_${PORT_B}.log"
 rm -f "$LOG_B"
 
-# A forma posicional já existente em peer.c inicia o servidor local e envia JOIN.
+# A forma posicional legada em superpeer_app.c inicia o servidor local e envia JOIN.
 start_peer "$LOG_B" "$PORT_B" 127.0.0.1 "$PORT_A"
 
 if wait_for_log "$LOG_A" 'JOIN validado:.*membros=2'; then

@@ -4,10 +4,7 @@
 #include <limits.h>
 #include <stdlib.h>
 
-/* ABI estável da liblz4; o ambiente possui a biblioteca de execução sem os headers de desenvolvimento. */
-extern int LZ4_compressBound(int inputSize);
-extern int LZ4_compress_default(const char *src, char *dst, int srcSize, int dstCapacity);
-extern int LZ4_decompress_safe(const char *src, char *dst, int compressedSize, int dstCapacity);
+#include <lz4.h>
 
 int compression_lz4_bound(size_t input_size, size_t *bound)
 {

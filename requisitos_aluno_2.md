@@ -1,5 +1,16 @@
 # Requisitos do trabalho — Aluno 2
 
+
+## Revisão integrada — 28/09/2026
+
+Estado vigente: [refatoração C1/C2](refatoracao_checkpoint_2.md). Upload/download agora são executados pelo **Peer ativo**, selecionado por `--local-peer-port` (padrão 55102), mediante canal Unix privado. A CLI não envia LOOKUP anônimo. PDF é validado pela extensão, sem exigir assinatura, para aceitar as fixtures sintéticas.
+
+`peer.c` e `superpeer.c` têm main exclusivos; a API de membros está em `membership.c`. Ambos os processos persistem UUID e leem configuração real. LEAVE remove membro/disponibilidade. Metadados foram ampliados com proprietário NodeID, versão, compressão e descritores/hashes; ANNOUNCE publica o cadastro completo atomicamente.
+
+Evidências funcionais: C1 10/10, regressão legada 14/14, C2 20/20, runner disponível do professor 16/16 e integração independente 46 verificações. APIs locais e testes de falha de manifest passaram. Checkpoints 3–6 e suas metas globais permanecem **fora desta implementação**.
+
+As seções históricas datadas abaixo documentam entregas anteriores; descrições de main condicional, LEAVE pendente, cliente anônimo ou modelo de metadata inalterado não representam esta revisão.
+
 Este documento separa as responsabilidades do Aluno 2 a partir do enunciado do trabalho de Programação Distribuída.
 
 ## Acompanhamento da implementação — 25/09/2026
@@ -17,7 +28,7 @@ Atualizar este documento a cada avanço do aluno 2, mantendo requisitos, impleme
 | Remoção pela API local | Implementado | Testes de remoção e proteção do próprio Super Peer |
 | Concorrência na tabela | Implementado, cobertura parcial | Mutex; teste de 4 threads com 25 registros cada, total 101; não é prova de ausência de corridas |
 | JOIN por TCP e validação do NodeID | Implementado na integração | `peer.c` reconstrói identidade e registra antes do ACK; scripts oficial e peer-to-peer aprovados nesta revisão |
-| Remoção via LEAVE | Pendente na integração | `peer.c` responde ACK sem chamar `superpeer_unregister_node` |
+| Remoção via LEAVE | Implementada na integração | `superpeer_app.c` remove membership e disponibilidades |
 | Resposta ERROR para CRC inválido | Pendente em relação ao requisito | Recepção falha e conexão é encerrada; não envia ERROR nesse caminho |
 | Metadados, ObjectID e chunks (C2) | Implementados e integrados | API local preservada; `directory.c` adapta ANNOUNCE/LOOKUP e resolve localizações pela tabela de membros |
 | Chord, Gossip, heartbeat e estados de falha (C3) | Pendente | Apenas ALIVE e last_seen existem; sem temporizador de falhas |
@@ -25,7 +36,7 @@ Atualizar este documento a cada avanço do aluno 2, mantendo requisitos, impleme
 | 2PC e IST (C5) | Pendente | Sem implementação |
 | Integração final e metas de desempenho (C6) | Pendente | Sem validação das metas não funcionais |
 
-A configuração padrão de `node_config_init` recebe UUID novo a cada inicialização. O processo de armazenamento do Aluno 1 agora persiste seu UUID em `.peer_storage/<porta>/node.uuid` e reutiliza o mesmo NodeID ao reiniciar; o processo Super Peer ainda gera UUID novo. O teste local de `node.c` não cobre explicitamente a alteração individual de IP, porta e UUID nem todos os caminhos de erro.
+A configuração padrão de `node_config_init` recebe UUID novo a cada inicialização. O processo de armazenamento do Aluno 1 agora persiste seu UUID em `.peer_storage/<porta>/node.uuid` e reutiliza o mesmo NodeID ao reiniciar; o processo Super Peer também persiste UUID em `.superpeer_storage/<porta>/node.uuid`. O teste local de `node.c` não cobre explicitamente a alteração individual de IP, porta e UUID nem todos os caminhos de erro.
 
 Na integração C2, o Super Peer mantém apenas índice e localização. Os Peers persistem chunks e manifests, reingressam via JOIN e anunciam novamente os documentos ao reiniciar. Essa reconstrução não substitui persistência/replicação do índice do Super Peer, que continua pendente para checkpoints posteriores.
 
@@ -83,7 +94,7 @@ textual (46 bytes), porta em ordem de rede (2 bytes) e UUID (16 bytes).
 
 - `common.h`: constantes compartilhadas entre identidade e protocolo;
 - `node.c`: configuração, UUID, NodeID e informações do processo;
-- `superpeer.c`: criação do Super Peer, tabela de membros e `main` condicional do executável; `superpeer_app.c` implementa os handlers de rede da integração.
+- `superpeer.c`: main exclusivo; `membership.c`: criação do Super Peer e tabela de membros; `superpeer_app.c` implementa os handlers de rede da integração.
 
 ## 3. Checkpoint 1 — identificação e Super Peer básico
 

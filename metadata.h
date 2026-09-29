@@ -17,7 +17,22 @@ typedef struct
     char name[METADATA_NAME_SIZE];
     uint64_t file_size;
     uint64_t chunk_count;
+    uint64_t version;
+    NodeID owner;
+    uint8_t compression;
 } MetadataDocument;
+
+typedef struct
+{
+    uint64_t index, offset;
+    uint32_t raw_size, compressed_size;
+    uint8_t hash[OBJECT_ID_SIZE];
+} MetadataChunk;
+
+int metadata_announce(MetadataStore *store, const MetadataDocument *document, const MetadataChunk *chunks, const NodeID *owner);
+int metadata_find_name(MetadataStore *store, const char *name, ObjectID *id);
+int metadata_chunk_descriptor(MetadataStore *store, const ObjectID *id, uint64_t index, MetadataChunk *output);
+int metadata_remove_peer(MetadataStore *store, const NodeID *peer);
 
 /* Retornos: 0 em sucesso, -1 com errno em erro. Saídas preservadas em erro, salvo indicação. */
 /* SHA-256 em leitura incremental; o chamador deve impedir alterações no arquivo durante a leitura. */

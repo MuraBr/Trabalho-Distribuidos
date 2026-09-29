@@ -1,13 +1,14 @@
 #ifndef STORAGE_H
 #define STORAGE_H
 
-#include "transfer_protocol.h"
+#include "transfer_types.h"
 
 #include <stddef.h>
 
 typedef struct Storage Storage;
 
 int storage_create(const char *root, const NodeID *owner, Storage **output);
+int storage_descriptors(Storage *storage, const ObjectID *id, MetadataChunk **output);
 void storage_destroy(Storage *storage);
 int storage_begin(Storage *storage, const TransferDocument *document);
 int storage_put_chunk(Storage *storage, const TransferChunk *chunk);

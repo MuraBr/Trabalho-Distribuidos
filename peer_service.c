@@ -1,15 +1,19 @@
 #define _POSIX_C_SOURCE 200809L
 #include "peer_service.h"
+#include "app_config.h"
+#include "local_control.h"
 
 #include "concurrent_server.h"
 #include "network.h"
 #include "node.h"
 #include "protocol.h"
 #include "rpc.h"
+#include "remote_error.h"
 #include "storage.h"
 #include "transfer_protocol.h"
 
 #include <errno.h>
+#include <arpa/inet.h>
 #include <fcntl.h>
 #include <inttypes.h>
 #include <signal.h>
@@ -27,13 +31,15 @@ typedef struct
 {
     int server_fd;
     Node node;
+    NodeID superpeer_id;
+    LocalControl *control;
     Storage *storage;
     ConcurrentServer *runtime;
     char superpeer_host[NODE_ADDRESS_SIZE];
     uint16_t superpeer_port;
 } PeerService;
 
-static int service_server_fd = -1;
+static volatile sig_atomic_t service_server_fd = -1;
 
 static void stop_service(int signal_number)
 {
@@ -44,105 +50,13 @@ static void stop_service(int signal_number)
     }
 }
 
-static int load_or_create_uuid(const char *storage_path, uint8_t uuid[NODE_UUID_SIZE])
-{
-    char path[PEER_STORAGE_PATH_SIZE + 16U];
-    size_t received = 0U;
-    int fd;
-    int length;
-
-    if ((mkdir(".peer_storage", 0700) < 0 && errno != EEXIST) || (mkdir(storage_path, 0700) < 0 && errno != EEXIST))
-    {
-        return -1;
-    }
-    length = snprintf(path, sizeof(path), "%s/node.uuid", storage_path);
-    if (length < 0 || (size_t)length >= sizeof(path))
-    {
-        errno = ENAMETOOLONG;
-        return -1;
-    }
-    fd = open(path, O_WRONLY | O_CREAT | O_EXCL, 0600);
-    if (fd >= 0)
-    {
-        if (node_generate_uuid(uuid) < 0)
-        {
-            (void)close(fd);
-            (void)unlink(path);
-            return -1;
-        }
-        while (received < NODE_UUID_SIZE)
-        {
-            ssize_t count = write(fd, uuid + received, NODE_UUID_SIZE - received);
-
-            if (count < 0 && errno == EINTR)
-            {
-                continue;
-            }
-            if (count <= 0)
-            {
-                (void)close(fd);
-                (void)unlink(path);
-                errno = EIO;
-                return -1;
-            }
-            received += (size_t)count;
-        }
-        if (fsync(fd) < 0)
-        {
-            (void)close(fd);
-            (void)unlink(path);
-            return -1;
-        }
-        if (close(fd) < 0)
-        {
-            (void)unlink(path);
-            return -1;
-        }
-        return 0;
-    }
-    if (errno != EEXIST)
-    {
-        return -1;
-    }
-    fd = open(path, O_RDONLY);
-    if (fd < 0)
-    {
-        return -1;
-    }
-    while (received < NODE_UUID_SIZE)
-    {
-        ssize_t count = read(fd, uuid + received, NODE_UUID_SIZE - received);
-
-        if (count < 0 && errno == EINTR)
-        {
-            continue;
-        }
-        if (count <= 0)
-        {
-            (void)close(fd);
-            errno = EBADMSG;
-            return -1;
-        }
-        received += (size_t)count;
-    }
-    {
-        uint8_t extra;
-        ssize_t count = read(fd, &extra, 1U);
-
-        if (count != 0)
-        {
-            (void)close(fd);
-            errno = EBADMSG;
-            return -1;
-        }
-    }
-    return close(fd);
-}
-
 static int send_response(PeerService *service, int socket_fd, const Message *request, Message_Type type, const uint8_t *payload, uint32_t payload_size)
 {
     Message response;
     int status;
+    uint8_t error_payload[2];
+
+    if (type == M_ERROR) { remote_error_encode(errno, error_payload); payload = error_payload; payload_size = sizeof(error_payload); }
 
     if (message_init(&response) < 0)
     {
@@ -179,6 +93,13 @@ static int join_superpeer(PeerService *service)
         return -1;
     }
     status = response.header.message_type == (uint8_t)M_ACK ? 0 : -1;
+    if (status == 0)
+    {
+        NodeConfig remote_config;
+        Node remote_node;
+        if (rpc_decode_join_payload(response.payload, response.header.payload_size, &remote_config) < 0 || node_init(&remote_node, &remote_config) < 0 || memcmp(remote_node.id.bytes, response.header.source_node, NODE_ID_SIZE) != 0) status = -1;
+    }
+    if (status == 0) memcpy(service->superpeer_id.bytes, response.header.source_node, NODE_ID_SIZE);
     message_free(&response);
     if (status < 0)
     {
@@ -194,7 +115,11 @@ static int announce_document(PeerService *service, const TransferDocument *docum
     Message response;
     int status = -1;
 
-    if (transfer_encode_document(document, &payload, &payload_size, TRANSFER_STORE_ANNOUNCE) < 0 || rpc_call(service->superpeer_host, service->superpeer_port, &service->node.id, NULL, M_STORE, payload, payload_size, &response) < 0)
+    MetadataChunk *chunks = NULL;
+    if (storage_descriptors(service->storage, &document->id, &chunks) < 0) return -1;
+    int encoded = transfer_encode_announcement(document, chunks, &payload, &payload_size);
+    free(chunks);
+    if (encoded < 0 || rpc_call(service->superpeer_host, service->superpeer_port, &service->node.id, &service->superpeer_id, M_STORE, payload, payload_size, &response) < 0)
     {
         free(payload);
         return -1;
@@ -205,7 +130,7 @@ static int announce_document(PeerService *service, const TransferDocument *docum
     }
     else
     {
-        errno = EREMOTEIO;
+        errno = remote_error_decode(response.payload, response.header.payload_size);
     }
     message_free(&response);
     free(payload);
@@ -307,6 +232,23 @@ static void serve_connection(void *context, int socket_fd)
     message_init(&message);
     if (protocol_receive_message(socket_fd, &message) == PROTOCOL_OK)
     {
+        const uint8_t zero[NODE_ID_SIZE] = {0};
+        int c2 = message.header.message_type == M_STORE || message.header.message_type == M_DOWNLOAD_REQ;
+        printf("Peer RX tipo=%u origem=", (unsigned)message.header.message_type);
+        for (size_t i = 0U; i < NODE_ID_SIZE; ++i) printf("%02x", (unsigned)message.header.source_node[i]);
+        struct sockaddr_in remote;
+        socklen_t remote_size = sizeof(remote);
+        char ip[INET_ADDRSTRLEN] = "desconhecido";
+        if (getpeername(socket_fd, (struct sockaddr *)&remote, &remote_size) == 0) (void)inet_ntop(AF_INET, &remote.sin_addr, ip, sizeof(ip));
+        printf(" ip_origem=%s\n", ip);
+        fflush(stdout);
+        if (c2 && (memcmp(message.header.source_node, zero, NODE_ID_SIZE) == 0 || memcmp(message.header.destination_node, service->node.id.bytes, NODE_ID_SIZE) != 0))
+        {
+            errno = EACCES;
+            (void)send_response(service, socket_fd, &message, M_ERROR, NULL, 0U);
+            message_free(&message);
+            return;
+        }
         if (message.header.message_type == (uint8_t)M_STORE)
         {
             (void)handle_store(service, socket_fd, &message);
@@ -321,6 +263,7 @@ static void serve_connection(void *context, int socket_fd)
         }
         else
         {
+            errno = ENOTSUP;
             (void)send_response(service, socket_fd, &message, M_ERROR, NULL, 0U);
         }
     }
@@ -330,7 +273,6 @@ static void serve_connection(void *context, int socket_fd)
 static int initialize_service(PeerService *service, uint16_t local_port, const char *superpeer_host, uint16_t superpeer_port)
 {
     NodeConfig config;
-    uint8_t uuid[NODE_UUID_SIZE];
     char storage_path[PEER_STORAGE_PATH_SIZE];
     int length;
 
@@ -342,7 +284,8 @@ static int initialize_service(PeerService *service, uint16_t local_port, const c
         errno = EINVAL;
         return -1;
     }
-    if (load_or_create_uuid(storage_path, uuid) < 0 || node_config_init_with_uuid(&config, "127.0.0.1", local_port, uuid) < 0 || node_init(&service->node, &config) < 0)
+    if (app_config.data_dir[0] != '\0') { strcpy(storage_path, app_config.data_dir); }
+    if (app_identity(storage_path, &config, local_port) < 0 || node_init(&service->node, &config) < 0)
     {
         return -1;
     }
@@ -359,20 +302,27 @@ int peer_service_run(uint16_t local_port, const char *superpeer_host, uint16_t s
 {
     PeerService service;
     int status = EXIT_FAILURE;
+    int joined = 0;
 
     if (initialize_service(&service, local_port, superpeer_host, superpeer_port) < 0)
     {
         perror("peer initialization");
         return EXIT_FAILURE;
     }
-    if (join_superpeer(&service) < 0 || announce_catalog(&service) < 0)
-    {
-        perror("superpeer registration");
-        goto cleanup;
-    }
     service.server_fd = network_create_server(local_port, PEER_BACKLOG);
     if (service.server_fd < 0 || concurrent_server_create(service.server_fd, serve_connection, &service, &service.runtime) < 0)
     {
+        goto cleanup;
+    }
+    if (join_superpeer(&service) < 0)
+    {
+        perror("peer registration");
+        goto cleanup;
+    }
+    joined = 1;
+    if (announce_catalog(&service) < 0 || local_control_start(local_port, &service.node.id, &service.control) < 0)
+    {
+        perror("peer registration/control");
         goto cleanup;
     }
     service_server_fd = service.server_fd;
@@ -383,12 +333,19 @@ int peer_service_run(uint16_t local_port, const char *superpeer_host, uint16_t s
     {
         printf("%02x", (unsigned)service.node.id.bytes[index]);
     }
-    printf("\nStorage: .peer_storage/%" PRIu16 "\n", local_port);
+    if (app_config.data_dir[0] != '\0') printf("\nStorage: %s\n", app_config.data_dir);
+    else printf("\nStorage: .peer_storage/%" PRIu16 "\n", local_port);
     fflush(stdout);
     status = concurrent_server_run(service.runtime) == 0 ? EXIT_SUCCESS : EXIT_FAILURE;
 
 cleanup:
     service_server_fd = -1;
+    local_control_stop(service.control);
+    if (joined)
+    {
+        Message response;
+        if (rpc_call(service.superpeer_host, service.superpeer_port, &service.node.id, &service.superpeer_id, M_LEAVE, NULL, 0U, &response) == 0) message_free(&response);
+    }
     if (service.runtime != NULL)
     {
         concurrent_server_destroy(service.runtime);

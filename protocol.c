@@ -1,3 +1,4 @@
+#include "wire.h"
 #include "protocol.h"
 
 #include "network.h"
@@ -9,41 +10,12 @@
 #include <zlib.h>
 
 /* Grava quatro bytes do mais significativo ao menos significativo, independentemente da arquitetura. */
-static void write_u32_be(uint8_t *destination, uint32_t value)
-{
-    destination[0] = (uint8_t)(value >> 24);
-    destination[1] = (uint8_t)(value >> 16);
-    destination[2] = (uint8_t)(value >> 8);
-    destination[3] = (uint8_t)value;
-}
 
 /* Reconstrói um inteiro de 32 bits a partir de bytes em ordem de rede. */
-static uint32_t read_u32_be(const uint8_t *source)
-{
-    return ((uint32_t)source[0] << 24) | ((uint32_t)source[1] << 16) | ((uint32_t)source[2] << 8) | (uint32_t)source[3];
-}
 
 /* Serializa oito bytes do inteiro de 64 bits em ordem de rede. */
-static void write_u64_be(uint8_t *destination, uint64_t value)
-{
-    for (int shift = 56; shift >= 0; shift -= 8)
-    {
-        *destination++ = (uint8_t)(value >> shift);
-    }
-}
 
 /* Reconstrói o inteiro de 64 bits deslocando e incorporando cada byte recebido. */
-static uint64_t read_u64_be(const uint8_t *source)
-{
-    uint64_t value = 0;
-
-    for (size_t index = 0; index < sizeof(value); index++)
-    {
-        value = (value << 8) | source[index];
-    }
-
-    return value;
-}
 
 /* Atualiza o CRC com zlib em blocos que cabem em uInt, mesmo quando size_t é maior. */
 static uint32_t crc32_update(uint32_t crc, const uint8_t *data, size_t size)
@@ -138,13 +110,13 @@ int protocol_serialize_header(const Header *header, uint8_t *buffer, size_t buff
     memcpy(buffer + offset, header->transaction_id, TRANSACTION_ID_SIZE);
     offset += TRANSACTION_ID_SIZE;
 
-    write_u64_be(buffer + offset, header->timestamp);
+    wire_put_u64(buffer + offset, header->timestamp);
     offset += sizeof(uint64_t);
 
-    write_u32_be(buffer + offset, header->payload_size);
+    wire_put_u32(buffer + offset, header->payload_size);
     offset += sizeof(uint32_t);
 
-    write_u32_be(buffer + offset, header->checksum);
+    wire_put_u32(buffer + offset, header->checksum);
     offset += sizeof(uint32_t);
 
     return (int)offset;
@@ -174,13 +146,13 @@ int protocol_deserialize_header(Header *header, const uint8_t *buffer, size_t bu
     memcpy(header->transaction_id, buffer + offset, TRANSACTION_ID_SIZE);
     offset += TRANSACTION_ID_SIZE;
 
-    header->timestamp = read_u64_be(buffer + offset);
+    header->timestamp = wire_get_u64(buffer + offset);
     offset += sizeof(uint64_t);
 
-    header->payload_size = read_u32_be(buffer + offset);
+    header->payload_size = wire_get_u32(buffer + offset);
     offset += sizeof(uint32_t);
 
-    header->checksum = read_u32_be(buffer + offset);
+    header->checksum = wire_get_u32(buffer + offset);
     offset += sizeof(uint32_t);
 
     return (int)offset;

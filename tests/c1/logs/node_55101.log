@@ -1,10 +1,10 @@
 Node C1SP1 started
-NodeID: 98ccb68d46eaa5a1c85e0bd3ba04a3f03950320c7ab6e3b3289b8333c7c0b049
-Peer ouvindo na porta 55101, NodeID=98ccb68d46eaa5a1c85e0bd3ba04a3f03950320c7ab6e3b3289b8333c7c0b049, membros locais=1
+NodeID: 0db256ac781a1769677c2c8fefab5a3cde36f741c13ff99e4694f5b7e87acca4
+Peer ouvindo na porta 55101, NodeID=0db256ac781a1769677c2c8fefab5a3cde36f741c13ff99e4694f5b7e87acca4, membros locais=1
 Mensagem recebida: tipo=3, payload=4 bytes, ip_origem=127.0.0.1
 RX PING
-Mensagem recebida: tipo=0, origem=31d6762686866a3367248b28a551171fdcd2d2f2bb6baffcff43063d42fd8f2e, payload=64 bytes, ip_origem=127.0.0.1
-JOIN validado: NodeID=31d6762686866a3367248b28a551171fdcd2d2f2bb6baffcff43063d42fd8f2e, resultado=ADDED, membros=2
+Mensagem recebida: tipo=0, origem=222b170491d1a934c05bbf75cbd85e6c364013ccb7f3c2a642d360418a177889, payload=64 bytes, ip_origem=127.0.0.1
+JOIN validado: NodeID=222b170491d1a934c05bbf75cbd85e6c364013ccb7f3c2a642d360418a177889, resultado=ADDED, membros=2
 Mensagem recebida: tipo=5, origem=0000000000000000000000000000000000000000000000000000000000000000, payload=0 bytes, ip_origem=127.0.0.1
 Mensagem recebida: tipo=3, payload=4 bytes, ip_origem=127.0.0.1
 RX PING
@@ -47,5 +47,4 @@ RX PING
 Mensagem recebida: tipo=3, payload=4 bytes, ip_origem=127.0.0.1
 RX PING
 Falha ao receber uma mensagem do cliente.
-accept: Invalid argument
 Peer encerrado.

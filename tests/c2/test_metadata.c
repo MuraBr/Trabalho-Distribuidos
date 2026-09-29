@@ -111,6 +111,21 @@ int main(void)
     size = 42;
     assert(object_id_file(path, &id, &size) == -1 && errno == ENOENT);
     assert(memcmp(previous.bytes, id.bytes, OBJECT_ID_SIZE) == 0 && size == 42);
+    /* Anúncio completo deve publicar todos os chunks ou preservar o registro anterior. */
+    MetadataDocument announced = {.id = large, .name = "completo.pdf", .file_size = 3U, .chunk_count = 1U, .compression = 1U};
+    MetadataChunk descriptor = {.index = 0U, .offset = 0U, .raw_size = 3U, .compressed_size = 4U, .hash = {7U}};
+    assert(metadata_announce(store, &announced, &descriptor, &a) == 0);
+    assert(metadata_announce(store, &announced, &descriptor, &b) == 0);
+    assert(metadata_find_document(store, &large, &doc) == 0 && doc.version == 1U && doc.compression == 1U && memcmp(doc.owner.bytes, a.bytes, NODE_ID_SIZE) == 0);
+    assert(metadata_chunk_peers(store, &large, 0U, &peers, &count) == 0 && count == 2U);
+    free(peers);
+    descriptor.hash[0] = 8U;
+    assert(metadata_announce(store, &announced, &descriptor, &a) == -1 && errno == EEXIST);
+    assert(metadata_chunk_descriptor(store, &large, 0U, &descriptor) == 0 && descriptor.hash[0] == 7U);
+    assert(metadata_remove_peer(store, &a) == 0);
+    assert(metadata_chunk_peers(store, &large, 0U, &peers, &count) == 0 && count == 1U);
+    free(peers);
+    assert(metadata_find_name(store, "completo.pdf", &previous) == 0 && memcmp(previous.bytes, large.bytes, OBJECT_ID_SIZE) == 0);
     metadata_destroy(store);
     puts("metadata C2: ok");
     return 0;

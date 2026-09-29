@@ -5,3 +5,6 @@
 /bin/peer
 /bin/superpeer
 /.peer_storage/
+/.superpeer_storage/
+/.deps/
+/bin/test_storage_atomic

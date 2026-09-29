@@ -8,7 +8,7 @@
 #include <string.h>
 #include <unistd.h>
 
-extern unsigned char *SHA256(const unsigned char *data, size_t size, unsigned char *digest);
+#include <openssl/sha.h>
 
 /* Valida IPv4/IPv6 e normaliza o texto do endereço. */
 static int normalize_ip(const char *ip, char normalized[NODE_ADDRESS_SIZE])

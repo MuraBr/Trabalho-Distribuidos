@@ -2,11 +2,18 @@
 
 Revisão: 24/09/2026. Este guia descreve o checkpoint 1 e a API local de metadados do checkpoint 2. As pendências estão em [requisitos_aluno_2.md](requisitos_aluno_2.md).
 
+## Revisão C2 atual
+
+A API atômica `metadata_announce` substitui o cadastro parcial em várias chamadas. O índice inclui owner NodeID completo, versão inicial, LZ4, descritores e hashes. `metadata_find_name` detecta ambiguidade; `metadata_remove_peer` acompanha LEAVE. A configuração e o UUID dos dois processos são persistidos por app_config. O índice de metadados continua em memória, reconstruído por anúncios.
+
+Explicação de cada função nova: [guia completo](guia_completo_funcoes.md). Evidências e limites: [relatório C2](refatoracao_checkpoint_2.md). Registros datados mais antigos abaixo devem ser lidos como histórico.
+
+
 ## 1. O que minha parte faz
 
 “Minha parte cria a identidade dos nós e mantém o cadastro de membros do Super Peer. Cada nó possui configuração, um identificador SHA-256 e informações locais do processo. O Super Peer usa esse identificador para adicionar, consultar, atualizar e remover membros, protegendo a tabela contra acessos simultâneos.”
 
-Os arquivos centrais são `node.c` e `superpeer.c`. `node.h` e `superpeer.h` apresentam as estruturas e funções públicas; `common.h` compartilha os tamanhos com o protocolo. `test_node_superpeer.c` verifica os módulos. O `main` de `bin/superpeer` fica em `superpeer.c` e é ativado apenas no build desse executável; `superpeer_app.c`, da integração com o aluno 1, conecta a API às mensagens TCP.
+Os arquivos centrais são `node.c`, `membership.c` e `metadata.c`; `superpeer.c` contém somente main. `node.h` e `superpeer.h` apresentam as estruturas e funções públicas; `common.h` compartilha os tamanhos com o protocolo. `test_node_superpeer.c` verifica os módulos. O `main` exclusivo de `bin/superpeer` fica em `superpeer.c`; `superpeer_app.c`, da integração com o aluno 1, conecta a API às mensagens TCP.
 
 ## 2. Estruturas e conceitos
 
@@ -54,7 +61,7 @@ IP binário (4 ou 16 bytes) + porta (2 bytes, ordem de rede) + UUID (16 bytes)
 
 O código valida a configuração, converte o IP para bytes e usa `htons` na porta. A ordem de rede coloca o byte mais significativo primeiro e torna a entrada independente da ordem de bytes da máquina. `memcpy` concatena os campos em um buffer; o hash considera apenas os bytes preenchidos: 22 para IPv4 ou 34 para IPv6.
 
-A função `SHA256` pertence à biblioteca OpenSSL/libcrypto. O código declara sua assinatura diretamente porque o ambiente original tinha `libcrypto.so.3` sem os headers de desenvolvimento. Não há algoritmo SHA-256 implementado manualmente.
+A função `SHA256` pertence à biblioteca OpenSSL/libcrypto. O código usa o header oficial openssl/sha.h; make deps fornece headers locais quando necessário. Não há algoritmo SHA-256 implementado manualmente.
 
 Mesmos IP binário, porta e UUID produzem o mesmo ID. Alterar essas entradas deve alterar o hash, embora hashes não ofereçam garantia matemática de inexistência de colisões. PID e papel ficam fora da entrada. Validar esse hash confirma coerência entre dados e ID, mas não autentica a pessoa ou a máquina que enviou os dados.
 
@@ -73,11 +80,11 @@ Mesmos IP binário, porta e UUID produzem o mesmo ID. Alterar essas entradas dev
 - `node_id_equal`: exige dois ponteiros válidos e compara todos os bytes.
 - `node_get_process_id`: devolve o PID armazenado ou -1 para ponteiro nulo.
 
-## 4. `superpeer.c`: função por função
+## 4. `membership.c`: função por função
 
 ### Encapsulamento e concorrência
 
-A definição completa de `SuperPeer` fica no `.c`; o `.h` expõe um tipo incompleto. Quem usa o módulo chama sua API sem manipular diretamente os campos internos. O `main` condicional chama `superpeer_run` de `superpeer_app.c`; testes unitários compilam a API sem esse `main`.
+A definição completa de `SuperPeer` fica no `.c`; o `.h` expõe um tipo incompleto. Quem usa o módulo chama sua API sem manipular diretamente os campos internos. O main exclusivo chama superpeer_run; testes locais compilam membership.c sem ponto de entrada.
 
 `lock_members` e `unlock_members` encapsulam o mutex. Funções pthread devolvem o número do erro diretamente; esses auxiliares o colocam em `errno` e retornam -1, acompanhando a convenção do módulo.
 
@@ -111,7 +118,7 @@ Exemplo: o Super Peer sozinho tem contagem 1. Cadastrar A leva a 2. Cadastrar A 
 
 Rejeita a remoção do próprio nó com `EPERM`. Para outro ID, busca sob mutex, retorna `ENOENT` se não encontrar e usa `memmove` para deslocar os elementos posteriores. `memmove` permite sobreposição entre origem e destino. Reduz a contagem, mas não reduz a capacidade alocada.
 
-Essa remoção funciona na API local e está testada. O ramo LEAVE de `peer.c` ainda apenas envia ACK, sem chamar a função; não se deve apresentar LEAVE/ACK como prova de remoção.
+Essa remoção funciona na API local e na integração: o handler LEAVE do Super Peer chama superpeer_unregister_node e metadata_remove_peer. Isso cobre saída voluntária, não detecção automática de crash.
 
 ### Consultas e destruição
 
@@ -198,7 +205,7 @@ Procure `JOIN validado` no receptor e `JOIN aceito pelo peer remoto` no iniciado
 
 ## Checkpoint 2 — metadados (24/09/2026)
 
-Agora a parte do aluno 2 também oferece `metadata.c` e `metadata.h`. A tabela associa o ObjectID de um documento aos seus dados e aos peers que anunciam cada chunk. Ela é uma API local independente da tabela de membros; sua conexão ao servidor de rede ainda deve ser feita pelo aluno 1.
+Agora a parte do aluno 2 também oferece `metadata.c` e `metadata.h`. A tabela associa o ObjectID de um documento aos seus dados e aos peers que anunciam cada chunk. Ela é uma API local independente da tabela de membros; a integração de rede usa directory.c e superpeer_app.c.
 
 `object_id_file` calcula SHA-256 com EVP em blocos de 64 KiB, evitando carregar todo o PDF na memória. `metadata_register_document` registra nome, tamanho original e quantidade de chunks de 4 MiB. Repetir o mesmo conteúdo/tamanho preserva o cadastro; tamanho conflitante produz erro.
 
@@ -208,4 +215,4 @@ A hash table tem 257 buckets. O hash escolhe o bucket, mas a igualdade compara t
 
 O mutex protege cada operação da tabela. Isso é proteção local entre threads, não consenso distribuído. O chamador deve encerrar as threads antes de destruir a tabela. Identidades anunciadas precisam ser validadas pelo consumidor; para obter IP e porta de um NodeID, usar `superpeer_find_member`.
 
-Os testes novos estão em `tests/c2/test_metadata.c`; `make test-aluno2` executa esses testes e os de node/superpeer. Em 24/09/2026, passaram, assim como `make test` e a suíte C2 com sanitizadores de memória/comportamento indefinido. A integração C2 por TCP permanece pendente. Consulte [o contrato de integração](integracao_checkpoint_2_aluno_2.md) para retornos, memória, convenções e evidências detalhadas.
+Os testes novos estão em `tests/c2/test_metadata.c`; `make test-aluno2` executa esses testes e os de node/superpeer. Em 24/09/2026, passaram, assim como `make test` e a suíte C2 com sanitizadores de memória/comportamento indefinido. A integração C2 por TCP está implementada e testada nesta revisão. Consulte [o contrato de integração](integracao_checkpoint_2_aluno_2.md) para retornos, memória, convenções e evidências detalhadas.

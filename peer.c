@@ -1,5 +1,7 @@
 /* Ponto de entrada do Peer de armazenamento e dos comandos do cliente. */
 #include "file_client.h"
+#include "app_config.h"
+#include "local_control.h"
 #include "node.h"
 #include "peer_service.h"
 #include "rpc.h"
@@ -15,6 +17,7 @@
 #define DEFAULT_SUPERPEER_PORT 55101U
 #define DEFAULT_PEER_HOST "127.0.0.1"
 #define DEFAULT_PEER_PORT 55102U
+static uint16_t local_peer_port = DEFAULT_PEER_PORT;
 
 static int parse_port(const char *text, uint16_t *port)
 {
@@ -145,7 +148,7 @@ static int option_command(int argc, char **argv)
                 return -1;
             }
         }
-        else if (strcmp(argv[index], "--file") == 0)
+        else if ((strcmp(argv[index], "--file") == 0 || strcmp(argv[index], "--name") == 0))
         {
             file = argv[index + 1];
         }
@@ -159,6 +162,11 @@ static int option_command(int argc, char **argv)
             return -1;
         }
     }
+    if (command != NULL && (strcmp(command, "upload") == 0 || strcmp(command, "download") == 0))
+    {
+        if (host == NULL) host = "127.0.0.1";
+        if (port == 0U) port = strcmp(command, "upload") == 0 ? DEFAULT_PEER_PORT : DEFAULT_SUPERPEER_PORT;
+    }
     if (command == NULL || host == NULL || port == 0U)
     {
         errno = EINVAL;
@@ -171,7 +179,7 @@ static int option_command(int argc, char **argv)
             errno = EINVAL;
             return -1;
         }
-        return file_client_upload(file, host, port);
+        return local_control_command(local_peer_port, 1, file, NULL, host, port);
     }
     if (strcmp(command, "download") == 0)
     {
@@ -180,7 +188,7 @@ static int option_command(int argc, char **argv)
             errno = EINVAL;
             return -1;
         }
-        return file_client_download(file, output, host, port);
+        return local_control_command(local_peer_port, 0, file, output, host, port);
     }
     if (file != NULL || output != NULL)
     {
@@ -199,10 +207,27 @@ int main(int argc, char **argv)
 {
     int result = -1;
 
+    if (app_config_load(&argc, argv, 0) < 0) { perror("config"); return EXIT_FAILURE; }
     (void)signal(SIGPIPE, SIG_IGN);
+    /* Remove a opção transversal antes de interpretar a CLI legada. */
+    for (int i = 1; i < argc; ++i)
+    {
+        if (strcmp(argv[i], "--local-peer-port") == 0)
+        {
+            if (i + 1 >= argc || parse_port(argv[i + 1], &local_peer_port) < 0) goto failure;
+            for (int j = i; j + 2 < argc; ++j) argv[j] = argv[j + 2];
+            argc -= 2;
+            argv[argc] = NULL;
+            --i;
+        }
+    }
     if (argc >= 2 && strcmp(argv[1], "--cmd") == 0)
     {
         result = option_command(argc, argv);
+    }
+    else if (argc == 2 && strcmp(argv[1], "serve") == 0)
+    {
+        return peer_service_run(app_config.port, app_config.superpeer, app_config.superpeer_port);
     }
     else if (argc == 5 && strcmp(argv[1], "serve") == 0)
     {
@@ -221,7 +246,7 @@ int main(int argc, char **argv)
 
         if ((argc == 3 || parse_port(argv[4], &port) == 0))
         {
-            result = file_client_upload(argv[2], host, port);
+            result = local_control_command(local_peer_port, 1, argv[2], NULL, host, port);
         }
     }
     else if (argc == 3 && strcmp(argv[1], "benchmark") == 0)
@@ -255,7 +280,7 @@ int main(int argc, char **argv)
                 goto failure;
             }
         }
-        result = file_client_download(argv[2], destination, host, port);
+        result = local_control_command(local_peer_port, 0, argv[2], destination, host, port);
     }
     if (result == 0)
     {

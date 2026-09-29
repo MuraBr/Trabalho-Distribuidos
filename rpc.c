@@ -59,19 +59,74 @@ int rpc_call(const char *host, uint16_t port, const NodeID *source, const NodeID
     request.header.timestamp = (uint64_t)time(NULL);
     request.header.payload_size = payload_size;
     request.payload = (uint8_t *)payload;
-    if (protocol_send_message(socket_fd, &request) != PROTOCOL_OK || protocol_receive_message(socket_fd, response) != PROTOCOL_OK || memcmp(request.header.transaction_id, response->header.transaction_id, TRANSACTION_ID_SIZE) != 0)
+    errno = 0;
+    if (protocol_send_message(socket_fd, &request) != PROTOCOL_OK || protocol_receive_message(socket_fd, response) != PROTOCOL_OK)
+    {
+        if (errno == 0) errno = EBADMSG;
+        goto cleanup;
+    }
+    if (memcmp(request.header.transaction_id, response->header.transaction_id, TRANSACTION_ID_SIZE) != 0)
     {
         errno = EBADMSG;
         goto cleanup;
     }
     status = 0;
+    if ((source != NULL && memcmp(response->header.destination_node, source->bytes, NODE_ID_SIZE) != 0) || (destination != NULL && memcmp(response->header.source_node, destination->bytes, NODE_ID_SIZE) != 0))
+    {
+        errno = EBADMSG;
+        status = -1;
+    }
 
 cleanup:
     request.payload = NULL;
-    (void)network_shutdown(socket_fd);
+    { int error = errno; (void)network_shutdown(socket_fd); errno = error; }
     if (status < 0)
     {
         message_free(response);
     }
     return status;
+}
+
+int rpc_decode_join_payload(const uint8_t *payload, size_t payload_size, NodeConfig *config)
+{
+    char ip[NODE_ADDRESS_SIZE];
+    const uint8_t *terminator;
+    uint16_t network_port;
+    uint16_t port;
+    size_t index;
+
+    if (payload == NULL || config == NULL || payload_size != JOIN_PAYLOAD_WIRE_SIZE)
+    {
+        errno = EINVAL;
+        return -1;
+    }
+
+    terminator = memchr(payload, '\0', NODE_ADDRESS_SIZE);
+    if (terminator == NULL)
+    {
+        errno = EINVAL;
+        return -1;
+    }
+
+    /* O preenchimento após o terminador deve conter apenas zeros. */
+    index = (size_t)(terminator - payload) + 1U;
+    while (index < NODE_ADDRESS_SIZE)
+    {
+        if (payload[index] != 0U)
+        {
+            errno = EINVAL;
+            return -1;
+        }
+        ++index;
+    }
+
+    memcpy(ip, payload, sizeof(ip));
+    memcpy(&network_port, payload + NODE_ADDRESS_SIZE, sizeof(network_port));
+    port = ntohs(network_port);
+
+    if (node_config_init_with_uuid( config, ip, port, payload + NODE_ADDRESS_SIZE + sizeof(network_port)) < 0)
+    {
+        return -1;
+    }
+    return 0;
 }

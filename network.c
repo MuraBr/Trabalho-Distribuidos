@@ -1,190 +1,129 @@
+#define _POSIX_C_SOURCE 200809L
 #include "network.h"
-
 #include <arpa/inet.h>
 #include <errno.h>
-#include <netinet/in.h>
-#include <stdio.h>
+#include <fcntl.h>
+#include <limits.h>
+#include <poll.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <time.h>
 #include <unistd.h>
 
-/* Cria servidor TCP IPv4 em todas as interfaces; configura reutilização de endereço, bind e fila listen. */
+static int timeout_ms(const char *name, int fallback)
+{
+    const char *value = getenv(name);
+    char *end;
+    long seconds;
+    if (value == NULL) return fallback;
+    errno = 0;
+    seconds = strtol(value, &end, 10);
+    return errno == 0 && end != value && *end == '\0' && seconds > 0 && seconds <= 3600 ? (int)seconds * 1000 : fallback;
+}
+
+static int64_t now_ms(void)
+{
+    struct timespec value;
+    if (clock_gettime(CLOCK_MONOTONIC, &value) < 0) return -1;
+    return (int64_t)value.tv_sec * 1000 + value.tv_nsec / 1000000;
+}
+
+static int wait_ready(int fd, short events, int64_t deadline)
+{
+    struct pollfd descriptor = {.fd = fd, .events = events};
+    for (;;)
+    {
+        int64_t remaining = deadline - now_ms();
+        if (remaining <= 0) { errno = ETIMEDOUT; return -1; }
+        int result = poll(&descriptor, 1U, remaining > INT_MAX ? INT_MAX : (int)remaining);
+        if (result > 0) return 0;
+        if (result == 0) { errno = ETIMEDOUT; return -1; }
+        if (errno != EINTR) return -1;
+    }
+}
+
 int network_create_server(uint16_t porta, int backlog)
 {
-    int sock;
-    struct sockaddr_in address;
+    struct sockaddr_in address = {.sin_family = AF_INET, .sin_port = htons(porta)};
+    const char *bind_ip = getenv("PEER_BIND_IP");
     int opt = 1;
-
-    if((sock = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+    int fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (fd < 0) return -1;
+    address.sin_addr.s_addr = htonl(INADDR_ANY);
+    if (bind_ip != NULL && inet_pton(AF_INET, bind_ip, &address.sin_addr) != 1) { close(fd); errno = EINVAL; return -1; }
+    if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0 || bind(fd, (struct sockaddr *)&address, sizeof(address)) < 0 || listen(fd, backlog) < 0)
     {
-	    perror("socket failed");
-        return -1;
+        int error = errno; close(fd); errno = error; return -1;
     }
-    if(setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)))
-    {
-        perror("setsockopt");
-	    close(sock);
-        return -1;
-    }
-    memset(&address, 0, sizeof(address));
-    address.sin_family = AF_INET;
-    address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(porta);
-
-    if(bind(sock, (struct sockaddr*)&address, sizeof(address)) < 0)
-    {
-        perror("bind failed");
-	    close(sock);
-	    return -1;
-    }
-    if(listen(sock, backlog) < 0)
-    {
-        perror("listen");
-	    close(sock);
-	    return -1;
-    }
-
-    return sock;
+    return fd;
 }
 
-/* Aceita uma conexão e retorna seu descritor; erros, inclusive EINTR, são tratados pelo chamador. */
 int network_accept_client(int server_fd)
 {
-    int client_fd;
-    struct sockaddr_in client;
-    socklen_t client_len = sizeof(client);
-    memset(&client, 0, sizeof(client));
-
-    if((client_fd = accept(server_fd, (struct sockaddr*)&client, &client_len)) < 0)
-    {
-        perror("accept");
-        return -1;
-    }
-
-    return client_fd;
+    return accept(server_fd, NULL, NULL);
 }
 
-/* Conecta a um IPv4 numérico e porta; fecha o socket se a validação ou conexão falhar. */
 int network_connect(const char *ip, uint16_t porta)
 {
-    int sock;
-    struct sockaddr_in server;
-
-    if (ip == NULL || porta == 0U)
+    struct sockaddr_in address = {.sin_family = AF_INET, .sin_port = htons(porta)};
+    int fd, flags, error = 0;
+    socklen_t size = sizeof(error);
+    if (ip == NULL || porta == 0U || inet_pton(AF_INET, ip, &address.sin_addr) != 1) { errno = EINVAL; return -1; }
+    fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (fd < 0) return -1;
+    flags = fcntl(fd, F_GETFL);
+    if (flags < 0 || fcntl(fd, F_SETFL, flags | O_NONBLOCK) < 0) goto failure;
+    if (connect(fd, (struct sockaddr *)&address, sizeof(address)) < 0)
     {
-        errno = EINVAL;
-        return -1;
+        if (errno != EINPROGRESS || wait_ready(fd, POLLOUT, now_ms() + timeout_ms("PEER_CONNECT_TIMEOUT", 5000)) < 0) goto failure;
+        if (getsockopt(fd, SOL_SOCKET, SO_ERROR, &error, &size) < 0) goto failure;
+        if (error != 0) { errno = error; goto failure; }
     }
-
-    if((sock = socket(AF_INET, SOCK_STREAM, 0)) == -1)
-    {
-	    perror("socket failed");
-        return -1;
-    }
-
-    memset(&server, 0, sizeof(server));
-    server.sin_family = AF_INET;
-    server.sin_port = htons(porta);
-
-    switch(inet_pton(AF_INET, ip, &server.sin_addr))
-    {
-        case 1:
-        {
-            break;
-        }
-        case 0:
-        {
-            fprintf(stderr, "O endereco IP nao eh valido!\n");
-            close(sock);
-            return -1;
-        }
-        case -1:
-        {
-            perror("inet_pton");
-            close(sock);
-            return -1;
-        }
-    }
-
-    if(connect(sock, (struct sockaddr *)&server, sizeof(server)) < 0)
-    {
-        perror("connect");
-        close(sock);
-        return -1;
-    }
-
-    return sock;
+    if (fcntl(fd, F_SETFL, flags) < 0) goto failure;
+    return fd;
+failure:
+    error = errno; close(fd); errno = error; return -1;
 }
 
-/* Repete send para completar o buffer e retoma após EINTR; retorna total enviado ou -1. */
-ssize_t network_send_all(int sock, const void *buffer, size_t tam)
+ssize_t network_send_all(int sock, const void *buffer, size_t size)
 {
-    const char *data = buffer;
-    size_t total_sent = 0;
-
-    while(total_sent < tam)
+    const unsigned char *data = buffer;
+    size_t done = 0U;
+    int timeout = timeout_ms("PEER_IO_TIMEOUT", 30000);
+    int64_t deadline = now_ms() + timeout;
+    if (size > (size_t)SSIZE_MAX || (buffer == NULL && size != 0U)) { errno = EINVAL; return -1; }
+    while (done < size)
     {
-        ssize_t sent_now = send(sock, data + total_sent, tam - total_sent, MSG_NOSIGNAL);
-        if(sent_now > 0)
-        {
-            total_sent += (size_t)sent_now;
-            continue;
-        }
-        if(sent_now == -1)
-        {
-            if(errno == EINTR)
-            {
-                continue;
-            }
-            perror("send");
-            return -1;
-        }
-
-        fprintf(stderr, "send retornou zero bytes\n");
-        return -1;
+        ssize_t count = send(sock, data + done, size - done, MSG_NOSIGNAL | MSG_DONTWAIT);
+        if (count > 0) { done += (size_t)count; deadline = now_ms() + timeout; continue; }
+        if (count == 0) { errno = EPIPE; return -1; }
+        if (errno == EINTR) continue;
+        if ((errno != EAGAIN && errno != EWOULDBLOCK) || wait_ready(sock, POLLOUT, deadline) < 0) return -1;
     }
-    return (ssize_t)total_sent;
+    return (ssize_t)done;
 }
 
-/* Acumula recv até o tamanho pedido; retorna total parcial no fechamento, zero sem dados ou -1 em erro. */
-ssize_t network_recv_exact(int sock, void *buffer, size_t tam)
+ssize_t network_recv_exact(int sock, void *buffer, size_t size)
 {
-    size_t total_received = 0;
-    char *data = buffer;
-
-    while(total_received < tam)
+    unsigned char *data = buffer;
+    size_t done = 0U;
+    int timeout = timeout_ms("PEER_IO_TIMEOUT", 30000);
+    int64_t deadline = now_ms() + timeout;
+    if (size > (size_t)SSIZE_MAX || (buffer == NULL && size != 0U)) { errno = EINVAL; return -1; }
+    while (done < size)
     {
-        ssize_t received_now = recv(sock, data + total_received, tam - total_received, 0);
-        if(received_now > 0)
-        {
-            total_received += (size_t)received_now;
-            continue;
-        }
-        if(received_now == 0)
-        {
-            return (ssize_t)total_received;
-        }
-        if(errno == EINTR)
-        {
-            continue;
-        }
-        perror("recv");
-        return -1;
+        ssize_t count = recv(sock, data + done, size - done, MSG_DONTWAIT);
+        if (count > 0) { done += (size_t)count; deadline = now_ms() + timeout; continue; }
+        if (count == 0) return (ssize_t)done;
+        if (errno == EINTR) continue;
+        if ((errno != EAGAIN && errno != EWOULDBLOCK) || wait_ready(sock, POLLIN, deadline) < 0) return -1;
     }
-    return (ssize_t)total_received;
+    return (ssize_t)done;
 }
 
-/* Tenta encerrar os dois sentidos e sempre chama close; o retorno reflete o resultado de close. */
 int network_shutdown(int sock)
 {
-    if(shutdown(sock, SHUT_RDWR) == -1)
-    {
-	    perror("shutdown");
-    }
-    if(close(sock) == -1)
-    {
-	    perror("close");
-	    return -1;
-    }
-    return 0;
+    (void)shutdown(sock, SHUT_RDWR);
+    return close(sock);
 }

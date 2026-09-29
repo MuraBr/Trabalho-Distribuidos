@@ -1,5 +1,16 @@
 # Requisitos do trabalho — Aluno 1
 
+
+## Revisão integrada — 28/09/2026
+
+Estado vigente: [refatoração C1/C2](refatoracao_checkpoint_2.md). Upload/download agora são executados pelo **Peer ativo**, selecionado por `--local-peer-port` (padrão 55102), mediante canal Unix privado. A CLI não envia LOOKUP anônimo. PDF é validado pela extensão, sem exigir assinatura, para aceitar as fixtures sintéticas.
+
+`peer.c` e `superpeer.c` têm main exclusivos; a API de membros está em `membership.c`. Ambos os processos persistem UUID e leem configuração real. LEAVE remove membro/disponibilidade. Metadados foram ampliados com proprietário NodeID, versão, compressão e descritores/hashes; ANNOUNCE publica o cadastro completo atomicamente.
+
+Evidências funcionais: C1 10/10, regressão legada 14/14, C2 20/20, runner disponível do professor 16/16 e integração independente 46 verificações. APIs locais e testes de falha de manifest passaram. Checkpoints 3–6 e suas metas globais permanecem **fora desta implementação**.
+
+As seções históricas datadas abaixo documentam entregas anteriores; descrições de main condicional, LEAVE pendente, cliente anônimo ou modelo de metadata inalterado não representam esta revisão.
+
 Este documento separa as responsabilidades do Aluno 1 a partir do enunciado do trabalho de Programação Distribuída.
 
 ## Estado da implementação — Checkpoint 2

@@ -1,4 +1,5 @@
 #define _POSIX_C_SOURCE 200809L
+#include "wire.h"
 #include "storage.h"
 
 #include "compression.h"
@@ -10,6 +11,8 @@
 #include <inttypes.h>
 #include <limits.h>
 #include <pthread.h>
+#include <stdatomic.h>
+#include <openssl/evp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -41,7 +44,8 @@ typedef struct StoredDocument
     TransferDocument document;
     NodeID owner;
     uint64_t uploaded_at;
-    TransferState state;
+    _Atomic TransferState state;
+    pthread_mutex_t mutex;
     StoredChunk *chunks;
     struct StoredDocument *next;
 } StoredDocument;
@@ -54,53 +58,46 @@ struct Storage
     StoredDocument *documents;
 };
 
+static StoredDocument *allocate_document(void)
+{
+    StoredDocument *document = calloc(1U, sizeof(*document));
+    if (document == NULL) return NULL;
+    int error = pthread_mutex_init(&document->mutex, NULL);
+    if (error != 0) { free(document); errno = error; return NULL; }
+    return document;
+}
+
+static void release_document(StoredDocument *document)
+{
+    if (document != NULL) { pthread_mutex_destroy(&document->mutex); free(document); }
+}
+
+/* rename só é durável após sincronizar o diretório que contém a entrada. */
+static int sync_parent(const char *path)
+{
+    char parent[PATH_MAX];
+    if (strlen(path) >= sizeof(parent)) { errno = ENAMETOOLONG; return -1; }
+    strcpy(parent, path);
+    char *slash = strrchr(parent, '/');
+    if (slash == NULL) strcpy(parent, ".");
+    else if (slash == parent) slash[1] = '\0';
+    else *slash = '\0';
+    int fd = open(parent, O_RDONLY | O_DIRECTORY);
+    if (fd < 0) return -1;
+    int status = fsync(fd);
+    int error = errno;
+    close(fd);
+    errno = error;
+    return status;
+}
+
 static int verify_document(Storage *storage, StoredDocument *stored, int final);
 
-static void put_u16(uint8_t *destination, uint16_t value)
-{
-    destination[0] = (uint8_t)(value >> 8);
-    destination[1] = (uint8_t)value;
-}
 
-static uint16_t get_u16(const uint8_t *source)
-{
-    return (uint16_t)(((uint16_t)source[0] << 8) | source[1]);
-}
 
-static void put_u32(uint8_t *destination, uint32_t value)
-{
-    destination[0] = (uint8_t)(value >> 24);
-    destination[1] = (uint8_t)(value >> 16);
-    destination[2] = (uint8_t)(value >> 8);
-    destination[3] = (uint8_t)value;
-}
 
-static uint32_t get_u32(const uint8_t *source)
-{
-    return ((uint32_t)source[0] << 24) | ((uint32_t)source[1] << 16) | ((uint32_t)source[2] << 8) | source[3];
-}
 
-static void put_u64(uint8_t *destination, uint64_t value)
-{
-    size_t index;
 
-    for (index = 0U; index < 8U; ++index)
-    {
-        destination[index] = (uint8_t)(value >> (56U - index * 8U));
-    }
-}
-
-static uint64_t get_u64(const uint8_t *source)
-{
-    uint64_t value = 0U;
-    size_t index;
-
-    for (index = 0U; index < 8U; ++index)
-    {
-        value = (value << 8) | source[index];
-    }
-    return value;
-}
 
 static int write_all_fd(int fd, const uint8_t *data, size_t size)
 {
@@ -284,32 +281,32 @@ static int write_manifest(Storage *storage, StoredDocument *stored, int final)
     {
         goto cleanup;
     }
-    put_u32(scalar, MANIFEST_VERSION);
+    wire_put_u32(scalar, MANIFEST_VERSION);
     if (write_all_fd(fd, scalar, 4U) < 0 || write_all_fd(fd, stored->document.id.bytes, OBJECT_ID_SIZE) < 0)
     {
         goto cleanup;
     }
-    put_u64(scalar, stored->document.file_size);
+    wire_put_u64(scalar, stored->document.file_size);
     if (write_all_fd(fd, scalar, 8U) < 0)
     {
         goto cleanup;
     }
-    put_u64(scalar, stored->document.chunk_count);
+    wire_put_u64(scalar, stored->document.chunk_count);
     if (write_all_fd(fd, scalar, 8U) < 0 || write_all_fd(fd, &stored->document.compression, 1U) < 0)
     {
         goto cleanup;
     }
-    put_u16(scalar, (uint16_t)name_size);
+    wire_put_u16(scalar, (uint16_t)name_size);
     if (write_all_fd(fd, scalar, 2U) < 0 || write_all_fd(fd, (const uint8_t *)stored->document.name, name_size) < 0 || write_all_fd(fd, stored->owner.bytes, NODE_ID_SIZE) < 0)
     {
         goto cleanup;
     }
-    put_u64(scalar, stored->uploaded_at);
+    wire_put_u64(scalar, stored->uploaded_at);
     if (write_all_fd(fd, scalar, 8U) < 0)
     {
         goto cleanup;
     }
-    scalar[0] = (uint8_t)stored->state;
+    scalar[0] = (uint8_t)(stored->state == TRANSFER_VERIFYING ? TRANSFER_FINISHED : stored->state);
     if (write_all_fd(fd, scalar, 1U) < 0)
     {
         goto cleanup;
@@ -318,22 +315,22 @@ static int write_manifest(Storage *storage, StoredDocument *stored, int final)
     {
         StoredChunk *chunk = &stored->chunks[index];
 
-        put_u64(scalar, chunk->index);
+        wire_put_u64(scalar, chunk->index);
         if (write_all_fd(fd, scalar, 8U) < 0)
         {
             goto cleanup;
         }
-        put_u64(scalar, chunk->offset);
+        wire_put_u64(scalar, chunk->offset);
         if (write_all_fd(fd, scalar, 8U) < 0)
         {
             goto cleanup;
         }
-        put_u32(scalar, chunk->raw_size);
+        wire_put_u32(scalar, chunk->raw_size);
         if (write_all_fd(fd, scalar, 4U) < 0)
         {
             goto cleanup;
         }
-        put_u32(scalar, chunk->compressed_size);
+        wire_put_u32(scalar, chunk->compressed_size);
         if (write_all_fd(fd, scalar, 4U) < 0 || write_all_fd(fd, chunk->hash, OBJECT_ID_SIZE) < 0)
         {
             goto cleanup;
@@ -354,7 +351,7 @@ static int write_manifest(Storage *storage, StoredDocument *stored, int final)
         goto cleanup;
     }
     fd = -1;
-    if (rename(temporary, path) < 0)
+    if (rename(temporary, path) < 0 || sync_parent(path) < 0)
     {
         goto cleanup;
     }
@@ -388,28 +385,28 @@ static int read_manifest(Storage *storage, const char *path, int final, StoredDo
     {
         return -1;
     }
-    stored = calloc(1U, sizeof(*stored));
+    stored = allocate_document();
     if (stored == NULL)
     {
         goto error;
     }
-    if (read_all_fd(fd, magic, sizeof(magic)) < 0 || memcmp(magic, MANIFEST_MAGIC, sizeof(magic)) != 0 || read_all_fd(fd, scalar, 4U) < 0 || get_u32(scalar) != MANIFEST_VERSION || read_all_fd(fd, stored->document.id.bytes, OBJECT_ID_SIZE) < 0 || read_all_fd(fd, scalar, 8U) < 0)
+    if (read_all_fd(fd, magic, sizeof(magic)) < 0 || memcmp(magic, MANIFEST_MAGIC, sizeof(magic)) != 0 || read_all_fd(fd, scalar, 4U) < 0 || wire_get_u32(scalar) != MANIFEST_VERSION || read_all_fd(fd, stored->document.id.bytes, OBJECT_ID_SIZE) < 0 || read_all_fd(fd, scalar, 8U) < 0)
     {
         errno = EBADMSG;
         goto error;
     }
-    stored->document.file_size = get_u64(scalar);
+    stored->document.file_size = wire_get_u64(scalar);
     if (read_all_fd(fd, scalar, 8U) < 0)
     {
         goto error;
     }
-    stored->document.chunk_count = get_u64(scalar);
+    stored->document.chunk_count = wire_get_u64(scalar);
     if (stored->document.chunk_count != stored->document.file_size / METADATA_CHUNK_SIZE + (stored->document.file_size % METADATA_CHUNK_SIZE != 0U) || stored->document.chunk_count > SIZE_MAX / sizeof(*stored->chunks) || read_all_fd(fd, &stored->document.compression, 1U) < 0 || stored->document.compression != COMPRESSION_LZ4 || read_all_fd(fd, scalar, 2U) < 0)
     {
         errno = EBADMSG;
         goto error;
     }
-    name_size = get_u16(scalar);
+    name_size = wire_get_u16(scalar);
     if (name_size == 0U || name_size >= METADATA_NAME_SIZE || read_all_fd(fd, (uint8_t *)stored->document.name, name_size) < 0 || memchr(stored->document.name, '\0', name_size) != NULL || memchr(stored->document.name, '/', name_size) != NULL)
     {
         errno = EBADMSG;
@@ -420,7 +417,7 @@ static int read_manifest(Storage *storage, const char *path, int final, StoredDo
     {
         goto error;
     }
-    stored->uploaded_at = get_u64(scalar);
+    stored->uploaded_at = wire_get_u64(scalar);
     if (read_all_fd(fd, scalar, 1U) < 0 || scalar[0] > TRANSFER_REPLICATED || (final && scalar[0] != TRANSFER_FINISHED && scalar[0] != TRANSFER_VERIFYING) || (!final && scalar[0] == TRANSFER_FINISHED))
     {
         errno = EBADMSG;
@@ -444,22 +441,22 @@ static int read_manifest(Storage *storage, const char *path, int final, StoredDo
         {
             goto error;
         }
-        chunk->index = get_u64(scalar);
+        chunk->index = wire_get_u64(scalar);
         if (read_all_fd(fd, scalar, 8U) < 0)
         {
             goto error;
         }
-        chunk->offset = get_u64(scalar);
+        chunk->offset = wire_get_u64(scalar);
         if (read_all_fd(fd, scalar, 4U) < 0)
         {
             goto error;
         }
-        chunk->raw_size = get_u32(scalar);
+        chunk->raw_size = wire_get_u32(scalar);
         if (read_all_fd(fd, scalar, 4U) < 0)
         {
             goto error;
         }
-        chunk->compressed_size = get_u32(scalar);
+        chunk->compressed_size = wire_get_u32(scalar);
         if (read_all_fd(fd, chunk->hash, OBJECT_ID_SIZE) < 0 || read_all_fd(fd, scalar, 1U) < 0)
         {
             goto error;
@@ -519,7 +516,7 @@ error:
     if (stored != NULL)
     {
         free(stored->chunks);
-        free(stored);
+        release_document(stored);
     }
     return -1;
 }
@@ -563,7 +560,7 @@ static int load_documents(Storage *storage, int final)
             if (object_hex(&stored->document.id, expected) < 0 || strcmp(entry->d_name, expected) != 0 || find_document(storage, &stored->document.id) != NULL)
             {
                 free(stored->chunks);
-                free(stored);
+                release_document(stored);
                 continue;
             }
             if (final)
@@ -574,7 +571,7 @@ static int load_documents(Storage *storage, int final)
                 if (recover && write_manifest(storage, stored, 1) < 0)
                 {
                     free(stored->chunks);
-                    free(stored);
+                    release_document(stored);
                     (void)closedir(directory);
                     return -1;
                 }
@@ -640,7 +637,7 @@ void storage_destroy(Storage *storage)
         StoredDocument *next = document->next;
 
         free(document->chunks);
-        free(document);
+        release_document(document);
         document = next;
     }
     pthread_mutex_destroy(&storage->mutex);
@@ -653,7 +650,7 @@ int storage_begin(Storage *storage, const TransferDocument *document)
     char directory[PATH_MAX];
     int error;
 
-    if (storage == NULL || document == NULL || document->compression != COMPRESSION_LZ4 || document->chunk_count == 0U || document->chunk_count > SIZE_MAX / sizeof(*stored->chunks))
+    if (storage == NULL || document == NULL || !content_pdf_name(document->name) || document->compression != COMPRESSION_LZ4 || document->chunk_count == 0U || document->chunk_count > SIZE_MAX / sizeof(*stored->chunks))
     {
         errno = EINVAL;
         return -1;
@@ -677,7 +674,7 @@ int storage_begin(Storage *storage, const TransferDocument *document)
         }
         return 0;
     }
-    stored = calloc(1U, sizeof(*stored));
+    stored = allocate_document();
     if (stored == NULL)
     {
         pthread_mutex_unlock(&storage->mutex);
@@ -686,7 +683,7 @@ int storage_begin(Storage *storage, const TransferDocument *document)
     stored->chunks = calloc((size_t)document->chunk_count, sizeof(*stored->chunks));
     if (stored->chunks == NULL)
     {
-        free(stored);
+        release_document(stored);
         pthread_mutex_unlock(&storage->mutex);
         return -1;
     }
@@ -700,7 +697,7 @@ int storage_begin(Storage *storage, const TransferDocument *document)
     {
         storage->documents = stored->next;
         free(stored->chunks);
-        free(stored);
+        release_document(stored);
         pthread_mutex_unlock(&storage->mutex);
         return -1;
     }
@@ -749,12 +746,16 @@ int storage_put_chunk(Storage *storage, const TransferChunk *chunk)
         errno = stored == NULL ? ENOENT : EINVAL;
         return -1;
     }
+    /* Registros não são removidos enquanto o serviço está ativo. */
+    pthread_mutex_unlock(&storage->mutex);
+    error = pthread_mutex_lock(&stored->mutex);
+    if (error != 0) { errno = error; return -1; }
     expected_offset = chunk->index * METADATA_CHUNK_SIZE;
     remaining = stored->document.file_size - expected_offset;
     expected_size = (uint32_t)(remaining > METADATA_CHUNK_SIZE ? METADATA_CHUNK_SIZE : remaining);
     if (chunk->offset != expected_offset || chunk->raw_size != expected_size)
     {
-        pthread_mutex_unlock(&storage->mutex);
+        pthread_mutex_unlock(&stored->mutex);
         errno = EINVAL;
         return -1;
     }
@@ -763,7 +764,7 @@ int storage_put_chunk(Storage *storage, const TransferChunk *chunk)
     {
         int matches = record->present && record->raw_size == chunk->raw_size && record->compressed_size == chunk->compressed_size && memcmp(record->hash, chunk->hash, OBJECT_ID_SIZE) == 0;
 
-        pthread_mutex_unlock(&storage->mutex);
+        pthread_mutex_unlock(&stored->mutex);
         if (!matches)
         {
             errno = EEXIST;
@@ -775,7 +776,7 @@ int storage_put_chunk(Storage *storage, const TransferChunk *chunk)
     {
         int matches = record->raw_size == chunk->raw_size && record->compressed_size == chunk->compressed_size && memcmp(record->hash, chunk->hash, OBJECT_ID_SIZE) == 0;
 
-        pthread_mutex_unlock(&storage->mutex);
+        pthread_mutex_unlock(&stored->mutex);
         if (!matches)
         {
             errno = EEXIST;
@@ -785,13 +786,13 @@ int storage_put_chunk(Storage *storage, const TransferChunk *chunk)
     }
     if (chunk_path(storage, &chunk->id, chunk->index, 0, final_path) < 0)
     {
-        pthread_mutex_unlock(&storage->mutex);
+        pthread_mutex_unlock(&stored->mutex);
         return -1;
     }
     length = snprintf(temporary, sizeof(temporary), "%s.tmp-%ld", final_path, (long)getpid());
     if (length < 0 || (size_t)length >= sizeof(temporary))
     {
-        pthread_mutex_unlock(&storage->mutex);
+        pthread_mutex_unlock(&stored->mutex);
         errno = ENAMETOOLONG;
         return -1;
     }
@@ -803,23 +804,25 @@ int storage_put_chunk(Storage *storage, const TransferChunk *chunk)
             close(fd);
         }
         unlink(temporary);
-        pthread_mutex_unlock(&storage->mutex);
+        pthread_mutex_unlock(&stored->mutex);
         return -1;
     }
     if (close(fd) < 0)
     {
         fd = -1;
         unlink(temporary);
-        pthread_mutex_unlock(&storage->mutex);
+        pthread_mutex_unlock(&stored->mutex);
         return -1;
     }
     fd = -1;
     if (rename(temporary, final_path) < 0)
     {
         unlink(temporary);
-        pthread_mutex_unlock(&storage->mutex);
+        pthread_mutex_unlock(&stored->mutex);
         return -1;
     }
+    StoredChunk previous_record = *record;
+    TransferState previous_state = stored->state;
     record->index = chunk->index;
     record->offset = chunk->offset;
     record->raw_size = chunk->raw_size;
@@ -827,35 +830,26 @@ int storage_put_chunk(Storage *storage, const TransferChunk *chunk)
     memcpy(record->hash, chunk->hash, OBJECT_ID_SIZE);
     record->present = 1;
     stored->state = TRANSFER_TRANSFERRING;
-    if (write_manifest(storage, stored, 0) < 0)
+    if (sync_parent(final_path) < 0 || write_manifest(storage, stored, 0) < 0)
     {
-        pthread_mutex_unlock(&storage->mutex);
+        *record = previous_record;
+        stored->state = previous_state;
+        pthread_mutex_unlock(&stored->mutex);
         return -1;
     }
-    pthread_mutex_unlock(&storage->mutex);
+    pthread_mutex_unlock(&stored->mutex);
     return 0;
 }
 
 static int verify_document(Storage *storage, StoredDocument *stored, int final)
 {
-    char verified_path[PATH_MAX];
     ObjectID actual;
-    uint64_t actual_size;
+    uint64_t actual_size = 0U;
     uint64_t index;
-    int fd;
-    int length;
-
-    length = snprintf(verified_path, sizeof(verified_path), "%s/pending/verify-%ld.pdf", storage->root, (long)getpid());
-    if (length < 0 || (size_t)length >= sizeof(verified_path))
-    {
-        errno = ENAMETOOLONG;
-        return -1;
-    }
-    fd = open(verified_path, O_WRONLY | O_CREAT | O_TRUNC, 0600);
-    if (fd < 0)
-    {
-        return -1;
-    }
+    unsigned int digest_size = 0U;
+    EVP_MD_CTX *hash = EVP_MD_CTX_new();
+    if (hash == NULL) return -1;
+    if (EVP_DigestInit_ex(hash, EVP_sha256(), NULL) != 1) { EVP_MD_CTX_free(hash); errno = EIO; return -1; }
     for (index = 0U; index < stored->document.chunk_count; ++index)
     {
         StoredChunk *record = &stored->chunks[index];
@@ -892,38 +886,26 @@ static int verify_document(Storage *storage, StoredDocument *stored, int final)
             goto error;
         }
         chunk_fd = -1;
-        if (compression_lz4_decompress(compressed, record->compressed_size, record->raw_size, &raw) < 0 || content_sha256(raw, record->raw_size, digest) < 0 || memcmp(digest, record->hash, OBJECT_ID_SIZE) != 0 || write_all_fd(fd, raw, record->raw_size) < 0)
+        if (compression_lz4_decompress(compressed, record->compressed_size, record->raw_size, &raw) < 0 || content_sha256(raw, record->raw_size, digest) < 0 || memcmp(digest, record->hash, OBJECT_ID_SIZE) != 0 || EVP_DigestUpdate(hash, raw, record->raw_size) != 1)
         {
             free(compressed);
             free(raw);
             errno = EBADMSG;
             goto error;
         }
+        actual_size += record->raw_size;
         free(compressed);
         free(raw);
     }
-    if (fsync(fd) < 0)
-    {
-        goto error;
-    }
-    if (close(fd) < 0)
-    {
-        fd = -1;
-        goto error_closed;
-    }
-    fd = -1;
-    if (object_id_file(verified_path, &actual, &actual_size) < 0 || actual_size != stored->document.file_size || memcmp(actual.bytes, stored->document.id.bytes, OBJECT_ID_SIZE) != 0)
+    if (EVP_DigestFinal_ex(hash, actual.bytes, &digest_size) != 1 || digest_size != OBJECT_ID_SIZE || actual_size != stored->document.file_size || memcmp(actual.bytes, stored->document.id.bytes, OBJECT_ID_SIZE) != 0)
     {
         errno = EBADMSG;
-        goto error_closed;
+        goto error;
     }
-    unlink(verified_path);
+    EVP_MD_CTX_free(hash);
     return 0;
-
 error:
-    close(fd);
-error_closed:
-    unlink(verified_path);
+    EVP_MD_CTX_free(hash);
     return -1;
 }
 
@@ -953,43 +935,47 @@ int storage_commit(Storage *storage, const ObjectID *id, TransferDocument *docum
         errno = ENOENT;
         return -1;
     }
+    pthread_mutex_unlock(&storage->mutex);
+    error = pthread_mutex_lock(&stored->mutex);
+    if (error != 0) { errno = error; return -1; }
     if (stored->state == TRANSFER_FINISHED)
     {
         *document = stored->document;
-        pthread_mutex_unlock(&storage->mutex);
+        pthread_mutex_unlock(&stored->mutex);
         return 0;
     }
     for (index = 0U; index < stored->document.chunk_count; ++index)
     {
         if (!stored->chunks[index].present)
         {
-            pthread_mutex_unlock(&storage->mutex);
+            pthread_mutex_unlock(&stored->mutex);
             errno = ENODATA;
             return -1;
         }
     }
     stored->state = TRANSFER_VERIFYING;
-    if (verify_document(storage, stored, 0) < 0 || write_manifest(storage, stored, 0) < 0 || document_directory(storage, id, 0, pending) < 0 || document_directory(storage, id, 1, final) < 0)
+    if (verify_document(storage, stored, 0) < 0 || document_directory(storage, id, 0, pending) < 0 || document_directory(storage, id, 1, final) < 0)
     {
-        pthread_mutex_unlock(&storage->mutex);
+        pthread_mutex_unlock(&stored->mutex);
         return -1;
     }
-    if (rename(pending, final) < 0)
+    /* O manifest final é escrito em pending antes da publicação do diretório. */
+    if (write_manifest(storage, stored, 0) < 0 || rename(pending, final) < 0)
     {
-        if (errno != EEXIST)
-        {
-            pthread_mutex_unlock(&storage->mutex);
-            return -1;
-        }
+        stored->state = TRANSFER_VERIFYING;
+        pthread_mutex_unlock(&stored->mutex);
+        return -1;
+    }
+    if (sync_parent(pending) < 0 || sync_parent(final) < 0)
+    {
+        /* Reverte para permitir nova tentativa sem confirmar estado não durável. */
+        if (rename(final, pending) == 0) stored->state = TRANSFER_VERIFYING;
+        pthread_mutex_unlock(&stored->mutex);
+        return -1;
     }
     stored->state = TRANSFER_FINISHED;
-    if (write_manifest(storage, stored, 1) < 0)
-    {
-        pthread_mutex_unlock(&storage->mutex);
-        return -1;
-    }
     *document = stored->document;
-    pthread_mutex_unlock(&storage->mutex);
+    pthread_mutex_unlock(&stored->mutex);
     return 0;
 }
 
@@ -1152,5 +1138,30 @@ int storage_list(Storage *storage, TransferDocument **documents, size_t *count)
     pthread_mutex_unlock(&storage->mutex);
     *documents = list;
     *count = total;
+    return 0;
+}
+
+int storage_descriptors(Storage *storage, const ObjectID *id, MetadataChunk **output)
+{
+    if (storage == NULL || id == NULL || output == NULL) { errno = EINVAL; return -1; }
+    *output = NULL;
+    pthread_mutex_lock(&storage->mutex);
+    StoredDocument *stored = find_document(storage, id);
+    if (stored == NULL) { pthread_mutex_unlock(&storage->mutex); errno = ENOENT; return -1; }
+    pthread_mutex_unlock(&storage->mutex);
+    pthread_mutex_lock(&stored->mutex);
+    if (stored->state != TRANSFER_FINISHED) { pthread_mutex_unlock(&stored->mutex); errno = ENODATA; return -1; }
+    MetadataChunk *list = calloc((size_t)stored->document.chunk_count, sizeof(*list));
+    if (list == NULL) { pthread_mutex_unlock(&stored->mutex); return -1; }
+    for (uint64_t i = 0U; i < stored->document.chunk_count; ++i)
+    {
+        list[i].index = i;
+        list[i].offset = stored->chunks[i].offset;
+        list[i].raw_size = stored->chunks[i].raw_size;
+        list[i].compressed_size = stored->chunks[i].compressed_size;
+        memcpy(list[i].hash, stored->chunks[i].hash, OBJECT_ID_SIZE);
+    }
+    pthread_mutex_unlock(&stored->mutex);
+    *output = list;
     return 0;
 }

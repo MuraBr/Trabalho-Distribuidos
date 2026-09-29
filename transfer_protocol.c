@@ -1,3 +1,4 @@
+#include "wire.h"
 #include "transfer_protocol.h"
 
 #include <arpa/inet.h>
@@ -12,6 +13,11 @@
 #define ENDPOINT_FIXED_SIZE (NODE_ID_SIZE + 1U + 2U)
 
 static atomic_uint_least32_t transaction_sequence = 0;
+static atomic_uint_fast64_t transaction_clock = 0;
+
+#define DESCRIPTOR_SIZE 56U
+static void encode_descriptor(uint8_t *output, const MetadataChunk *chunk);
+static void decode_descriptor(const uint8_t *input, MetadataChunk *chunk);
 
 static size_t bounded_string_length(const char *text, size_t capacity)
 {
@@ -24,51 +30,11 @@ static size_t bounded_string_length(const char *text, size_t capacity)
     return length;
 }
 
-static void put_u16(uint8_t *destination, uint16_t value)
-{
-    destination[0] = (uint8_t)(value >> 8);
-    destination[1] = (uint8_t)value;
-}
 
-static uint16_t get_u16(const uint8_t *source)
-{
-    return (uint16_t)(((uint16_t)source[0] << 8) | source[1]);
-}
 
-static void put_u32(uint8_t *destination, uint32_t value)
-{
-    destination[0] = (uint8_t)(value >> 24);
-    destination[1] = (uint8_t)(value >> 16);
-    destination[2] = (uint8_t)(value >> 8);
-    destination[3] = (uint8_t)value;
-}
 
-static uint32_t get_u32(const uint8_t *source)
-{
-    return ((uint32_t)source[0] << 24) | ((uint32_t)source[1] << 16) | ((uint32_t)source[2] << 8) | source[3];
-}
 
-static void put_u64(uint8_t *destination, uint64_t value)
-{
-    size_t index;
 
-    for (index = 0U; index < 8U; ++index)
-    {
-        destination[index] = (uint8_t)(value >> (56U - index * 8U));
-    }
-}
-
-static uint64_t get_u64(const uint8_t *source)
-{
-    uint64_t value = 0U;
-    size_t index;
-
-    for (index = 0U; index < 8U; ++index)
-    {
-        value = (value << 8) | source[index];
-    }
-    return value;
-}
 
 static int object_id_from_hex(ObjectID *id, const char *text)
 {
@@ -120,12 +86,12 @@ static int encode_document_at(const TransferDocument *document, uint8_t operatio
     output[offset++] = operation;
     memcpy(output + offset, document->id.bytes, OBJECT_ID_SIZE);
     offset += OBJECT_ID_SIZE;
-    put_u64(output + offset, document->file_size);
+    wire_put_u64(output + offset, document->file_size);
     offset += 8U;
-    put_u64(output + offset, document->chunk_count);
+    wire_put_u64(output + offset, document->chunk_count);
     offset += 8U;
     output[offset++] = document->compression;
-    put_u16(output + offset, (uint16_t)name_size);
+    wire_put_u16(output + offset, (uint16_t)name_size);
     offset += 2U;
     memcpy(output + offset, document->name, name_size);
     offset += name_size;
@@ -146,12 +112,12 @@ static int decode_document_at(const uint8_t *payload, size_t payload_size, uint8
     memset(document, 0, sizeof(*document));
     memcpy(document->id.bytes, payload + offset, OBJECT_ID_SIZE);
     offset += OBJECT_ID_SIZE;
-    document->file_size = get_u64(payload + offset);
+    document->file_size = wire_get_u64(payload + offset);
     offset += 8U;
-    document->chunk_count = get_u64(payload + offset);
+    document->chunk_count = wire_get_u64(payload + offset);
     offset += 8U;
     document->compression = payload[offset++];
-    name_size = get_u16(payload + offset);
+    name_size = wire_get_u16(payload + offset);
     offset += 2U;
     if (name_size == 0U || name_size >= METADATA_NAME_SIZE || offset + name_size > payload_size || memchr(payload + offset, '\0', name_size) != NULL || memchr(payload + offset, '/', name_size) != NULL || document->compression != COMPRESSION_LZ4 || document->chunk_count != document->file_size / METADATA_CHUNK_SIZE + (document->file_size % METADATA_CHUNK_SIZE != 0U))
     {
@@ -167,10 +133,18 @@ static int decode_document_at(const uint8_t *payload, size_t payload_size, uint8
 
 void transfer_fill_transaction_id(uint8_t output[TRANSACTION_ID_SIZE], const uint8_t source_node[NODE_ID_SIZE])
 {
-    uint64_t timestamp = (uint64_t)time(NULL);
+    struct timespec now;
+    (void)timespec_get(&now, TIME_UTC);
+    uint64_t timestamp = (uint64_t)now.tv_sec * UINT64_C(1000000000) + (uint64_t)now.tv_nsec;
+    uint_fast64_t previous = atomic_load_explicit(&transaction_clock, memory_order_relaxed);
+    for (;;)
+    {
+        if (timestamp <= previous) timestamp = previous + 1U;
+        if (atomic_compare_exchange_weak_explicit(&transaction_clock, &previous, timestamp, memory_order_relaxed, memory_order_relaxed)) break;
+    }
     uint32_t sequence = atomic_fetch_add_explicit(&transaction_sequence, 1U, memory_order_relaxed) + 1U;
 
-    put_u64(output, timestamp);
+    wire_put_u64(output, timestamp);
     if (source_node == NULL)
     {
         memset(output + 8U, 0, 4U);
@@ -179,7 +153,7 @@ void transfer_fill_transaction_id(uint8_t output[TRANSACTION_ID_SIZE], const uin
     {
         memcpy(output + 8U, source_node, 4U);
     }
-    put_u32(output + 12U, sequence);
+    wire_put_u32(output + 12U, sequence);
 }
 
 int transfer_encode_document(const TransferDocument *document, uint8_t **output, uint32_t *output_size, uint8_t operation)
@@ -252,13 +226,13 @@ int transfer_encode_chunk(const TransferChunk *chunk, uint8_t operation, uint8_t
     buffer[offset++] = operation;
     memcpy(buffer + offset, chunk->id.bytes, OBJECT_ID_SIZE);
     offset += OBJECT_ID_SIZE;
-    put_u64(buffer + offset, chunk->index);
+    wire_put_u64(buffer + offset, chunk->index);
     offset += 8U;
-    put_u64(buffer + offset, chunk->offset);
+    wire_put_u64(buffer + offset, chunk->offset);
     offset += 8U;
-    put_u32(buffer + offset, chunk->raw_size);
+    wire_put_u32(buffer + offset, chunk->raw_size);
     offset += 4U;
-    put_u32(buffer + offset, chunk->compressed_size);
+    wire_put_u32(buffer + offset, chunk->compressed_size);
     offset += 4U;
     memcpy(buffer + offset, chunk->hash, OBJECT_ID_SIZE);
     offset += OBJECT_ID_SIZE;
@@ -280,13 +254,13 @@ int transfer_decode_chunk(const uint8_t *payload, size_t payload_size, uint8_t e
     memset(chunk, 0, sizeof(*chunk));
     memcpy(chunk->id.bytes, payload + offset, OBJECT_ID_SIZE);
     offset += OBJECT_ID_SIZE;
-    chunk->index = get_u64(payload + offset);
+    chunk->index = wire_get_u64(payload + offset);
     offset += 8U;
-    chunk->offset = get_u64(payload + offset);
+    chunk->offset = wire_get_u64(payload + offset);
     offset += 8U;
-    chunk->raw_size = get_u32(payload + offset);
+    chunk->raw_size = wire_get_u32(payload + offset);
     offset += 4U;
-    chunk->compressed_size = get_u32(payload + offset);
+    chunk->compressed_size = wire_get_u32(payload + offset);
     offset += 4U;
     memcpy(chunk->hash, payload + offset, OBJECT_ID_SIZE);
     offset += OBJECT_ID_SIZE;
@@ -360,7 +334,7 @@ int transfer_encode_lookup_request(const char *selector, uint8_t **output, uint3
         return -1;
     }
     buffer[0] = type;
-    put_u16(buffer + 1U, (uint16_t)length);
+    wire_put_u16(buffer + 1U, (uint16_t)length);
     if (type == TRANSFER_SELECTOR_OBJECT_ID)
     {
         memcpy(buffer + 3U, id.bytes, OBJECT_ID_SIZE);
@@ -383,7 +357,7 @@ int transfer_decode_lookup_request(const uint8_t *payload, size_t payload_size, 
         errno = EBADMSG;
         return -1;
     }
-    length = get_u16(payload + 1U);
+    length = wire_get_u16(payload + 1U);
     if ((payload[0] != TRANSFER_SELECTOR_OBJECT_ID && payload[0] != TRANSFER_SELECTOR_NAME) || 3U + length != payload_size)
     {
         errno = EBADMSG;
@@ -455,12 +429,12 @@ int transfer_encode_lookup_result(const TransferLookupResult *result, uint8_t **
             errno = EOVERFLOW;
             return -1;
         }
-        if (size > SIZE_MAX - 2U)
+        if (size > SIZE_MAX - 2U - DESCRIPTOR_SIZE)
         {
             errno = EOVERFLOW;
             return -1;
         }
-        size += 2U;
+        size += 2U + DESCRIPTOR_SIZE;
         for (peer_index = 0U; peer_index < result->chunks[chunk_index].peer_count; ++peer_index)
         {
             size_t ip_size = bounded_string_length(result->chunks[chunk_index].peers[peer_index].ip, NODE_ADDRESS_SIZE);
@@ -493,7 +467,9 @@ int transfer_encode_lookup_result(const TransferLookupResult *result, uint8_t **
     {
         size_t peer_index;
 
-        put_u16(buffer + offset, (uint16_t)result->chunks[chunk_index].peer_count);
+        encode_descriptor(buffer + offset, &result->chunks[chunk_index].descriptor);
+        offset += DESCRIPTOR_SIZE;
+        wire_put_u16(buffer + offset, (uint16_t)result->chunks[chunk_index].peer_count);
         offset += 2U;
         for (peer_index = 0U; peer_index < result->chunks[chunk_index].peer_count; ++peer_index)
         {
@@ -505,7 +481,7 @@ int transfer_encode_lookup_result(const TransferLookupResult *result, uint8_t **
             buffer[offset++] = (uint8_t)ip_size;
             memcpy(buffer + offset, endpoint->ip, ip_size);
             offset += ip_size;
-            put_u16(buffer + offset, endpoint->port);
+            wire_put_u16(buffer + offset, endpoint->port);
             offset += 2U;
         }
     }
@@ -529,6 +505,11 @@ int transfer_decode_lookup_result(const uint8_t *payload, size_t payload_size, T
     {
         return -1;
     }
+    if (result->document.chunk_count > (payload_size - offset) / (DESCRIPTOR_SIZE + 2U))
+    {
+        errno = EBADMSG;
+        return -1;
+    }
     if (result->document.chunk_count != 0U)
     {
         result->chunks = calloc((size_t)result->document.chunk_count, sizeof(*result->chunks));
@@ -542,11 +523,14 @@ int transfer_decode_lookup_result(const uint8_t *payload, size_t payload_size, T
         uint16_t peer_count;
         size_t peer_index;
 
-        if (offset + 2U > payload_size)
+        if (offset + DESCRIPTOR_SIZE + 2U > payload_size)
         {
             goto invalid;
         }
-        peer_count = get_u16(payload + offset);
+        decode_descriptor(payload + offset, &result->chunks[chunk_index].descriptor);
+        if (result->chunks[chunk_index].descriptor.index != chunk_index) goto invalid;
+        offset += DESCRIPTOR_SIZE;
+        peer_count = wire_get_u16(payload + offset);
         offset += 2U;
         result->chunks[chunk_index].peer_count = peer_count;
         if (peer_count != 0U)
@@ -577,7 +561,7 @@ int transfer_decode_lookup_result(const uint8_t *payload, size_t payload_size, T
             memcpy(endpoint->ip, payload + offset, ip_size);
             endpoint->ip[ip_size] = '\0';
             offset += ip_size;
-            endpoint->port = get_u16(payload + offset);
+            endpoint->port = wire_get_u16(payload + offset);
             offset += 2U;
             if (endpoint->port == 0U)
             {
@@ -613,7 +597,7 @@ int transfer_encode_chunk_request(const ObjectID *id, uint64_t index, uint8_t **
     }
     buffer[0] = TRANSFER_DOWNLOAD_CHUNK;
     memcpy(buffer + 1U, id->bytes, OBJECT_ID_SIZE);
-    put_u64(buffer + 1U + OBJECT_ID_SIZE, index);
+    wire_put_u64(buffer + 1U + OBJECT_ID_SIZE, index);
     *output = buffer;
     *output_size = 1U + OBJECT_ID_SIZE + 8U;
     return 0;
@@ -627,6 +611,54 @@ int transfer_decode_chunk_request(const uint8_t *payload, size_t payload_size, O
         return -1;
     }
     memcpy(id->bytes, payload + 1U, OBJECT_ID_SIZE);
-    *index = get_u64(payload + 1U + OBJECT_ID_SIZE);
+    *index = wire_get_u64(payload + 1U + OBJECT_ID_SIZE);
+    return 0;
+}
+
+static void encode_descriptor(uint8_t *output, const MetadataChunk *chunk)
+{
+    wire_put_u64(output, chunk->index);
+    wire_put_u64(output + 8U, chunk->offset);
+    wire_put_u32(output + 16U, chunk->raw_size);
+    wire_put_u32(output + 20U, chunk->compressed_size);
+    memcpy(output + 24U, chunk->hash, OBJECT_ID_SIZE);
+}
+
+static void decode_descriptor(const uint8_t *input, MetadataChunk *chunk)
+{
+    chunk->index = wire_get_u64(input);
+    chunk->offset = wire_get_u64(input + 8U);
+    chunk->raw_size = wire_get_u32(input + 16U);
+    chunk->compressed_size = wire_get_u32(input + 20U);
+    memcpy(chunk->hash, input + 24U, OBJECT_ID_SIZE);
+}
+
+int transfer_encode_announcement(const TransferDocument *document, const MetadataChunk *chunks, uint8_t **output, uint32_t *size)
+{
+    if (document == NULL || chunks == NULL || output == NULL || size == NULL) { errno = EINVAL; return -1; }
+    *output = NULL;
+    size_t base = document_wire_size(document), used;
+    if (base > MAX_PAYLOAD_SIZE || document->chunk_count > (MAX_PAYLOAD_SIZE - base) / DESCRIPTOR_SIZE) { errno = EMSGSIZE; return -1; }
+    size_t total = base + (size_t)document->chunk_count * DESCRIPTOR_SIZE;
+    uint8_t *buffer = malloc(total);
+    if (buffer == NULL) return -1;
+    if (encode_document_at(document, TRANSFER_STORE_ANNOUNCE, buffer, total, &used) < 0) { free(buffer); return -1; }
+    for (uint64_t i = 0U; i < document->chunk_count; ++i) encode_descriptor(buffer + used + (size_t)i * DESCRIPTOR_SIZE, &chunks[i]);
+    *output = buffer;
+    *size = (uint32_t)total;
+    return 0;
+}
+
+int transfer_decode_announcement(const uint8_t *payload, size_t size, TransferDocument *document, MetadataChunk **chunks)
+{
+    size_t used;
+    if (chunks == NULL || document == NULL) { errno = EINVAL; return -1; }
+    *chunks = NULL;
+    if (decode_document_at(payload, size, TRANSFER_STORE_ANNOUNCE, document, &used) < 0) return -1;
+    if (document->chunk_count == 0U || document->chunk_count > (size - used) / DESCRIPTOR_SIZE || size - used != document->chunk_count * DESCRIPTOR_SIZE || document->chunk_count > SIZE_MAX / sizeof(**chunks)) { errno = EBADMSG; return -1; }
+    MetadataChunk *list = calloc((size_t)document->chunk_count, sizeof(*list));
+    if (list == NULL) return -1;
+    for (uint64_t i = 0U; i < document->chunk_count; ++i) decode_descriptor(payload + used + (size_t)i * DESCRIPTOR_SIZE, &list[i]);
+    *chunks = list;
     return 0;
 }

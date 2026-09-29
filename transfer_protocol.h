@@ -13,71 +13,19 @@ typedef enum
     TRANSFER_STORE_BEGIN = 1,
     TRANSFER_STORE_CHUNK = 2,
     TRANSFER_STORE_COMMIT = 3,
-    TRANSFER_STORE_ANNOUNCE = 4
+    TRANSFER_STORE_ANNOUNCE = 5 /* formato C2 v2; código 4 antigo não é aceito */
 } TransferStoreOperation;
 
 typedef enum
 {
-    TRANSFER_DOWNLOAD_METADATA = 1,
+    TRANSFER_DOWNLOAD_METADATA = 3 /* metadados com descritores, v2 */,
     TRANSFER_DOWNLOAD_CHUNK = 2
 } TransferDownloadOperation;
 
-typedef enum
-{
-    TRANSFER_SELECTOR_OBJECT_ID = 1,
-    TRANSFER_SELECTOR_NAME = 2
-} TransferSelectorType;
+#include "transfer_types.h"
 
-typedef enum
-{
-    TRANSFER_CREATED = 0,
-    TRANSFER_QUEUED = 1,
-    TRANSFER_STARTED = 2,
-    TRANSFER_TRANSFERRING = 3,
-    TRANSFER_VERIFYING = 4,
-    TRANSFER_FINISHED = 5,
-    TRANSFER_REPLICATED = 6
-} TransferState;
-
-typedef struct
-{
-    ObjectID id;
-    char name[METADATA_NAME_SIZE];
-    uint64_t file_size;
-    uint64_t chunk_count;
-    uint8_t compression;
-} TransferDocument;
-
-typedef struct
-{
-    ObjectID id;
-    uint64_t index;
-    uint64_t offset;
-    uint32_t raw_size;
-    uint32_t compressed_size;
-    uint8_t hash[OBJECT_ID_SIZE];
-    const uint8_t *data;
-} TransferChunk;
-
-typedef struct
-{
-    NodeID node_id;
-    char ip[NODE_ADDRESS_SIZE];
-    uint16_t port;
-} TransferEndpoint;
-
-typedef struct
-{
-    size_t peer_count;
-    TransferEndpoint *peers;
-} TransferChunkLocations;
-
-typedef struct
-{
-    TransferDocument document;
-    TransferChunkLocations *chunks;
-} TransferLookupResult;
-
+int transfer_encode_announcement(const TransferDocument *document, const MetadataChunk *chunks, uint8_t **output, uint32_t *size);
+int transfer_decode_announcement(const uint8_t *payload, size_t size, TransferDocument *document, MetadataChunk **chunks);
 void transfer_fill_transaction_id(uint8_t output[TRANSACTION_ID_SIZE], const uint8_t source_node[NODE_ID_SIZE]);
 int transfer_encode_document(const TransferDocument *document, uint8_t **output, uint32_t *output_size, uint8_t operation);
 int transfer_decode_document(const uint8_t *payload, size_t payload_size, uint8_t expected_operation, TransferDocument *document);

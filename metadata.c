@@ -6,16 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* Tipos opacos da ABI pública EVP do OpenSSL; como node.c, permite libcrypto sem headers de desenvolvimento. */
-typedef struct evp_md_ctx_st EVP_MD_CTX;
-typedef struct evp_md_st EVP_MD;
-typedef struct engine_st ENGINE;
-extern EVP_MD_CTX *EVP_MD_CTX_new(void);
-extern void EVP_MD_CTX_free(EVP_MD_CTX *ctx);
-extern const EVP_MD *EVP_sha256(void);
-extern int EVP_DigestInit_ex(EVP_MD_CTX *ctx, const EVP_MD *type, ENGINE *impl);
-extern int EVP_DigestUpdate(EVP_MD_CTX *ctx, const void *data, size_t count);
-extern int EVP_DigestFinal_ex(EVP_MD_CTX *ctx, unsigned char *md, unsigned int *size);
+#include <openssl/evp.h>
 
 #define BUCKET_COUNT 257U
 /* Registros esparsos: não alocamos todos os chunks ao cadastrar um arquivo grande. */
@@ -29,6 +20,7 @@ typedef struct Entry
 {
     MetadataDocument document;
     Availability *available;
+    MetadataChunk *chunks;
     struct Entry *next;
 } Entry;
 struct MetadataStore
@@ -107,6 +99,7 @@ static Entry **find_entry(MetadataStore *store, const ObjectID *id)
 static void free_entry(Entry *entry)
 {
     while (entry->available != NULL) { Availability *next = entry->available->next; free(entry->available); entry->available = next; }
+    free(entry->chunks);
     free(entry);
 }
 
@@ -241,4 +234,103 @@ int metadata_chunk_peers(MetadataStore *store, const ObjectID *id, uint64_t chun
     }
     pthread_mutex_unlock(&store->mutex);
     return error == 0 ? 0 : fail(error);
+}
+
+/* Publicação atômica: aloca e valida uma cópia completa antes de trocar o bucket. */
+int metadata_announce(MetadataStore *store, const MetadataDocument *document, const MetadataChunk *chunks, const NodeID *owner)
+{
+    if (store == NULL || document == NULL || chunks == NULL || owner == NULL || document->chunk_count == 0U || document->chunk_count > SIZE_MAX / sizeof(*chunks) || document->chunk_count != document->file_size / METADATA_CHUNK_SIZE + (document->file_size % METADATA_CHUNK_SIZE != 0U) || strnlen(document->name, METADATA_NAME_SIZE) == METADATA_NAME_SIZE) return fail(EINVAL);
+    Entry *candidate = calloc(1U, sizeof(*candidate));
+    if (candidate == NULL) return -1;
+    candidate->document = *document;
+    candidate->document.owner = *owner;
+    candidate->document.version = 1U;
+    candidate->chunks = malloc((size_t)document->chunk_count * sizeof(*chunks));
+    if (candidate->chunks == NULL) { free_entry(candidate); return -1; }
+    memcpy(candidate->chunks, chunks, (size_t)document->chunk_count * sizeof(*chunks));
+    for (uint64_t i = 0U; i < document->chunk_count; ++i)
+    {
+        uint64_t offset = i * METADATA_CHUNK_SIZE;
+        uint64_t remaining = document->file_size - offset;
+        if (chunks[i].index != i || chunks[i].offset != offset || chunks[i].raw_size != (remaining > METADATA_CHUNK_SIZE ? METADATA_CHUNK_SIZE : remaining) || chunks[i].compressed_size == 0U) { free_entry(candidate); return fail(EINVAL); }
+        Availability *item = calloc(1U, sizeof(*item));
+        if (item == NULL) { free_entry(candidate); return -1; }
+        item->index = i;
+        item->peer = *owner;
+        item->next = candidate->available;
+        candidate->available = item;
+    }
+    if (lock_store(store) < 0) { free_entry(candidate); return -1; }
+    Entry **slot = find_entry(store, &document->id);
+    Entry *old = *slot;
+    int error = 0;
+    if (old != NULL)
+    {
+        if (old->document.file_size != document->file_size || old->document.chunk_count != document->chunk_count) error = EEXIST;
+        for (uint64_t i = 0U; error == 0 && old->chunks != NULL && i < document->chunk_count; ++i)
+            if (old->chunks[i].raw_size != chunks[i].raw_size || memcmp(old->chunks[i].hash, chunks[i].hash, OBJECT_ID_SIZE) != 0) error = EEXIST;
+        for (Availability *item = old->available; error == 0 && item != NULL; item = item->next)
+        {
+            if (memcmp(item->peer.bytes, owner->bytes, NODE_ID_SIZE) == 0) continue;
+            Availability *copy = malloc(sizeof(*copy));
+            if (copy == NULL) { error = ENOMEM; break; }
+            *copy = *item;
+            copy->next = candidate->available;
+            candidate->available = copy;
+        }
+        if (error == 0) { candidate->document = old->document; candidate->next = old->next; }
+    }
+    if (error == 0) { *slot = candidate; if (old != NULL) free_entry(old); }
+    pthread_mutex_unlock(&store->mutex);
+    if (error != 0) { free_entry(candidate); return fail(error); }
+    return 0;
+}
+
+int metadata_find_name(MetadataStore *store, const char *name, ObjectID *id)
+{
+    if (store == NULL || name == NULL || id == NULL) return fail(EINVAL);
+    if (lock_store(store) < 0) return -1;
+    int found = 0;
+    ObjectID result = {{0}};
+    for (size_t i = 0U; i < BUCKET_COUNT; ++i)
+        for (Entry *entry = store->buckets[i]; entry != NULL; entry = entry->next)
+            if (strcmp(entry->document.name, name) == 0)
+            {
+                if (found) { pthread_mutex_unlock(&store->mutex); return fail(ENOTUNIQ); }
+                result = entry->document.id;
+                found = 1;
+            }
+    pthread_mutex_unlock(&store->mutex);
+    if (!found) return fail(ENOENT);
+    *id = result;
+    return 0;
+}
+
+int metadata_chunk_descriptor(MetadataStore *store, const ObjectID *id, uint64_t index, MetadataChunk *output)
+{
+    if (store == NULL || id == NULL || output == NULL) return fail(EINVAL);
+    if (lock_store(store) < 0) return -1;
+    Entry *entry = *find_entry(store, id);
+    int valid = entry != NULL && entry->chunks != NULL && index < entry->document.chunk_count;
+    if (valid) *output = entry->chunks[index];
+    pthread_mutex_unlock(&store->mutex);
+    return valid ? 0 : fail(ENOENT);
+}
+
+int metadata_remove_peer(MetadataStore *store, const NodeID *peer)
+{
+    if (store == NULL || peer == NULL) return fail(EINVAL);
+    if (lock_store(store) < 0) return -1;
+    for (size_t i = 0U; i < BUCKET_COUNT; ++i)
+        for (Entry *entry = store->buckets[i]; entry != NULL; entry = entry->next)
+        {
+            Availability **slot = &entry->available;
+            while (*slot != NULL)
+            {
+                if (memcmp((*slot)->peer.bytes, peer->bytes, NODE_ID_SIZE) == 0) { Availability *old = *slot; *slot = old->next; free(old); }
+                else slot = &(*slot)->next;
+            }
+        }
+    pthread_mutex_unlock(&store->mutex);
+    return 0;
 }

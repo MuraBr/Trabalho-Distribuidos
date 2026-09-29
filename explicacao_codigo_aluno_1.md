@@ -1,13 +1,15 @@
 # Explicação da implementação — Aluno 1, Checkpoint 2
 
+Consulte a [refatoração integrada](refatoracao_checkpoint_2.md) para comandos atualizados, configuração, ownership, wire e evidências. As funções estão no [guia completo](guia_completo_funcoes.md).
+
 ## Resultado
 
-A aplicação implementa upload e download de documentos PDF em um P2P híbrido. O Super Peer mantém metadados e localizações; os Peers armazenam chunks comprimidos; o cliente consulta o índice e transfere diretamente com os Peers. A base do Checkpoint 1 continua compatível com os scripts anteriores.
+A aplicação implementa upload e download de documentos PDF em um P2P híbrido. O Super Peer mantém metadados e localizações; os Peers armazenam chunks comprimidos; o Peer ativo consulta o índice e transfere diretamente com outros Peers, a pedido da CLI via socket Unix. A base do Checkpoint 1 continua compatível com os scripts anteriores.
 
 ```text
-upload:   cliente ──chunks──► Peer ──ANNOUNCE──► Super Peer
+upload:   Peer ativo ──chunks──► Peer ──ANNOUNCE──► Super Peer
 lookup:   cliente ──LOOKUP──► Super Peer
-download: cliente ◄─chunks─── Peer(s)
+download: Peer ativo ◄─chunks─── Peer(s)
 ```
 
 ## Executáveis
@@ -17,7 +19,7 @@ download: cliente ◄─chunks─── Peer(s)
 - `bin/node`: link para `bin/superpeer`, por compatibilidade.
 - `bin/client`: link para `bin/peer`, por compatibilidade.
 
-`client.c` permanece apenas como referência histórica e não participa do build padrão.
+`client.c` foi removido; o alias bin/client mantém compatibilidade sem duplicar implementação.
 
 ## Rede e protocolo
 
@@ -35,7 +37,7 @@ Depois de um COMMIT válido, o Peer envia `STORE/ANNOUNCE`. O Super Peer exige q
 
 ## Upload
 
-1. `content_validate_pdf` exige extensão `.pdf` e assinatura `%PDF-` nos primeiros 1024 bytes.
+1. `content_validate_pdf` exige extensão `.pdf` (case-insensitive), sem exigir assinatura; os fixtures sintéticos também são aceitos.
 2. `object_id_file` lê incrementalmente e calcula o ObjectID SHA-256 do documento inteiro.
 3. O arquivo é dividido em chunks de 4 MiB.
 4. Um pool obtém trabalhos por índice; cada worker usa `pread`.
@@ -77,7 +79,7 @@ Cada worker usa conexão própria. Isso evita compartilhar estado de framing ent
 - NodeID, ObjectID e SHA-256 de chunks: libcrypto.
 - Compressão/descompressão: `liblz4.so.1`.
 
-Não há implementação manual desses algoritmos. Como o ambiente possui as bibliotecas de execução sem todos os headers de desenvolvimento, os módulos declaram apenas as funções da ABI estável que utilizam e o Makefile liga versões instaladas.
+Não há implementação manual desses algoritmos nem declarações manuais de ABI. Os módulos incluem os headers oficiais; make deps fornece headers locais de OpenSSL/LZ4 sem sudo quando o ambiente possui apenas bibliotecas de execução.
 
 ## Comandos de demonstração
 

@@ -1,157 +1,32 @@
-#define _POSIX_C_SOURCE 200809L
 #include "directory.h"
-
 #include <errno.h>
-#include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 
-typedef struct DirectoryName
-{
-    ObjectID id;
-    char name[METADATA_NAME_SIZE];
-    struct DirectoryName *next;
-} DirectoryName;
-
-struct Directory
-{
-    MetadataStore *metadata;
-    SuperPeer *superpeer;
-    pthread_mutex_t mutex;
-    DirectoryName *names;
-};
+struct Directory { MetadataStore *metadata; SuperPeer *superpeer; };
 
 int directory_create(MetadataStore *metadata, SuperPeer *superpeer, Directory **output)
 {
-    Directory *directory;
-    int error;
-
-    if (metadata == NULL || superpeer == NULL || output == NULL)
-    {
-        errno = EINVAL;
-        return -1;
-    }
-    *output = NULL;
-    directory = calloc(1U, sizeof(*directory));
-    if (directory == NULL)
-    {
-        return -1;
-    }
-    error = pthread_mutex_init(&directory->mutex, NULL);
-    if (error != 0)
-    {
-        free(directory);
-        errno = error;
-        return -1;
-    }
-    directory->metadata = metadata;
-    directory->superpeer = superpeer;
-    *output = directory;
+    if (metadata == NULL || superpeer == NULL || output == NULL) { errno = EINVAL; return -1; }
+    *output = calloc(1U, sizeof(**output));
+    if (*output == NULL) return -1;
+    (*output)->metadata = metadata;
+    (*output)->superpeer = superpeer;
     return 0;
 }
 
-void directory_destroy(Directory *directory)
+void directory_destroy(Directory *directory) { free(directory); }
+
+/* O índice de nomes e o anúncio completo pertencem à mesma hash table. */
+int directory_announce(Directory *directory, const TransferDocument *document, const MetadataChunk *chunks, const NodeID *owner)
 {
-    DirectoryName *name;
-
-    if (directory == NULL)
-    {
-        return;
-    }
-    name = directory->names;
-    while (name != NULL)
-    {
-        DirectoryName *next = name->next;
-
-        free(name);
-        name = next;
-    }
-    pthread_mutex_destroy(&directory->mutex);
-    free(directory);
-}
-
-int directory_announce(Directory *directory, const TransferDocument *document, const NodeID *owner)
-{
-    DirectoryName *name;
-    uint64_t index;
-    int error;
-
-    if (directory == NULL || document == NULL || owner == NULL || document->compression != COMPRESSION_LZ4)
-    {
-        errno = EINVAL;
-        return -1;
-    }
-    if (metadata_register_document(directory->metadata, &document->id, document->name, document->file_size) < 0)
-    {
-        return -1;
-    }
-    for (index = 0U; index < document->chunk_count; ++index)
-    {
-        if (metadata_register_chunk(directory->metadata, &document->id, index, owner) < 0)
-        {
-            return -1;
-        }
-    }
-    error = pthread_mutex_lock(&directory->mutex);
-    if (error != 0)
-    {
-        errno = error;
-        return -1;
-    }
-    for (name = directory->names; name != NULL; name = name->next)
-    {
-        if (memcmp(name->id.bytes, document->id.bytes, OBJECT_ID_SIZE) == 0)
-        {
-            pthread_mutex_unlock(&directory->mutex);
-            return 0;
-        }
-    }
-    name = calloc(1U, sizeof(*name));
-    if (name == NULL)
-    {
-        pthread_mutex_unlock(&directory->mutex);
-        return -1;
-    }
-    name->id = document->id;
-    strcpy(name->name, document->name);
-    name->next = directory->names;
-    directory->names = name;
-    pthread_mutex_unlock(&directory->mutex);
-    return 0;
-}
-
-static int resolve_name(Directory *directory, const char *name, ObjectID *id)
-{
-    DirectoryName *current;
-    int found = 0;
-    int error = pthread_mutex_lock(&directory->mutex);
-
-    if (error != 0)
-    {
-        errno = error;
-        return -1;
-    }
-    for (current = directory->names; current != NULL; current = current->next)
-    {
-        if (strcmp(current->name, name) == 0)
-        {
-            if (found && memcmp(id->bytes, current->id.bytes, OBJECT_ID_SIZE) != 0)
-            {
-                pthread_mutex_unlock(&directory->mutex);
-                errno = ENOTUNIQ;
-                return -1;
-            }
-            *id = current->id;
-            found = 1;
-        }
-    }
-    pthread_mutex_unlock(&directory->mutex);
-    if (!found)
-    {
-        errno = ENOENT;
-        return -1;
-    }
-    return 0;
+    if (directory == NULL || document == NULL || owner == NULL || document->compression != COMPRESSION_LZ4) { errno = EINVAL; return -1; }
+    size_t length = strlen(document->name);
+    if (length < 4U || strcasecmp(document->name + length - 4U, ".pdf") != 0) { errno = EINVAL; return -1; }
+    MetadataDocument metadata = {.id = document->id, .file_size = document->file_size, .chunk_count = document->chunk_count, .version = 1U, .owner = *owner, .compression = document->compression};
+    memcpy(metadata.name, document->name, sizeof(metadata.name));
+    return metadata_announce(directory->metadata, &metadata, chunks, owner);
 }
 
 int directory_lookup(Directory *directory, TransferSelectorType type, const ObjectID *id, const char *name, TransferLookupResult *result)
@@ -170,7 +45,7 @@ int directory_lookup(Directory *directory, TransferSelectorType type, const Obje
     {
         selected = *id;
     }
-    else if (resolve_name(directory, name, &selected) < 0)
+    else if (metadata_find_name(directory->metadata, name, &selected) < 0)
     {
         return -1;
     }
@@ -193,6 +68,7 @@ int directory_lookup(Directory *directory, TransferSelectorType type, const Obje
     }
     for (chunk_index = 0U; chunk_index < metadata_document.chunk_count; ++chunk_index)
     {
+        if (metadata_chunk_descriptor(directory->metadata, &selected, chunk_index, &result->chunks[chunk_index].descriptor) < 0) { transfer_lookup_result_free(result); return -1; }
         NodeID *owners = NULL;
         size_t owner_count = 0U;
         size_t owner_index;

@@ -1,40 +1,42 @@
-# Checkpoint 2 — contrato de integração com o Aluno 2
+# Checkpoint 2 — contrato integrado dos dois alunos
 
-## Estado atual
+A arquitetura, comandos, requisitos e evidências atuais estão em [refatoracao_checkpoint_2.md](refatoracao_checkpoint_2.md).
 
-A API local de `metadata.c` está integrada ao processo `bin/superpeer` por `directory.c`. Sua estrutura pública permanece inalterada: documento, ObjectID, tamanho, quantidade de chunks e associações `(ObjectID, índice, NodeID)`. Metadados adicionais do enunciado ficam no manifest persistente do Peer, sem serem apresentados como parte de `metadata.c`.
+## API local e integração TCP são coisas diferentes
 
-O fluxo em rede está implementado:
+A API local de membros está em `membership.c`, com declarações em `superpeer.h`. `superpeer.c` contém somente main; `superpeer_app.c` integra o atendimento TCP. Os testes locais não substituem os testes de rede.
 
-1. o Peer faz `JOIN` e é validado/registrado por `superpeer.c`;
-2. após publicar um documento localmente, envia `STORE/ANNOUNCE`;
-3. `superpeer_app.c` confirma que o `Header.source_node` pertence à tabela de membros;
-4. `directory.c` chama `metadata_register_document` e `metadata_register_chunk`;
-5. em `LOOKUP`, consulta `metadata_find_document` e `metadata_chunk_peers`;
-6. resolve cada NodeID com `superpeer_find_member` e devolve IP/porta ao cliente;
-7. os bytes dos chunks seguem diretamente entre cliente e Peers, sem passar pelo Super Peer.
+A API de metadados foi ampliada com autorização explícita. A antiga limitação de manter sua estrutura inalterada não vigora nesta revisão:
 
-## Convenções compartilhadas
+- `metadata_announce`: recebe documento, descritores completos e NodeID anunciante; aloca a substituição antes de publicar, sob mutex. Retorna -1/errno sem alterar o cadastro em conflito ou falha.
+- `metadata_find_name`: resolve nome no mesmo índice, ENOENT se ausente e ENOTUNIQ se ambíguo.
+- `metadata_chunk_descriptor`: devolve cópia de descritor/hash por índice.
+- `metadata_remove_peer`: remove disponibilidades do NodeID sem apagar documentos.
+- APIs legadas de documento/chunk esparso continuam disponíveis para testes e compatibilidade local; o ANNOUNCE de rede usa a API atômica.
 
-- ObjectID: SHA-256 dos bytes do documento original inteiro.
-- Chunk: 4 MiB (`METADATA_CHUNK_SIZE`), índice iniciado em zero.
-- NodeID e ObjectID são 32 bytes binários na rede.
-- Inteiros multibyte são big-endian.
-- Structs C e ponteiros nunca são transmitidos diretamente.
-- `metadata_chunk_peers` devolve memória que `directory.c` libera com `free()`.
-- O mesmo documento e associação podem ser anunciados novamente; o registro é idempotente.
+`MetadataDocument` contém ObjectID, nome, uint64 tamanho/contagem/versão, owner NodeID completo e compressão. `MetadataChunk` contém índice/offset uint64, tamanhos uint32 e hash de 32 bytes. Versão inicial é 1; não há algoritmo de versionamento distribuído.
 
-## Limites da integração atual
+## Fluxo entre componentes
 
-`metadata.c` continua em memória. Ao reiniciar somente o Super Peer, seu índice é reconstruído quando Peers de armazenamento reiniciam e anunciam seus manifests; não existe ainda solicitação periódica de reanúncio. LEAVE não remove associações e não há detecção automática de Peer morto: durante download, o cliente tenta a próxima localização retornada.
+1. Peer prepara listener e identidade persistente.
+2. JOIN envia descritor; SP recalcula e valida NodeID.
+3. Peer aprende e valida a identidade do SP na resposta.
+4. COMMIT local verifica todos os chunks e ObjectID.
+5. ANNOUNCE v2 envia documento e descritores; SP valida membership e publica o índice atômico.
+6. Outro Peer ativo envia LOOKUP; SP devolve descritores e localizações NodeID/IP/porta.
+7. DOWNLOAD_REQ/REP trafegam diretamente entre Peers. Destinos e respostas são correlacionados.
+8. LEAVE voluntário remove membro e suas disponibilidades.
 
-Nome duplicado para ObjectIDs diferentes é detectado em `directory.c` e retorna erro de ambiguidade. A API atual preserva o primeiro nome associado a um ObjectID. Hash individual, compressão, timestamp, estado e tamanhos dos chunks permanecem nos manifests dos Peers.
+Origem zero é rejeitada no C2; somente comandos legados de diagnóstico C1 continuam admitindo anonimato. Isso não fornece autenticação criptográfica: o trabalho não implementa TLS ou credenciais federadas.
 
-Chord, Gossip, replicação automática, consenso distribuído, 2PC e IST não fazem parte desta entrega e não são declarados como implementados.
+## Memória, erros e compatibilidade
+
+Inteiros wire são big-endian. Structs e ponteiros não são transmitidos. Encoders alocam buffers liberados pelo chamador; consultas de peers devolvem cópias liberadas por free. Lookup composto usa transfer_lookup_result_free. Descritor de chunk decodificado aponta para bytes da mensagem recebida.
+
+Erros de domínio usam payload de dois bytes (versão 1 e código estável); nunca se transmite errno bruto. Formatos: [protocolo_checkpoint_2.md](protocolo_checkpoint_2.md).
+
+O índice do SP continua volátil. Ao reiniciar SP e Peers, manifests são reanunciados. Somente reiniciar SP não solicita reanúncio automático de Peers que já estavam ativos. Fallback tenta localizações existentes, sem criar réplicas.
 
 ## Evidências
 
-- `make test-aluno2`: testa `node.c`, `superpeer.c` e a API local de metadados.
-- `script_testes.sh`: mantém 10/10 no Checkpoint 1.
-- `script_testes_peer.sh`: mantém 14/14 na comunicação anterior.
-- `script_testes_c2.sh`: testa dois Peers, upload pequeno e multichunk, lookup, download, fallback, reinicialização, novo anúncio, idempotência e rejeições básicas.
+`make test-aluno2` cobre APIs locais; `make test-c2` cobre protocolo/storage e falha real de gravação de manifest. `tests/c2/integration.py` cobre a rede com dois Peers, configuração, origem, erros, fallback e reinício do índice. Resultados e limites estão no relatório da refatoração. C3+ permanece fora do escopo.

@@ -4,7 +4,7 @@ A arquitetura, comandos, requisitos e evidências atuais estão em [refatoracao_
 
 ## API local e integração TCP são coisas diferentes
 
-A API local de membros está em `membership.c`, com declarações em `superpeer.h`. `superpeer.c` contém somente main; `superpeer_app.c` integra o atendimento TCP. Os testes locais não substituem os testes de rede.
+A API local de membros tem declarações em `superpeer.h` e implementação em `superpeer.c`, junto com o atendimento TCP e o `main`. Os testes locais compilam apenas a parte de membros com `SUPERPEER_MEMBERSHIP_ONLY`; não substituem os testes de rede. Os antigos `membership.c` e `superpeer_app.c` foram incorporados em 29/09/2026.
 
 A API de metadados foi ampliada com autorização explícita. A antiga limitação de manter sua estrutura inalterada não vigora nesta revisão:
 

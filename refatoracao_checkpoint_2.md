@@ -35,13 +35,10 @@ O canal local serializa comandos por serviço; cada transferência usa seu próp
 
 ## Organização e ownership
 
-- `peer.c`: main/CLI do Peer.
-- `superpeer.c`: main exclusivo do Super Peer.
-- `superpeer_app.c`: handlers TCP, inicialização e encerramento do SP.
-- `membership.c`: API de membros antes misturada com main.
+- `peer.c`: main/CLI e serviço de armazenamento do Peer; incorpora o antigo `peer_service.c`.
+- `superpeer.c`: main, API de membros, handlers TCP, inicialização e encerramento do SP; incorpora os antigos `membership.c` e `superpeer_app.c`.
 - `app_config.c`: configuração e UUID persistente dos dois processos.
 - `local_control.c`: IPC local com framing, progresso e resultado.
-- `peer_service.c`: Node, storage, JOIN, ANNOUNCE, atendimento e LEAVE.
 - `file_client.c`: operações de transferência executadas dentro do serviço, com sessão explícita.
 - `metadata.c`: hash table, nomes, descritores, proprietário e localizações.
 - `directory.c`: resolve NodeIDs do índice usando membership; não mantém outro índice de nomes.

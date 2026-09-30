@@ -1,6 +1,6 @@
 # Guia completo das funções do projeto
 
-Este guia registra a revisão anterior do código em 28–29/09/2026. O catálogo detalhado inclui cópias históricas de corpos de função e assinaturas; após a mudança para `FileMetadata` em 29/09, suas seções de `metadata.h`, `metadata.c`, `directory.c` e `tests/c2/test_metadata.c` não correspondem mais aos fontes. Para o modelo vigente, leia [explicacao_codigo_aluno_2.md](explicacao_codigo_aluno_2.md), [requisitos_aluno_2.md](requisitos_aluno_2.md) e os arquivos C atuais. O restante oferece um mapa das responsabilidades e das chamadas da revisão anterior.
+Este guia registra uma revisão anterior do código em 28–29/09/2026. O catálogo detalhado inclui cópias históricas de corpos de função e assinaturas. Após a mudança para `FileMetadata` e a consolidação dos executáveis em 29/09, suas seções de `metadata.h`, `metadata.c`, `directory.c`, `tests/c2/test_metadata.c`, `membership.c`, `superpeer_app.c`, `peer_service.c`, `peer.c` e `superpeer.c` não correspondem mais aos fontes. Para a organização vigente, leia [guia_resumido_arquivos.md](guia_resumido_arquivos.md), [explicacao_codigo_aluno_2.md](explicacao_codigo_aluno_2.md), [requisitos_aluno_2.md](requisitos_aluno_2.md) e os arquivos C atuais. O restante documenta as responsabilidades e chamadas da revisão anterior.
 
 ## Navegação rápida
 

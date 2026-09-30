@@ -29,17 +29,17 @@ $(BIN_DIR):
 
 $(BIN_DIR)/superpeer: app_config.c app_config.h transfer_types.h remote_error.h network.c network.h concurrent_server.c concurrent_server.h protocol.c protocol.h transfer_protocol.c transfer_protocol.h \
                       node.c node.h common.h metadata.c metadata.h directory.c directory.h \
-                      superpeer.c membership.c superpeer.h rpc.c rpc.h superpeer_app.c | $(BIN_DIR)
+                      superpeer.c superpeer.h rpc.c rpc.h | $(BIN_DIR)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -pthread app_config.c network.c concurrent_server.c protocol.c node.c \
-		transfer_protocol.c rpc.c metadata.c directory.c membership.c superpeer.c superpeer_app.c \
+		transfer_protocol.c rpc.c metadata.c directory.c superpeer.c \
 		-o $@ $(LDLIBS)
 
 $(BIN_DIR)/peer: app_config.c app_config.h transfer_types.h remote_error.h network.c network.h concurrent_server.c concurrent_server.h protocol.c protocol.h transfer_protocol.c transfer_protocol.h \
                  compression.c compression.h content.c content.h storage.c storage.h rpc.c rpc.h \
-                 node.c node.h metadata.c metadata.h peer_service.c peer_service.h \
+                 node.c node.h metadata.c metadata.h \
                  file_client.c file_client.h local_control.c local_control.h peer.c | $(BIN_DIR)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -pthread -I. app_config.c network.c concurrent_server.c protocol.c transfer_protocol.c compression.c content.c \
-		storage.c rpc.c node.c metadata.c peer_service.c file_client.c local_control.c peer.c \
+		storage.c rpc.c node.c metadata.c file_client.c local_control.c peer.c \
 		-o $@ $(LDLIBS) $(LZ4_LIB)
 
 $(BIN_DIR)/node: $(BIN_DIR)/superpeer Makefile | $(BIN_DIR)
@@ -61,8 +61,8 @@ clean:
 $(BIN_DIR)/test_metadata: metadata.c metadata.h node.h common.h tests/c2/test_metadata.c | $(BIN_DIR)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -pthread -I. metadata.c tests/c2/test_metadata.c -o $@ $(CRYPTO_LIB)
 
-$(BIN_DIR)/test_node_superpeer: node.c node.h membership.c superpeer.h common.h test_node_superpeer.c | $(BIN_DIR)
-	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -pthread -I. node.c membership.c test_node_superpeer.c -o $@ $(CRYPTO_LIB)
+$(BIN_DIR)/test_node_superpeer: node.c node.h superpeer.c superpeer.h common.h test_node_superpeer.c | $(BIN_DIR)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -DSUPERPEER_MEMBERSHIP_ONLY -pthread -I. node.c superpeer.c test_node_superpeer.c -o $@ $(CRYPTO_LIB)
 
 test-aluno2: $(BIN_DIR)/test_metadata $(BIN_DIR)/test_node_superpeer
 	$(BIN_DIR)/test_node_superpeer

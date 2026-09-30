@@ -14,8 +14,8 @@ download: Peer ativo ◄─chunks─── Peer(s)
 
 ## Executáveis
 
-- `bin/superpeer`: tem `main` em `superpeer.c` e compila `superpeer_app.c`, `metadata.c` e `directory.c`.
-- `bin/peer`: tem `main` em `peer.c` e compila `peer_service.c`, `file_client.c`, `storage.c` e módulos compartilhados.
+- `bin/superpeer`: tem `main`, tabela de membros e atendimento TCP em `superpeer.c`; também compila `metadata.c` e `directory.c`.
+- `bin/peer`: tem `main` e serviço de armazenamento em `peer.c`; também compila `file_client.c`, `storage.c` e módulos compartilhados.
 - `bin/node`: link para `bin/superpeer`, por compatibilidade.
 - `bin/client`: link para `bin/peer`, por compatibilidade.
 

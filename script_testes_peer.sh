@@ -159,7 +159,7 @@ PORT_B=$((PORT_A + 1))
 LOG_B="$LOG_DIR/peer_b_${PORT_B}.log"
 rm -f "$LOG_B"
 
-# A forma posicional legada em superpeer_app.c inicia o servidor local e envia JOIN.
+# A forma posicional legada em superpeer.c inicia o servidor local e envia JOIN.
 start_peer "$LOG_B" "$PORT_B" 127.0.0.1 "$PORT_A"
 
 if wait_for_log "$LOG_A" 'JOIN validado:.*membros=2'; then

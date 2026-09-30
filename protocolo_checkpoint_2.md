@@ -6,9 +6,9 @@
 
 | Camada | Módulos |
 |---|---|
-| Aplicação | `peer.c`, `superpeer.c`, `superpeer_app.c` |
-| Serviço | `file_client.c`, `peer_service.c`, `rpc.c`, `concurrent_server.c` |
-| Metadados | `directory.c`, `metadata.c`, API de membros em `membership.c` |
+| Aplicação | `peer.c`, `superpeer.c` |
+| Serviço | `file_client.c`, atendimento do Peer em `peer.c`, `rpc.c`, `concurrent_server.c` |
+| Metadados | `directory.c`, `metadata.c`, API de membros em `superpeer.c` |
 | Compressão/conteúdo | `compression.c`, `content.c` |
 | Armazenamento | `storage.c` |
 | Protocolo/rede | `transfer_protocol.c`, `protocol.c`, `network.c` |

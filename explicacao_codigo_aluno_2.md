@@ -2,6 +2,8 @@
 
 Revisão C2: 29/09/2026. As seções de checkpoint 1 e as demonstrações datadas abaixo são históricas. O estado vigente e as pendências estão em [requisitos_aluno_2.md](requisitos_aluno_2.md).
 
+Organização vigente: `superpeer.c` reúne API de membros, atendimento TCP e `main`. A compilação local de membros usa `-DSUPERPEER_MEMBERSHIP_ONLY`, que exclui atendimento e `main`; o executável normal compila o arquivo inteiro. `membership.c` e `superpeer_app.c` foram incorporados. `peer.c` também incorpora o antigo `peer_service.c`. As linhas de JOIN e recepção são impressas sob o bloqueio de `stdout` para não se misturarem entre threads; o protocolo não mudou.
+
 ## Revisão C2 atual
 
 A hash table guarda exatamente a estrutura pública `FileMetadata`: `object_id[32]`, `filename[256]`, `size` de 64 bits, `chunk_count` de 32 bits, `chunk_hashes` como vetor de ponteiros para hashes SHA-256, `version` e `owner` de 32 bits. `metadata_announce` valida os descritores e publica o registro completo atomicamente; a versão inicial é 1. O campo numérico `owner` é derivado dos quatro primeiros bytes do NodeID; o NodeID completo fica nas localizações dos chunks, usado por `directory.c` para resolver os membros. A compressão LZ4 continua no documento de transferência, fora de `FileMetadata`.
@@ -15,7 +17,7 @@ Explicação de cada função nova: [guia completo](guia_completo_funcoes.md). E
 
 “Minha parte cria a identidade dos nós e mantém o cadastro de membros do Super Peer. Cada nó possui configuração, um identificador SHA-256 e informações locais do processo. O Super Peer usa esse identificador para adicionar, consultar, atualizar e remover membros, protegendo a tabela contra acessos simultâneos.”
 
-Os arquivos centrais são `node.c`, `membership.c` e `metadata.c`; `superpeer.c` contém somente main. `node.h` e `superpeer.h` apresentam as estruturas e funções públicas; `common.h` compartilha os tamanhos com o protocolo. `test_node_superpeer.c` verifica os módulos. O `main` exclusivo de `bin/superpeer` fica em `superpeer.c`; `superpeer_app.c`, da integração com o aluno 1, conecta a API às mensagens TCP.
+Os arquivos centrais são `node.c`, `superpeer.c` e `metadata.c`. `superpeer.c` reúne a tabela de membros, o atendimento TCP e o `main` de `bin/superpeer`; `directory.c` conecta metadados e membros. `node.h` e `superpeer.h` apresentam as estruturas e funções públicas; `common.h` compartilha os tamanhos com o protocolo. `test_node_superpeer.c` verifica a API local de identidade e membros.
 
 ## 2. Estruturas e conceitos
 
@@ -82,11 +84,11 @@ Mesmos IP binário, porta e UUID produzem o mesmo ID. Alterar essas entradas dev
 - `node_id_equal`: exige dois ponteiros válidos e compara todos os bytes.
 - `node_get_process_id`: devolve o PID armazenado ou -1 para ponteiro nulo.
 
-## 4. `membership.c`: função por função
+## 4. Tabela de membros em `superpeer.c`: função por função
 
 ### Encapsulamento e concorrência
 
-A definição completa de `SuperPeer` fica no `.c`; o `.h` expõe um tipo incompleto. Quem usa o módulo chama sua API sem manipular diretamente os campos internos. O main exclusivo chama superpeer_run; testes locais compilam membership.c sem ponto de entrada.
+A definição completa de `SuperPeer` fica em `superpeer.c`; o `.h` expõe um tipo incompleto. Quem usa o módulo chama sua API sem manipular diretamente os campos internos. O `main` chama `superpeer_run`; os testes locais compilam o mesmo arquivo com `SUPERPEER_MEMBERSHIP_ONLY`, sem atendimento TCP e sem ponto de entrada.
 
 `lock_members` e `unlock_members` encapsulam o mutex. Funções pthread devolvem o número do erro diretamente; esses auxiliares o colocam em `errno` e retornam -1, acompanhando a convenção do módulo.
 
@@ -136,7 +138,7 @@ Nas consultas com argumento `const`, o código faz um cast para adquirir o mutex
 
 O descritor transmitido possui 64 bytes: IP textual e preenchimento zero (46), porta em ordem de rede (2) e UUID (16). Nunca se envia a memória bruta de `Node`: ela contém informações locais e pode ter padding dependente do compilador.
 
-1. `superpeer_app.c` recebe a mensagem pela camada de protocolo do aluno 1, que cuida de framing e CRC32.
+1. A parte de atendimento TCP em `superpeer.c` recebe a mensagem pela camada de protocolo do aluno 1, que cuida de framing e CRC32.
 2. `register_join` verifica o destino: aceita o ID local ou destino zerado.
 3. `decode_join_payload` valida tamanho, terminador e preenchimento; reconstrói `NodeConfig` com o UUID recebido.
 4. `node_init` calcula o NodeID desse descritor.
@@ -166,7 +168,7 @@ O auxiliar `register_members` gera identidades distintas por thread e registra o
 Na raiz do projeto, compile e execute a suíte do aluno 2 sem sobrescrever binários versionados:
 
 ```bash
-gcc -std=c11 -Wall -Wextra -Wpedantic -pthread \
+gcc -std=c11 -Wall -Wextra -Wpedantic -DSUPERPEER_MEMBERSHIP_ONLY -pthread \
     node.c superpeer.c test_node_superpeer.c \
     -Wl,-l:libcrypto.so.3 -o /tmp/aluno2-test
 /tmp/aluno2-test
@@ -207,7 +209,7 @@ Procure `JOIN validado` no receptor e `JOIN aceito pelo peer remoto` no iniciado
 
 ## Checkpoint 2 — metadados (24/09/2026)
 
-Agora a parte do aluno 2 também oferece `metadata.c` e `metadata.h`. A tabela associa o ObjectID de um documento aos seus dados e aos peers que anunciam cada chunk. Ela é uma API local independente da tabela de membros; a integração de rede usa directory.c e superpeer_app.c.
+Agora a parte do aluno 2 também oferece `metadata.c` e `metadata.h`. A tabela associa o ObjectID de um documento aos seus dados e aos peers que anunciam cada chunk. Ela é uma API local independente da tabela de membros; a integração de rede usa `directory.c` e o atendimento em `superpeer.c`.
 
 `object_id_file` calcula SHA-256 com EVP em blocos de 64 KiB, evitando carregar todo o PDF na memória. `metadata_register_document` registra nome, tamanho original e quantidade de chunks de 4 MiB. Repetir o mesmo conteúdo/tamanho preserva o cadastro; tamanho conflitante produz erro.
 

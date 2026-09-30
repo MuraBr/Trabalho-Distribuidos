@@ -1,5 +1,11 @@
 # Requisitos do trabalho — Aluno 2
 
+## Reorganização dos arquivos — 29/09/2026
+
+`superpeer.c` agora contém a API de membros, o atendimento TCP e o `main`; `membership.c` e `superpeer_app.c` foram incorporados e removidos. Para testar somente a API local de membros, o Makefile compila `superpeer.c` com `SUPERPEER_MEMBERSHIP_ONLY`, sem o atendimento TCP e sem `main`. No lado do aluno 1, `peer_service.c` foi incorporado a `peer.c`, e a interface `peer_service.h`, usada apenas ali, foi removida. `metadata.c`, `directory.c`, `file_client.c` e `storage.c` mantêm responsabilidades e interfaces próprias.
+
+Esta reorganização não altera o protocolo nem o contrato `FileMetadata`. Evidências executadas após a junção: build C11 e C2x com `-Werror`; `make test-aluno2` e `make test-c2`; integração TCP C2 com 46 verificações; `script_testes.sh` 10/10; `script_testes_peer.sh` 14/14; `script_testes_c2.sh` 20/20. A primeira execução do roteiro entre Peers mostrou linhas de log misturadas por threads; a escrita das linhas de JOIN/recepção foi agrupada e o roteiro passou na repetição. O runner disponível do professor não foi repetido nesta reorganização. As pendências funcionais abaixo continuam: índice volátil, ausência de heartbeat/replicação e caminho de CRC inválido sem resposta ERROR.
+
 ## Estado vigente — 29/09/2026
 
 `metadata.h` expõe exatamente o `FileMetadata` solicitado: ObjectID de 32 bytes, nome de 256 bytes, tamanho de 64 bits, contagem de chunks de 32 bits, vetor de hashes, versão e proprietário de 32 bits. `metadata.c` usa essa estrutura na hash table e mantém os descritores e as localizações por NodeID em dados separados. `directory.c` adapta ANNOUNCE/LOOKUP da rede; o valor numérico de `owner` usa os quatro primeiros bytes do NodeID em ordem big-endian, enquanto a localização mantém os 32 bytes completos. Esse número é um resumo e pode colidir; não é usado para encaminhar downloads.
@@ -13,7 +19,7 @@ Evidências desta alteração: build C11 com `-Werror`, `make test-aluno2` e `ma
 
 Estado vigente: [refatoração C1/C2](refatoracao_checkpoint_2.md). Upload/download agora são executados pelo **Peer ativo**, selecionado por `--local-peer-port` (padrão 55102), mediante canal Unix privado. A CLI não envia LOOKUP anônimo. PDF é validado pela extensão, sem exigir assinatura, para aceitar as fixtures sintéticas.
 
-`peer.c` e `superpeer.c` têm main exclusivos; a API de membros está em `membership.c`. Ambos os processos persistem UUID e leem configuração real. LEAVE remove membro/disponibilidade. Na revisão de 28/09, os metadados incluíam proprietário NodeID, versão, compressão e descritores/hashes; ANNOUNCE publica o cadastro completo atomicamente. O modelo vigente está descrito acima.
+Na revisão de 28/09, `peer.c` e `superpeer.c` tinham main exclusivos, e a API de membros estava em `membership.c`. Ambos os processos persistem UUID e leem configuração real. LEAVE remove membro/disponibilidade. Naquela revisão, os metadados incluíam proprietário NodeID, versão, compressão e descritores/hashes; ANNOUNCE publica o cadastro completo atomicamente. O modelo e a organização vigentes estão descritos acima.
 
 Evidências funcionais: C1 10/10, regressão legada 14/14, C2 20/20, runner disponível do professor 16/16 e integração independente 46 verificações. APIs locais e testes de falha de manifest passaram. Checkpoints 3–6 e suas metas globais permanecem **fora desta implementação**.
 
@@ -36,7 +42,7 @@ Atualizar este documento a cada avanço do aluno 2, mantendo requisitos, impleme
 | Remoção pela API local | Implementado | Testes de remoção e proteção do próprio Super Peer |
 | Concorrência na tabela | Implementado, cobertura parcial | Mutex; teste de 4 threads com 25 registros cada, total 101; não é prova de ausência de corridas |
 | JOIN por TCP e validação do NodeID | Implementado na integração | `peer.c` reconstrói identidade e registra antes do ACK; scripts oficial e peer-to-peer aprovados nesta revisão |
-| Remoção via LEAVE | Implementada na integração | `superpeer_app.c` remove membership e disponibilidades |
+| Remoção via LEAVE | Implementada na integração | `superpeer.c` remove membro e disponibilidades |
 | Resposta ERROR para CRC inválido | Pendente em relação ao requisito | Recepção falha e conexão é encerrada; não envia ERROR nesse caminho |
 | Metadados, ObjectID e chunks (C2) | Implementados e integrados | API local preservada; `directory.c` adapta ANNOUNCE/LOOKUP e resolve localizações pela tabela de membros |
 | Chord, Gossip, heartbeat e estados de falha (C3) | Pendente | Apenas ALIVE e last_seen existem; sem temporizador de falhas |
@@ -102,7 +108,7 @@ textual (46 bytes), porta em ordem de rede (2 bytes) e UUID (16 bytes).
 
 - `common.h`: constantes compartilhadas entre identidade e protocolo;
 - `node.c`: configuração, UUID, NodeID e informações do processo;
-- `superpeer.c`: main exclusivo; `membership.c`: criação do Super Peer e tabela de membros; `superpeer_app.c` implementa os handlers de rede da integração.
+- `superpeer.c`: criação do Super Peer, tabela de membros, handlers de rede e main exclusivo; os testes locais compilam apenas a parte de membros.
 
 ## 3. Checkpoint 1 — identificação e Super Peer básico
 
@@ -271,7 +277,7 @@ O `script_testes.sh` exercita protocolo e comunicação C1, incluindo JOIN/ACK, 
 - A API usa mutex, cópias de saída e armazenamento esparso. Os chunks usam 4 MiB de conteúdo original; tamanho e quantidade são representados com `uint64_t`.
 - O módulo de metadados é independente; `bin/superpeer` cria uma instância duradoura e `directory.c` resolve NodeIDs pela API de membership existente.
 - Evidências: `make test-aluno2` e `make test` passaram; suíte C2 com AddressSanitizer/UndefinedBehaviorSanitizer passou fora do sandbox. Na verificação final, o sandbox bloqueou o socket da suíte de protocolo; `make test` passou fora dele. SHA-256 conhecido, colisões, duplicatas, remoção, fronteiras e oito threads cobertos. Não equivale a prova de ausência de corridas.
-- Integração posterior: `superpeer_app.c` e `directory.c` chamam a API, validam payloads de `ANNOUNCE`/`LOOKUP` e os fluxos de upload/consulta/download via rede passaram no script C2. O índice continua sem persistência ou consistência distribuída.
+- Integração posterior daquela revisão: `superpeer_app.c` e `directory.c` chamavam a API, validavam payloads de `ANNOUNCE`/`LOOKUP` e os fluxos de upload/consulta/download via rede passaram no script C2. O atendimento TCP agora está em `superpeer.c`; o índice continua sem persistência ou consistência distribuída.
 - Handoff e contrato detalhado: [integracao_checkpoint_2_aluno_2.md](integracao_checkpoint_2_aluno_2.md). Nenhum fluxo de upload/download ou protocolo do aluno 1 foi implementado aqui.
 
 ## Verificação da integração atual — 25/09/2026
@@ -280,4 +286,4 @@ A lista anterior registra o estado da entrega local em 24/09. Na revisão de 28/
 
 ## Organização dos executáveis — 27/09/2026
 
-`bin/superpeer` usa o `main` de `superpeer.c` (habilitado por `SUPERPEER_EXECUTABLE`) e a implementação do servidor em `superpeer_app.c`. `bin/peer` usa o `main` de `peer.c`. A API isolada de membros continua compilável sem `main` para `test_node_superpeer.c`. Após a reorganização, passaram `make test-aluno2`, `script_testes.sh` (10/10), `script_testes_peer.sh` (14/14) e `script_testes_c2.sh` (20/20). As pendências funcionais anteriores não mudaram.
+Na organização de 27/09, `bin/superpeer` usava o `main` de `superpeer.c` e a implementação do servidor em `superpeer_app.c`. `bin/peer` usava o `main` de `peer.c`. Após a reorganização daquela data, passaram `make test-aluno2`, `script_testes.sh` (10/10), `script_testes_peer.sh` (14/14) e `script_testes_c2.sh` (20/20). A organização vigente e os testes executados agora estão registrados no início deste documento.

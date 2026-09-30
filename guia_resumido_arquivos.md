@@ -12,19 +12,11 @@ Existem dois executáveis reais: `bin/peer` e `bin/superpeer`. `bin/client` e `b
 
 ### `peer.c`
 
-É a entrada do programa Peer. Interpreta comandos como iniciar o serviço, upload e download, encaminhando o trabalho aos módulos responsáveis. Não implementa sozinho toda a transferência.
-
-### `peer_service.c`
-
-Mantém o Peer de armazenamento funcionando: inicia sua identidade, carrega os arquivos salvos, registra-se no Super Peer e atende pedidos de chunks. Integra principalmente `storage.c`, `rpc.c` e `concurrent_server.c`.
+É a entrada do programa Peer e também contém seu serviço de armazenamento. Interpreta os comandos, inicia a identidade, carrega os arquivos salvos, registra-se no Super Peer e atende pedidos de chunks. O antigo `peer_service.c` foi incorporado aqui; `file_client.c`, `storage.c` e `local_control.c` continuam separados porque implementam operações próprias.
 
 ### `superpeer.c`
 
-Contém a entrada exclusiva do executável Super Peer. É pequeno porque apenas encaminha a execução para `superpeer_app.c`.
-
-### `superpeer_app.c`
-
-Coordena o funcionamento do Super Peer. Recebe registros de nós, anúncios de documentos e consultas de localização, usando `membership.c` e `directory.c`. Não guarda o conteúdo dos PDFs.
+Contém a entrada, a tabela de membros e o atendimento TCP do Super Peer. Recebe registros de nós, anúncios de documentos e consultas de localização, usando `directory.c`. Os antigos `membership.c` e `superpeer_app.c` foram incorporados aqui. Não guarda o conteúdo dos PDFs. O teste local compila somente a parte de membros com `SUPERPEER_MEMBERSHIP_ONLY`.
 
 ### `app_config.c`
 
@@ -62,9 +54,7 @@ Permite atender várias conexões com um conjunto limitado de threads e uma fila
 
 Representa a identidade de um nó. Calcula o NodeID a partir de IP, porta e UUID, valida essa composição e converte identificadores para texto. Apesar do nome, não é a entrada de `bin/node`.
 
-### `membership.c`
-
-Mantém a tabela de nós conhecidos pelo Super Peer, incluindo seus endereços. Permite registrar, consultar e remover membros, protegendo a tabela contra acessos simultâneos. Não é o catálogo de documentos.
+`superpeer.c` mantém a tabela de nós conhecidos pelo Super Peer, incluindo seus endereços. Permite registrar, consultar e remover membros, protegendo a tabela contra acessos simultâneos. Não é o catálogo de documentos.
 
 ### `metadata.c`
 
@@ -72,7 +62,7 @@ Mantém o índice de documentos, seus descritores e os NodeIDs que possuem cada 
 
 ### `directory.c`
 
-Une o catálogo de documentos à tabela de membros. Em uma consulta, descobre quais nós possuem os chunks e transforma seus NodeIDs em IPs e portas. Usa `metadata.c` e `membership.c` para montar a resposta.
+Une o catálogo de documentos à tabela de membros. Em uma consulta, descobre quais nós possuem os chunks e transforma seus NodeIDs em IPs e portas. Usa `metadata.c` e a API de membros em `superpeer.c` para montar a resposta.
 
 ## 5. Arquivos e transferência
 
@@ -104,9 +94,9 @@ Alguns merecem destaque:
 - `transfer_types.h`: estruturas de documento, chunk, endpoint e resultado de consulta, além dos estados da transferência.
 - `wire.h`: pequenos auxiliares para representar números em uma ordem de bytes padronizada.
 - `remote_error.h`: converte erros locais em códigos estáveis para transmitir pela rede e interpretá-los no receptor.
-- `superpeer.h`: interface da tabela de membros implementada em `membership.c`, não apenas da entrada `superpeer.c`.
+- `superpeer.h`: interface da tabela de membros implementada em `superpeer.c`.
 
-Os demais headers acompanham os módulos descritos acima: configuração, compressão, conteúdo, servidor concorrente, diretório, transferência, controle local, metadados, rede, identidade, serviço Peer, protocolo, RPC e armazenamento.
+Os demais headers acompanham os módulos descritos acima: configuração, compressão, conteúdo, servidor concorrente, diretório, transferência, controle local, metadados, rede, identidade, protocolo, RPC e armazenamento.
 
 ## 7. Compilação e testes
 
@@ -137,9 +127,9 @@ Esses arquivos descrevem verificações, não garantias de aprovação: o result
 
 1. `peer.c` recebe o comando e `local_control.c` o entrega ao Peer ativo.
 2. `file_client.c` prepara o documento e envia seus chunks usando compressão, RPC, protocolo e rede.
-3. `peer_service.c` recebe os pedidos e `storage.c` verifica e salva as partes.
+3. O serviço em `peer.c` recebe os pedidos e `storage.c` verifica e salva as partes.
 4. Depois de validar o documento inteiro, o Peer anuncia sua disponibilidade ao Super Peer.
-5. `superpeer_app.c`, `directory.c` e `metadata.c` registram onde encontrá-lo.
+5. `superpeer.c`, `directory.c` e `metadata.c` registram onde encontrá-lo.
 
 ### Download
 
@@ -152,6 +142,6 @@ Em resumo: **o Super Peer informa onde buscar; os Peers transferem os bytes**.
 
 ## 9. Ordem sugerida de leitura
 
-Comece por `peer.c` e `superpeer.c` para identificar as entradas. Depois leia `peer_service.c` e `superpeer_app.c` para entender os serviços. Siga para `file_client.c`, `storage.c`, `directory.c` e `metadata.c` para acompanhar os documentos. Por último, aprofunde-se em `rpc.c`, `protocol.c` e `network.c` para entender o transporte.
+Comece por `peer.c` e `superpeer.c` para identificar as entradas e o atendimento dos serviços. Siga para `file_client.c`, `storage.c`, `directory.c` e `metadata.c` para acompanhar os documentos. Por último, aprofunde-se em `rpc.c`, `protocol.c` e `network.c` para entender o transporte.
 
 Este resumo não substitui o [guia detalhado de funções](guia_completo_funcoes.md): use aquele apenas quando precisar estudar uma implementação específica. Chord, Gossip, eleição e replicação automática continuam fora do escopo implementado aqui.

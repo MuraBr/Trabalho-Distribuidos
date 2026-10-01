@@ -245,6 +245,7 @@ int metadata_unregister_chunk(MetadataStore *store, const ObjectID *id, uint64_t
     return change_chunk(store, id, chunk_index, peer, 1);
 }
 
+// Retorna cópia de IDs de peers que possuem o chunk; mutex cobre validação e cópia.
 int metadata_chunk_peers(MetadataStore *store, const ObjectID *id, uint64_t chunk_index, NodeID **output, size_t *count)
 {
     if (store == NULL || id == NULL || output == NULL || count == NULL) return fail(EINVAL);
@@ -275,17 +276,30 @@ int metadata_chunk_peers(MetadataStore *store, const ObjectID *id, uint64_t chun
 /* Publicação atômica: aloca e valida uma cópia completa antes de trocar o bucket. */
 int metadata_announce(MetadataStore *store, const FileMetadata *document, const MetadataChunk *chunks, const NodeID *owner)
 {
+    // Valida argumentos, tamanho e consistência de chunks; cria cópia completa e lista de disponibilidade.
     if (store == NULL || document == NULL || chunks == NULL || owner == NULL || document->chunk_count == 0U || document->chunk_count != document->size / METADATA_CHUNK_SIZE + (document->size % METADATA_CHUNK_SIZE != 0U) || document->filename[0] == '\0' || strnlen(document->filename, METADATA_NAME_SIZE) == METADATA_NAME_SIZE) return fail(EINVAL);
     Entry *candidate = calloc(1U, sizeof(*candidate));
-    if (candidate == NULL) return -1;
+
+    if (candidate == NULL){
+        return -1;
+    }
+    // Valida consistência de chunks e cria cópia completa do documento, incluindo ponteiros de hash.
     candidate->document = *document;
     candidate->document.chunk_hashes = NULL;
     candidate->document.version = 1U;
     candidate->chunks = malloc((size_t)document->chunk_count * sizeof(*chunks));
-    if (candidate->chunks == NULL) { free_entry(candidate); return -1; }
+
+    if (candidate->chunks == NULL) {
+        free_entry(candidate); return -1;
+    }
+
     memcpy(candidate->chunks, chunks, (size_t)document->chunk_count * sizeof(*chunks));
     candidate->document.chunk_hashes = calloc((size_t)document->chunk_count, sizeof(*candidate->document.chunk_hashes));
-    if (candidate->document.chunk_hashes == NULL) { free_entry(candidate); return -1; }
+
+    if (candidate->document.chunk_hashes == NULL) {
+        free_entry(candidate); return -1;
+    }
+    // Valida consistência de chunks e cria lista de disponibilidade.
     for (uint64_t i = 0U; i < document->chunk_count; ++i)
     {
         uint64_t offset = i * METADATA_CHUNK_SIZE;
@@ -299,7 +313,11 @@ int metadata_announce(MetadataStore *store, const FileMetadata *document, const 
         item->next = candidate->available;
         candidate->available = item;
     }
-    if (lock_store(store) < 0) { free_entry(candidate); return -1; }
+    // Valida consistência de chunks e cria cópia completa do documento, incluindo ponteiros de hash.
+    if (lock_store(store) < 0) {
+        free_entry(candidate); return -1;
+    }
+
     ObjectID id;
     memcpy(id.bytes, document->object_id, OBJECT_ID_SIZE);
     Entry **slot = find_entry(store, &id);
@@ -308,6 +326,7 @@ int metadata_announce(MetadataStore *store, const FileMetadata *document, const 
     if (old != NULL)
     {
         if (old->document.size != document->size || old->document.chunk_count != document->chunk_count) error = EEXIST;
+
         for (uint64_t i = 0U; error == 0 && old->chunks != NULL && i < document->chunk_count; ++i)
             if (old->chunks[i].raw_size != chunks[i].raw_size || memcmp(old->chunks[i].hash, chunks[i].hash, OBJECT_ID_SIZE) != 0) error = EEXIST;
         for (Availability *item = old->available; error == 0 && item != NULL; item = item->next)
@@ -334,6 +353,7 @@ int metadata_announce(MetadataStore *store, const FileMetadata *document, const 
     return 0;
 }
 
+// Retorna cópia de ID do objeto; mutex cobre validação e cópia.
 int metadata_find_name(MetadataStore *store, const char *name, ObjectID *id)
 {
     if (store == NULL || name == NULL || id == NULL) return fail(EINVAL);
@@ -354,6 +374,7 @@ int metadata_find_name(MetadataStore *store, const char *name, ObjectID *id)
     return 0;
 }
 
+// Retorna cópia de chunk, sem ponteiros internos; mutex cobre validação e cópia.
 int metadata_chunk_descriptor(MetadataStore *store, const ObjectID *id, uint64_t index, MetadataChunk *output)
 {
     if (store == NULL || id == NULL || output == NULL) return fail(EINVAL);
@@ -365,6 +386,7 @@ int metadata_chunk_descriptor(MetadataStore *store, const ObjectID *id, uint64_t
     return valid ? 0 : fail(ENOENT);
 }
 
+// Remove todos os registros de disponibilidade de um peer, usado quando o peer se desconecta.
 int metadata_remove_peer(MetadataStore *store, const NodeID *peer)
 {
     if (store == NULL || peer == NULL) return fail(EINVAL);

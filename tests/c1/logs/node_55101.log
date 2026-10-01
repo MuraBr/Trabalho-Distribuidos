@@ -1,14 +1,14 @@
 Node C1SP1 started
-NodeID: 799560e8fc76c5686058dfd39b753a1e9cadd04ae2e2d1deb600bcc39b77829b
-Peer ouvindo na porta 55101, NodeID=799560e8fc76c5686058dfd39b753a1e9cadd04ae2e2d1deb600bcc39b77829b, membros locais=1
+NodeID: 2ed74ee57dd3e559c64d05f701a02568567079152f6232e46f77fbc2dea46e63
+Peer ouvindo na porta 55101, NodeID=2ed74ee57dd3e559c64d05f701a02568567079152f6232e46f77fbc2dea46e63, membros locais=1
 Mensagem recebida: tipo=3, payload=4 bytes, ip_origem=127.0.0.1
 RX PING
-Mensagem recebida: tipo=0, origem=8a703db0d206cf5f284369e34cda5c0a4dffbe79aecd525ec7b17a0fda1f0502, payload=64 bytes, ip_origem=127.0.0.1
-JOIN validado: NodeID=8a703db0d206cf5f284369e34cda5c0a4dffbe79aecd525ec7b17a0fda1f0502, resultado=ADDED, membros=2
+Mensagem recebida: tipo=0, origem=b5e43cc6e75d662f710dc661c33ef83b9e6a91a28708bdb53de4968f63ac1af5, payload=64 bytes, ip_origem=127.0.0.1
+JOIN validado: NodeID=b5e43cc6e75d662f710dc661c33ef83b9e6a91a28708bdb53de4968f63ac1af5, resultado=ADDED, membros=2
 Mensagem recebida: tipo=5, origem=0000000000000000000000000000000000000000000000000000000000000000, payload=0 bytes, ip_origem=127.0.0.1
 Mensagem recebida: tipo=3, payload=4 bytes, ip_origem=127.0.0.1
-RX PING
 Mensagem recebida: tipo=3, payload=4 bytes, ip_origem=127.0.0.1
+RX PING
 RX PING
 Mensagem recebida: tipo=3, payload=4 bytes, ip_origem=127.0.0.1
 RX PING

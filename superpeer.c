@@ -1274,6 +1274,7 @@ static int superpeer_run(int argc, char **argv)
     pthread_t accept_thread;
     int thread_result;
 
+    // Inicializa configuração e interpreta argumentos; --cmd ignora --config e --name.
     if (app_config_load(&argc, argv, 1) < 0 || parse_node_arguments(argc, argv, &arguments) < 0)
     {
         print_usage(argv[0]);
@@ -1281,15 +1282,17 @@ static int superpeer_run(int argc, char **argv)
     }
 
     (void)signal(SIGPIPE, SIG_IGN);
-
+    // Se o modo de comando foi solicitado, executa e encerra imediatamente.
     if (arguments.command_mode)
     {
         return execute_command(&arguments) == 0 ? EXIT_SUCCESS : EXIT_FAILURE;
     }
 
+    // Configura tratadores de sinal para encerrar o peer com CTRL+C ou kill.
     (void)signal(SIGINT, handle_signal);
     (void)signal(SIGTERM, handle_signal);
 
+    // Inicializa identidade local, tabela de membros e diretório de metadados; encerra em caso de falha.
     memset(&peer, 0, sizeof(peer));
     peer.server_fd = -1;
     if (initialize_local_identity(&peer, arguments.local_port) < 0)

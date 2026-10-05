@@ -1,5 +1,13 @@
 # Requisitos do trabalho — Aluno 2
 
+## Avanço do checkpoint 3 — 05/10/2026
+
+O overlay Chord entre Super Peers foi acrescentado em `chord.c` e `chord_network.c`. Cada Super Peer usa seu NodeID SHA-256 existente no anel de 256 bits. A API local mantém sucessor, predecessor e 256 entradas da finger table sob mutex, calcula `(id + 2^i) mod 2^256` e escolhe o próximo salto. A integração TCP implementa descoberta do bootstrap, entrada no anel, lookup do Super Peer responsável, stabilize, notify e fix_fingers periódico (16 entradas por segundo). O ingresso é solicitado com `--chord-host <ip> --chord-port <porta>` no segundo Super Peer. Os tipos de mensagem Chord são 20–24; os payloads e seus limites estão documentados em `continuidade_checkpoint_3_aluno_1.md`.
+
+**Evidência executada nesta alteração:** `make test` passou (compilação C2x, testes C1, C2 e API local C3); `tests/c3/test_chord.c` cobriu aritmética circular e anel isolado; `python3 tests/c3/integration.py` passou com três processos reais, entrada, sucessor, predecessor, finger[0], finger[255], lookup circular e rejeição de mensagens malformadas; `python3 tests/c2/integration.py` passou 46 verificações TCP de regressão. A integração usa sockets TCP e não deve ser confundida com o teste local da API. Os números históricos abaixo continuam identificados pelas datas de cada revisão.
+
+**Pendências reais:** heartbeat, Gossip, `SUSPECT`/`FAILED`/`REMOVED`, recuperação automática de vizinhos após queda, replicação ou migração de metadados e encaminhamento de `M_LOOKUP`/`M_STORE` pelo anel ainda não foram implementados. O lookup Chord encontra o Super Peer responsável pela chave, mas `directory_lookup` continua consultando o índice local. O desempenho médio `O(log N)` não foi medido; com finger table ainda convergindo ou diante de falhas, não há garantia dessa meta. `M_HEARTBEAT` e `M_GOSSIP` continuam sem handler. O guia de continuidade aponta as interfaces para o aluno 1.
+
 ## Reorganização dos arquivos — 29/09/2026
 
 `superpeer.c` agora contém a API de membros, o atendimento TCP e o `main`; `membership.c` e `superpeer_app.c` foram incorporados e removidos. Para testar somente a API local de membros, o Makefile compila `superpeer.c` com `SUPERPEER_MEMBERSHIP_ONLY`, sem o atendimento TCP e sem `main`. No lado do aluno 1, `peer_service.c` foi incorporado a `peer.c`, e a interface `peer_service.h`, usada apenas ali, foi removida. `metadata.c`, `directory.c`, `file_client.c` e `storage.c` mantêm responsabilidades e interfaces próprias.
@@ -45,7 +53,8 @@ Atualizar este documento a cada avanço do aluno 2, mantendo requisitos, impleme
 | Remoção via LEAVE | Implementada na integração | `superpeer.c` remove membro e disponibilidades |
 | Resposta ERROR para CRC inválido | Pendente em relação ao requisito | Recepção falha e conexão é encerrada; não envia ERROR nesse caminho |
 | Metadados, ObjectID e chunks (C2) | Implementados e integrados | API local preservada; `directory.c` adapta ANNOUNCE/LOOKUP e resolve localizações pela tabela de membros |
-| Chord, Gossip, heartbeat e estados de falha (C3) | Pendente | Apenas ALIVE e last_seen existem; sem temporizador de falhas |
+| Chord (C3) | Implementado no overlay, integração parcial com o produto | API local e TCP testados com 3 Super Peers; `M_LOOKUP`/`M_STORE` de documentos ainda usam índice local e não migram metadados |
+| Gossip, heartbeat e estados de falha (C3) | Pendente | Apenas ALIVE e last_seen existem; sem temporizador ou recuperação após queda |
 | Log, SMR e estado de eleição (C4) | Pendente | Comparação de NodeIDs disponível e testada, mas sem consenso implementado |
 | 2PC e IST (C5) | Pendente | Sem implementação |
 | Integração final e metas de desempenho (C6) | Pendente | Sem validação das metas não funcionais |

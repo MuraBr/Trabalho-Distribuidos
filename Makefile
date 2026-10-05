@@ -27,10 +27,10 @@ $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
 
 
-$(BIN_DIR)/superpeer: app_config.c app_config.h transfer_types.h remote_error.h network.c network.h concurrent_server.c concurrent_server.h protocol.c protocol.h transfer_protocol.c transfer_protocol.h \
+$(BIN_DIR)/superpeer: app_config.c app_config.h transfer_types.h remote_error.h network.c network.h concurrent_server.c concurrent_server.h protocol.c protocol.h transfer_protocol.c transfer_protocol.h chord.c chord.h chord_network.c chord_network.h \
                       node.c node.h common.h metadata.c metadata.h directory.c directory.h \
                       superpeer.c superpeer.h rpc.c rpc.h | $(BIN_DIR)
-	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -pthread app_config.c network.c concurrent_server.c protocol.c node.c \
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -pthread app_config.c network.c concurrent_server.c protocol.c node.c chord.c chord_network.c \
 		transfer_protocol.c rpc.c metadata.c directory.c superpeer.c \
 		-o $@ $(LDLIBS)
 
@@ -54,7 +54,7 @@ test: all test-aluno2
 	$(MAKE) test-c2
 
 clean:
-	rm -f $(BIN_DIR)/peer $(BIN_DIR)/superpeer $(BIN_DIR)/node $(BIN_DIR)/client $(BIN_DIR)/test_metadata $(BIN_DIR)/test_node_superpeer $(BIN_DIR)/test_transfer_negative
+	rm -f $(BIN_DIR)/peer $(BIN_DIR)/superpeer $(BIN_DIR)/node $(BIN_DIR)/client $(BIN_DIR)/test_metadata $(BIN_DIR)/test_node_superpeer $(BIN_DIR)/test_transfer_negative $(BIN_DIR)/test_storage_atomic $(BIN_DIR)/test_chord
 	$(MAKE) -C tests/c1 clean
 
 # API local do aluno 2: não depende de sockets nem altera executáveis versionados.
@@ -67,6 +67,14 @@ $(BIN_DIR)/test_node_superpeer: node.c node.h superpeer.c superpeer.h common.h t
 test-aluno2: $(BIN_DIR)/test_metadata $(BIN_DIR)/test_node_superpeer
 	$(BIN_DIR)/test_node_superpeer
 	$(BIN_DIR)/test_metadata
+	$(MAKE) test-c3-local
+
+$(BIN_DIR)/test_chord: chord.c chord.h node.c node.h tests/c3/test_chord.c | $(BIN_DIR)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -Werror -pthread -I. chord.c node.c tests/c3/test_chord.c -o $@ $(CRYPTO_LIB)
+
+.PHONY: test-c3-local
+test-c3-local: $(BIN_DIR)/test_chord
+	$(BIN_DIR)/test_chord
 
 $(BIN_DIR)/test_transfer_negative: network.c protocol.c transfer_protocol.c compression.c content.c storage.c metadata.c tests/c2/test_transfer_negative.c | $(BIN_DIR)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -pthread -I. network.c protocol.c transfer_protocol.c compression.c content.c storage.c metadata.c tests/c2/test_transfer_negative.c -o $@ $(LDLIBS) $(LZ4_LIB)

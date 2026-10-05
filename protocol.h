@@ -48,6 +48,11 @@ typedef enum m_type
     M_COORDINATOR = 17,
     M_SNAPSHOT = 18,
     M_STATE_TRANSFER = 19,
+    M_CHORD_INFO = 20,
+    M_CHORD_ROUTE = 21,
+    M_CHORD_PREDECESSOR = 22,
+    M_CHORD_NOTIFY = 23,
+    M_CHORD_FINGER = 24,
 } Message_Type;
 
 /* Representação em memória: a serialização define a disposição dos campos na rede. */

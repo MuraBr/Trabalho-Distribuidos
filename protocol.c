@@ -204,6 +204,11 @@ int protocol_validate_header(const Header *header)
     case M_COORDINATOR:
     case M_SNAPSHOT:
     case M_STATE_TRANSFER:
+    case M_CHORD_INFO:
+    case M_CHORD_ROUTE:
+    case M_CHORD_PREDECESSOR:
+    case M_CHORD_NOTIFY:
+    case M_CHORD_FINGER:
         break;
     default:
         return PROTOCOL_ERROR;

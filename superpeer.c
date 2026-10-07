@@ -412,6 +412,7 @@ int superpeer_is_registered(const SuperPeer *superpeer, const NodeID *node_id)
 /* Atendimento TCP e entrada do programa; os testes locais compilam apenas a API de membros. */
 
 #include "concurrent_server.h"
+#include "chord_network.h"
 #include "app_config.h"
 #include "directory.h"
 #include "metadata.h"
@@ -450,6 +451,7 @@ typedef struct
     SuperPeer *superpeer;
     MetadataStore *metadata;
     Directory *directory;
+    Chord *chord;
 } PeerContext;
 
 typedef struct
@@ -459,6 +461,8 @@ typedef struct
     uint16_t remote_port;
     const char *config_path;
     const char *node_name;
+    const char *chord_host;
+    uint16_t chord_port;
     Message_Type command_type;
     int command_mode;
 } NodeArguments; /* Opções de inicialização; config_path ainda não tem conteúdo interpretado. */
@@ -530,6 +534,8 @@ static int parse_node_arguments(int argc, char **argv, NodeArguments *arguments)
         {"port", required_argument, NULL, 'p'},
         {"config", required_argument, NULL, 'f'},
         {"name", required_argument, NULL, 'n'},
+        {"chord-host", required_argument, NULL, 'H'},
+        {"chord-port", required_argument, NULL, 'P'},
         {NULL, 0, NULL, 0}
     };
     int option;
@@ -573,7 +579,7 @@ static int parse_node_arguments(int argc, char **argv, NodeArguments *arguments)
 
     opterr = 0;
     optind = 1;
-    while ((option = getopt_long(argc, argv, "c:h:p:f:n:", long_options, NULL)) != -1)
+    while ((option = getopt_long(argc, argv, "c:h:p:f:n:H:P:", long_options, NULL)) != -1)
     {
         switch (option)
         {
@@ -606,19 +612,25 @@ static int parse_node_arguments(int argc, char **argv, NodeArguments *arguments)
             }
             have_name = 1;
             break;
+        case 'H':
+            arguments->chord_host = optarg;
+            break;
+        case 'P':
+            if (parse_port(optarg, &arguments->chord_port) < 0) return -1;
+            break;
         default:
             return -1;
         }
     }
 
-    if (optind != argc || !have_port)
+    if (optind != argc || !have_port || (arguments->chord_host == NULL) != (arguments->chord_port == 0U))
     {
         return -1;
     }
 
     if (have_command)
     {
-        if (!have_host || arguments->config_path != NULL || have_name)
+        if (!have_host || arguments->config_path != NULL || have_name || arguments->chord_host != NULL)
         {
             return -1;
         }
@@ -1050,6 +1062,14 @@ static void handle_client(void *context, int client_fd)
                 break;
             }
         }
+        else if (message.header.message_type >= M_CHORD_INFO && message.header.message_type <= M_CHORD_FINGER)
+        {
+            uint8_t payload[CHORD_ROUTE_WIRE_SIZE];
+            uint32_t payload_size = 0U;
+            Message_Type response_type = M_ERROR;
+            if (chord_network_handle(peer->chord, &message, &response_type, payload, &payload_size) < 0) { response_type = M_ERROR; payload_size = 0U; }
+            if (send_reply(peer, client_fd, &message, response_type, payload, payload_size, 0) < 0) { message_free(&message); break; }
+        }
         else
         {
             /* Mensagens ainda nao tratadas pelo checkpoint recebem ERROR. */
@@ -1263,7 +1283,7 @@ cleanup:
 /* Mostra os modos servidor, conexão entre peers e comando de teste. */
 static void print_usage(const char *program_name)
 {
-    fprintf(stderr, "Uso: %s <porta-local> [<ip-remoto> <porta-remota>]\n" "   ou: %s --config <arquivo> --port <porta> --name <nome>\n" "   ou: %s --cmd <ping|join|leave> --host <ip> --port <porta>\n", program_name, program_name, program_name);
+    fprintf(stderr, "Uso: %s <porta-local> [<ip-remoto> <porta-remota>]\n" "   ou: %s --port <porta> [--chord-host <ip> --chord-port <porta>]\n" "   ou: %s --cmd <ping|join|leave> --host <ip> --port <porta>\n", program_name, program_name, program_name);
 }
 
 /* Inicializa identidade, sincronização e servidor; no encerramento espera clientes antes de destruir o estado. */
@@ -1300,10 +1320,11 @@ static int superpeer_run(int argc, char **argv)
         fprintf(stderr, "Nao foi possivel inicializar a identidade local.\n");
         return EXIT_FAILURE;
     }
-    if (metadata_create(&peer.metadata) < 0 || directory_create(peer.metadata, peer.superpeer, &peer.directory) < 0)
+    if (metadata_create(&peer.metadata) < 0 || directory_create(peer.metadata, peer.superpeer, &peer.directory) < 0 || chord_create(&peer.local_node, &peer.chord) < 0)
     {
         fprintf(stderr, "Nao foi possivel inicializar o diretorio de metadados.\n");
         metadata_destroy(peer.metadata);
+        chord_destroy(peer.chord);
         superpeer_destroy(peer.superpeer);
         return EXIT_FAILURE;
     }
@@ -1317,6 +1338,7 @@ static int superpeer_run(int argc, char **argv)
         }
         directory_destroy(peer.directory);
         metadata_destroy(peer.metadata);
+        chord_destroy(peer.chord);
         superpeer_destroy(peer.superpeer);
         return EXIT_FAILURE;
     }
@@ -1337,6 +1359,7 @@ static int superpeer_run(int argc, char **argv)
         concurrent_server_destroy(peer.runtime);
         directory_destroy(peer.directory);
         metadata_destroy(peer.metadata);
+        chord_destroy(peer.chord);
         superpeer_destroy(peer.superpeer);
         return EXIT_FAILURE;
     }
@@ -1346,9 +1369,21 @@ static int superpeer_run(int argc, char **argv)
         fprintf(stderr, "Nao foi possivel concluir o JOIN remoto.\n");
     }
 
+    if (arguments.chord_host != NULL && chord_network_join(peer.chord, arguments.chord_host, arguments.chord_port) < 0)
+    {
+        fprintf(stderr, "Nao foi possivel entrar no anel Chord.\n");
+        g_running = 0;
+    }
+
     /* Mantem o processo vivo para aceitar novos clientes. */
+    unsigned finger_index = 0U;
     while (g_running)
     {
+        for (unsigned count = 0U; count < 16U && g_running; ++count)
+        {
+            if (chord_network_maintain(peer.chord, finger_index) < 0) break;
+            finger_index = (finger_index + 1U) % CHORD_FINGER_COUNT;
+        }
         (void)sleep(1U);
     }
 
@@ -1358,6 +1393,7 @@ static int superpeer_run(int argc, char **argv)
     concurrent_server_destroy(peer.runtime);
     directory_destroy(peer.directory);
     metadata_destroy(peer.metadata);
+    chord_destroy(peer.chord);
     superpeer_destroy(peer.superpeer);
     printf("Peer encerrado.\n");
     return EXIT_SUCCESS;

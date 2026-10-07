@@ -8,3 +8,4 @@
 /.superpeer_storage/
 /.deps/
 /bin/test_storage_atomic
+/bin/test_chord

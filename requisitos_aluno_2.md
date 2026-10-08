@@ -1,12 +1,24 @@
 # Requisitos do trabalho — Aluno 2
 
+## Integração C3 vigente - 07/10/2026
+
+Complemento de integração dos dois alunos: chord_forget agora conserva bloqueio do NodeID; setters/notify/reparo recusam respostas antigas para FAILED/REMOVED. chord_allow só é chamado após ALIVE com evidência direta da instância atual. Foi acrescentado make test-c3 reunindo testes locais e TCP. As 17 verificações integradas passaram, incluindo upload, roteamento de ObjectID real, queda de sucessor, download durante reparo e reentrada do Super Peer com o mesmo NodeID. A regressão C2 passou 46 verificações. Evidências e fronteiras: integracao_checkpoint_3.md. A API de metadados não foi transformada em lookup distribuído.
+
+A entrega do Aluno 1 integrou membership, heartbeat, SUSPECT/FAILED/REMOVED, Gossip e recuperação de referências Chord. A tabela voltou a ser isolada em `membership.c`; o código de servidor e main permanece em `superpeer.c`. As APIs públicas em `superpeer.h` foram preservadas, mas LEAVE agora conserva tombstone e a contagem ativa exclui FAILED/REMOVED. Os testes locais compilam membership diretamente, sem depender de main ou do macro SUPERPEER_MEMBERSHIP_ONLY.
+
+O Aluno 2 mantém a responsabilidade pelo overlay/índice; foram acrescentadas APIs `chord_forget` e `chord_repair` para o detector invalidar vizinhos e fingers. RPCs Chord têm prazo de controle e alternativas limitadas. O handler e o diretório filtram disponibilidade por estado. JOIN de Peer não foi reutilizado para ingresso Chord. O modelo FileMetadata e os bytes wire C2 não foram alterados.
+
+Evidências nesta integração: build estrito -Werror; make test; API local de membership/codec/deadline; C1 10/10, roteiro legado 14/14, C2 próprio 20/20; integração C2 com 46 verificações; Chord TCP de três processos; queda e reparo de anel com cinco processos. Testes locais e TCP permanecem resultados distintos. Builds ASan/UBSan e ThreadSanitizer também foram executados, sem diagnósticos nas suítes concluídas. Detalhes, diretórios de evidência e resultados negativos constam de `checkpoint_3_aluno_1.md`.
+
+Pendências atuais: roteamento distribuído de M_LOOKUP/M_STORE, migração/replicação de metadados, consenso, eleição e metas de desempenho. O índice continua local/volátil. O roteiro C2 disponível do professor teve 26 PASS/1 FAIL por alias de nome para ObjectID idêntico; não foi declarado aprovado. A análise completa -fanalyzer reportou diagnóstico de vazamento em metadata.c preexistente; os módulos C3 analisados separadamente passaram. As seções datadas abaixo descrevem revisões históricas, não substituem este estado.
+
 ## Avanço do checkpoint 3 — 05/10/2026
 
 O overlay Chord entre Super Peers foi acrescentado em `chord.c` e `chord_network.c`. Cada Super Peer usa seu NodeID SHA-256 existente no anel de 256 bits. A API local mantém sucessor, predecessor e 256 entradas da finger table sob mutex, calcula `(id + 2^i) mod 2^256` e escolhe o próximo salto. A integração TCP implementa descoberta do bootstrap, entrada no anel, lookup do Super Peer responsável, stabilize, notify e fix_fingers periódico (16 entradas por segundo). O ingresso é solicitado com `--chord-host <ip> --chord-port <porta>` no segundo Super Peer. Os tipos de mensagem Chord são 20–24; os payloads e seus limites estão documentados em `continuidade_checkpoint_3_aluno_1.md`.
 
 **Evidência executada nesta alteração:** `make test` passou (compilação C2x, testes C1, C2 e API local C3); `tests/c3/test_chord.c` cobriu aritmética circular e anel isolado; `python3 tests/c3/integration.py` passou com três processos reais, entrada, sucessor, predecessor, finger[0], finger[255], lookup circular e rejeição de mensagens malformadas; `python3 tests/c2/integration.py` passou 46 verificações TCP de regressão. A integração usa sockets TCP e não deve ser confundida com o teste local da API. Os números históricos abaixo continuam identificados pelas datas de cada revisão.
 
-**Pendências reais:** heartbeat, Gossip, `SUSPECT`/`FAILED`/`REMOVED`, recuperação automática de vizinhos após queda, replicação ou migração de metadados e encaminhamento de `M_LOOKUP`/`M_STORE` pelo anel ainda não foram implementados. O lookup Chord encontra o Super Peer responsável pela chave, mas `directory_lookup` continua consultando o índice local. O desempenho médio `O(log N)` não foi medido; com finger table ainda convergindo ou diante de falhas, não há garantia dessa meta. `M_HEARTBEAT` e `M_GOSSIP` continuam sem handler. O guia de continuidade aponta as interfaces para o aluno 1.
+**Pendências naquela revisão (05/10):** heartbeat, Gossip e estados de falha ainda estavam abertos; foram integrados em 07/10, conforme seção vigente acima. Continuam pendentes replicação/migração dos índices e encaminhamento de documentos pela DHT. O desempenho médio O(log N) não foi medido.
 
 ## Reorganização dos arquivos — 29/09/2026
 
@@ -54,7 +66,7 @@ Atualizar este documento a cada avanço do aluno 2, mantendo requisitos, impleme
 | Resposta ERROR para CRC inválido | Pendente em relação ao requisito | Recepção falha e conexão é encerrada; não envia ERROR nesse caminho |
 | Metadados, ObjectID e chunks (C2) | Implementados e integrados | API local preservada; `directory.c` adapta ANNOUNCE/LOOKUP e resolve localizações pela tabela de membros |
 | Chord (C3) | Implementado no overlay, integração parcial com o produto | API local e TCP testados com 3 Super Peers; `M_LOOKUP`/`M_STORE` de documentos ainda usam índice local e não migram metadados |
-| Gossip, heartbeat e estados de falha (C3) | Pendente | Apenas ALIVE e last_seen existem; sem temporizador ou recuperação após queda |
+| Gossip, heartbeat e estados de falha (C3) | Integrados em 07/10/2026 pelo Aluno 1 | Detector monotônico, confirmação por sondagem, tombstones, Gossip e reparo de vizinhos; testes locais e TCP descritos no relatório C3 |
 | Log, SMR e estado de eleição (C4) | Pendente | Comparação de NodeIDs disponível e testada, mas sem consenso implementado |
 | 2PC e IST (C5) | Pendente | Sem implementação |
 | Integração final e metas de desempenho (C6) | Pendente | Sem validação das metas não funcionais |

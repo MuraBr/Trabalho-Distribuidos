@@ -1,5 +1,19 @@
 # Guia de apresentação — código do aluno 2
 
+## Organização vigente C3 - 07/10/2026
+
+Complemento de integração: chord_forget limpa referências e mantém lista de NodeIDs indisponíveis para barrar respostas TCP atrasadas. chord_allow libera o ID depois que o integrador confirma ALIVE por contato direto; versões/rumores não substituem esse contato. Os métodos de atualização e chord_repair verificam a lista sob mutex. Antes da confirmação inicial, o sucessor de bootstrap é preservado. make test-c3 reúne as APIs locais com testes de três e cinco Super Peers; a suíte ampliada passou 17 verificações TCP, incluindo queda e volta do mesmo Super Peer. Veja integracao_checkpoint_3.md para comandos, evidências e distinção entre lookup Chord de chave e consulta local de metadados.
+
+A API de membership agora é implementada em `membership.c`, preservando as declarações superpeer_* em `superpeer.h`. `superpeer.c` mantém main, servidor TCP, metadados e integração Chord. O macro SUPERPEER_MEMBERSHIP_ONLY não é mais necessário no alvo de teste local: ele compila membership.c e gossip.c diretamente. A descrição C2 abaixo permanece como histórico da organização anterior.
+
+`SuperPeerMember` acrescenta domínio, observador, incarnação, sequência, versão, tempos monotônicos e confirmação de sondagens. `superpeer_unregister_node` faz remoção lógica e mantém tombstone; `superpeer_find_member` não devolve REMOVED e `superpeer_member_count` conta membros locais ALIVE/SUSPECT. `membership_snapshot` devolve cópia de todos os registros, incluindo tombstones, que o chamador deve liberar.
+
+`heartbeat.c` realiza controle periódico e chama efeitos locais de falha sem manter o mutex da tabela durante TCP. `chord_forget` limpa todas as referências ao nó; `chord_repair` escolhe sucessor pela ordem circular dos candidatos ALIVE. O servidor aprende candidatos e chama esses métodos; stabilize/notify/fix_fingers continuam pertencendo ao overlay do Aluno 2. `directory_lookup` filtra estados inválidos, mas continua sendo consulta local, não lookup distribuído de documentos.
+
+JOIN C3 inclui incarnação e preserva ACK legado. HEARTBEAT/GOSSIP possuem codec explícito e deadline; LEAVE C3 inclui a incarnação para não remover uma reentrada nova com mensagem antiga. Metadados/chunks não são replicados por Gossip. O NodeID não é autenticação criptográfica.
+
+Evidências: make test, C1 10/10, legado 14/14, C2 próprio 20/20, integração C2 46 verificações, Chord TCP de três nós e falha/reparo de cinco nós. Consulte `checkpoint_3_aluno_1.md` para formatos, ownership, limites e o resultado negativo do roteiro disponível do professor (alias de filename), além da limitação de -fanalyzer no metadata.c legado. As metas de disponibilidade/consistência distribuída não foram demonstradas.
+
 Revisão C2: 29/09/2026. As seções de checkpoint 1 e as demonstrações datadas abaixo são históricas. O estado vigente e as pendências estão em [requisitos_aluno_2.md](requisitos_aluno_2.md).
 
 Organização vigente: `superpeer.c` reúne API de membros, atendimento TCP e `main`. A compilação local de membros usa `-DSUPERPEER_MEMBERSHIP_ONLY`, que exclui atendimento e `main`; o executável normal compila o arquivo inteiro. `membership.c` e `superpeer_app.c` foram incorporados. `peer.c` também incorpora o antigo `peer_service.c`. As linhas de JOIN e recepção são impressas sob o bloqueio de `stdout` para não se misturarem entre threads; o protocolo não mudou.

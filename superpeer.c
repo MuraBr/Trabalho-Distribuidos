@@ -1,415 +1,9 @@
 #define _POSIX_C_SOURCE 200809L
-
 #include "superpeer.h"
+#include "heartbeat.h"
+#include "wire.h"
 
-#include <errno.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
-#include <pthread.h>
-
-
-struct SuperPeer
-{
-    Node local_node;
-    SuperPeerMember *members;
-    size_t member_count;
-    size_t member_capacity;
-    pthread_mutex_t members_mutex;
-};
-
-/* Adquire mutex; converte erro de pthread para -1/errno. */
-static int lock_members(SuperPeer *superpeer)
-{
-    int error = pthread_mutex_lock(&superpeer->members_mutex);
-
-    if (error != 0)
-    {
-        errno = error;
-        return -1;
-    }
-    return 0;
-}
-
-/* Libera mutex e propaga eventual erro por errno. */
-static int unlock_members(SuperPeer *superpeer)
-{
-    int error = pthread_mutex_unlock(&superpeer->members_mutex);
-
-    if (error != 0)
-    {
-        errno = error;
-        return -1;
-    }
-    return 0;
-}
-
-/* Busca linear O(N); exige que o chamador já tenha adquirido o mutex. */
-static int find_member_index_locked(const SuperPeer *superpeer, const NodeID *node_id, size_t *index)
-{
-    size_t i;
-    // O index é opcional, então não precisamos inicializá-lo aqui.
-    for (i = 0U; i < superpeer->member_count; ++i)
-    {
-        if (node_id_equal(&superpeer->members[i].node.id, node_id))
-        {
-            if (index != NULL)
-            {
-                *index = i;
-            }
-            return 0;
-        }
-    }
-    return -1;
-}
-
-/* Sob mutex, duplica capacidade com verificação de overflow; preserva ponteiro se realloc falhar. */
-static int grow_members_locked(SuperPeer *superpeer)
-{
-    size_t new_capacity;
-    SuperPeerMember *new_members;
-
-    // Se ainda há espaço, não é necessário crescer.
-    if (superpeer->member_count < superpeer->member_capacity)
-    {
-        return 0;
-    }
-
-    // Se a capacidade atual for zero, inicializamos com a capacidade padrão. Caso contrário, dobramos a capacidade.
-    if (superpeer->member_capacity == 0U)
-    {
-        new_capacity = SUPERPEER_DEFAULT_MEMBER_CAPACITY;
-    }
-    else
-    {
-        if (superpeer->member_capacity > SIZE_MAX / 2U)
-        {
-            errno = ENOMEM;
-            return -1;
-        }
-        new_capacity = superpeer->member_capacity * 2U;
-    }
-
-    // Verifica se a nova capacidade multiplicada pelo tamanho do elemento não causa overflow.
-    if (new_capacity > SIZE_MAX / sizeof(*new_members))
-    {
-        errno = ENOMEM;
-        return -1;
-    }
-
-    // Realoca a memória para os membros com a nova capacidade.
-    new_members = realloc(superpeer->members, new_capacity * sizeof(*new_members));
-    if (new_members == NULL)
-    {
-        errno = ENOMEM;
-        return -1;
-    }
-
-    superpeer->members = new_members;
-    superpeer->member_capacity = new_capacity;
-    return 0;
-}
-
-/* Copia nó e renova ALIVE/last_seen; não realiza heartbeat. */
-static void set_member(SuperPeerMember *member, const Node *node)
-{
-    member->node = *node;
-    member->state = SUPERPEER_MEMBER_ALIVE;
-    member->last_seen = time(NULL);
-}
-
-/* Configura identidade conhecida e capacidade inicial padrão de 16 membros. */
-int superpeer_config_init_with_uuid(SuperPeerConfig *config, const char *ip, uint16_t port, const uint8_t uuid[NODE_UUID_SIZE])
-{
-    // Valida parâmetros de entrada.
-    if (config == NULL)
-    {
-        errno = EINVAL;
-        return -1;
-    }
-    // Configura o nó com o UUID fornecido.
-    if (node_config_init_with_uuid(&config->node, ip, port, uuid) == -1)
-    {
-        return -1;
-    }
-
-    config->initial_member_capacity = SUPERPEER_DEFAULT_MEMBER_CAPACITY;
-    return 0;
-}
-
-/* Configura identidade com UUID aleatório e capacidade padrão 16. */
-int superpeer_config_init(SuperPeerConfig *config, const char *ip, uint16_t port)
-{
-    if (config == NULL)
-    {
-        errno = EINVAL;
-        return -1;
-    }
-    if (node_config_init(&config->node, ip, port) == -1)
-    {
-        return -1;
-    }
-
-    config->initial_member_capacity = SUPERPEER_DEFAULT_MEMBER_CAPACITY;
-    return 0;
-}
-
-/* Aloca tabela/mutex e autorregistra o Super Peer: contagem inicial 1. Desfaz alocações em falha. */
-int superpeer_create(const SuperPeerConfig *config, SuperPeer **output)
-{
-    // Valida parâmetros de entrada e inicializa o nó local.
-    SuperPeer *superpeer;
-    size_t initial_capacity;
-    int mutex_error;
-    Node local_node;
-
-    if (output == NULL)
-    {
-        errno = EINVAL;
-        return -1;
-    }
-
-    *output = NULL;
-    if (config == NULL)
-    {
-        errno = EINVAL;
-        return -1;
-    }
-    if (node_config_validate(&config->node) == -1 || node_init(&local_node, &config->node) == -1)
-    {
-        return -1;
-    }
-    initial_capacity = config->initial_member_capacity == 0U ? SUPERPEER_DEFAULT_MEMBER_CAPACITY : config->initial_member_capacity;
-
-    if (initial_capacity > SIZE_MAX / sizeof(SuperPeerMember))
-    {
-        errno = ENOMEM;
-        return -1;
-    }
-
-    superpeer = calloc(1U, sizeof(*superpeer));
-    if (superpeer == NULL)
-    {
-        return -1;
-    }
-
-    superpeer->members = calloc(initial_capacity, sizeof(*superpeer->members));
-    if (superpeer->members == NULL)
-    {
-        free(superpeer);
-        return -1;
-    }
-
-    mutex_error = pthread_mutex_init(&superpeer->members_mutex, NULL);
-    if (mutex_error != 0)
-    {
-        free(superpeer->members);
-        free(superpeer);
-        errno = mutex_error;
-        return -1;
-    }
-
-    // Inicializa o nó local com papel de Super Peer e registra-o como o primeiro membro.
-    local_node.role = NODE_ROLE_SUPERPEER;
-    superpeer->local_node = local_node;
-    superpeer->member_capacity = initial_capacity;
-    set_member(&superpeer->members[0], &superpeer->local_node);
-    superpeer->member_count = 1U;
-    *output = superpeer;
-    return 0;
-}
-
-/* Libera recursos; o chamador deve encerrar threads usuárias antes de destruir. */
-void superpeer_destroy(SuperPeer *superpeer)
-{
-    if (superpeer == NULL)
-    {
-        return;
-    }
-
-    pthread_mutex_destroy(&superpeer->members_mutex);
-    free(superpeer->members);
-    free(superpeer);
-}
-
-/* Copia o nó local, imutável após criação. */
-int superpeer_get_node(const SuperPeer *superpeer, Node *output)
-{
-    if (superpeer == NULL || output == NULL)
-    {
-        errno = EINVAL;
-        return -1;
-    }
-
-    *output = superpeer->local_node;
-    return 0;
-}
-
-/* Valida nó; sob mutex, adiciona ou atualiza por ID. Duplicata não aumenta contagem. */
-SuperPeerRegistrationResult superpeer_register_node(SuperPeer *superpeer, const Node *node)
-{
-    size_t index;
-    int result;
-
-    if (superpeer == NULL || node == NULL)
-    {
-        errno = EINVAL;
-        return SUPERPEER_REGISTER_ERROR;
-    }
-    if (node_validate(node) == -1)
-    {
-        return SUPERPEER_REGISTER_ERROR;
-    }
-
-    if (lock_members(superpeer) == -1)
-    {
-        return SUPERPEER_REGISTER_ERROR;
-    }
-
-    if (find_member_index_locked(superpeer, &node->id, &index) == 0)
-    {
-        set_member(&superpeer->members[index], node);
-        result = SUPERPEER_MEMBER_UPDATED;
-    }
-    else if (grow_members_locked(superpeer) == -1)
-    {
-        result = SUPERPEER_REGISTER_ERROR;
-    }
-    else
-    {
-        set_member(&superpeer->members[superpeer->member_count], node);
-        ++superpeer->member_count;
-        result = SUPERPEER_MEMBER_ADDED;
-    }
-
-    if (unlock_members(superpeer) == -1)
-    {
-        return SUPERPEER_REGISTER_ERROR;
-    }
-    return (SuperPeerRegistrationResult)result;
-}
-
-/* Protege nó local e compacta vetor com memmove. LEAVE em peer.c ainda não chama esta API. */
-int superpeer_unregister_node(SuperPeer *superpeer, const NodeID *node_id)
-{
-    size_t index;
-    size_t remaining;
-
-    if (superpeer == NULL || node_id == NULL)
-    {
-        errno = EINVAL;
-        return -1;
-    }
-    if (node_id_equal(&superpeer->local_node.id, node_id))
-    {
-        errno = EPERM;
-        return -1;
-    }
-    if (lock_members(superpeer) == -1)
-    {
-        return -1;
-    }
-
-    if (find_member_index_locked(superpeer, node_id, &index) == -1)
-    {
-        unlock_members(superpeer);
-        errno = ENOENT;
-        return -1;
-    }
-
-    remaining = superpeer->member_count - index - 1U;
-    if (remaining > 0U)
-    {
-        memmove(&superpeer->members[index], &superpeer->members[index + 1U], remaining * sizeof(*superpeer->members));
-    }
-    --superpeer->member_count;
-
-    if (unlock_members(superpeer) == -1)
-    {
-        return -1;
-    }
-    return 0;
-}
-
-/* Busca sob mutex e retorna cópia: nenhum ponteiro interno sobrevive a realloc. */
-int superpeer_find_member(const SuperPeer *superpeer, const NodeID *node_id, SuperPeerMember *output)
-{
-    SuperPeer *mutable_superpeer;
-    size_t index;
-
-    if (superpeer == NULL || node_id == NULL || output == NULL)
-    {
-        errno = EINVAL;
-        return -1;
-    }
-
-    mutable_superpeer = (SuperPeer *)(void *)superpeer;
-    if (lock_members(mutable_superpeer) == -1)
-    {
-        return -1;
-    }
-
-    if (find_member_index_locked(superpeer, node_id, &index) == -1)
-    {
-        unlock_members(mutable_superpeer);
-        errno = ENOENT;
-        return -1;
-    }
-
-    *output = superpeer->members[index];
-    if (unlock_members(mutable_superpeer) == -1)
-    {
-        return -1;
-    }
-    return 0;
-}
-
-/* Consulta contagem sob mutex, incluindo o nó local; zero também pode sinalizar erro. */
-size_t superpeer_member_count(const SuperPeer *superpeer)
-{
-    SuperPeer *mutable_superpeer;
-    size_t count;
-
-    if (superpeer == NULL)
-    {
-        errno = EINVAL;
-        return 0U;
-    }
-
-    mutable_superpeer = (SuperPeer *)(void *)superpeer;
-    if (lock_members(mutable_superpeer) == -1)
-    {
-        return 0U;
-    }
-    count = superpeer->member_count;
-    unlock_members(mutable_superpeer);
-    return count;
-}
-
-/* Consulta existência sob mutex; zero significa ausência ou erro. */
-int superpeer_is_registered(const SuperPeer *superpeer, const NodeID *node_id)
-{
-    SuperPeer *mutable_superpeer;
-    int registered;
-
-    if (superpeer == NULL || node_id == NULL)
-    {
-        errno = EINVAL;
-        return 0;
-    }
-
-    mutable_superpeer = (SuperPeer *)(void *)superpeer;
-    if (lock_members(mutable_superpeer) == -1)
-    {
-        return 0;
-    }
-    registered = find_member_index_locked(superpeer, node_id, NULL) == 0;
-    unlock_members(mutable_superpeer);
-    return registered;
-}
-
-#ifndef SUPERPEER_MEMBERSHIP_ONLY
-/* Atendimento TCP e entrada do programa; os testes locais compilam apenas a API de membros. */
+/* Aplicação Super Peer; a API local e seus testes estão separados em membership.c. */
 
 #include "concurrent_server.h"
 #include "chord_network.h"
@@ -436,6 +30,8 @@ int superpeer_is_registered(const SuperPeer *superpeer, const NodeID *node_id)
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 
 #define PEER_BACKLOG 10
 #define DEFAULT_LOCAL_IP "127.0.0.1"
@@ -452,6 +48,7 @@ typedef struct
     MetadataStore *metadata;
     Directory *directory;
     Chord *chord;
+    Heartbeat *heartbeat;
 } PeerContext;
 
 typedef struct
@@ -779,6 +376,7 @@ static int initialize_local_identity(PeerContext *peer, uint16_t local_port)
         return -1;
     }
 
+    peer->local_node.role = NODE_ROLE_SUPERPEER;
     /* Reutiliza o UUID para que Node e SuperPeer locais tenham o mesmo ID. */
     if (superpeer_config_init_with_uuid(&superpeer_config, config.ip, config.port, config.uuid) < 0 || superpeer_create(&superpeer_config, &peer->superpeer) < 0)
     {
@@ -868,7 +466,9 @@ static int register_join(PeerContext *peer, const Message *message)
         return -1;
     }
 
-    if (rpc_decode_join_payload(message->payload, message->header.payload_size, &remote_config) < 0 || node_init(&remote_node, &remote_config) < 0)
+    uint64_t incarnation = 0U;
+    if (message->header.payload_size == JOIN_PAYLOAD_WIRE_SIZE + 9U && message->payload[JOIN_PAYLOAD_WIRE_SIZE] == 1U) incarnation = wire_get_u64(message->payload + JOIN_PAYLOAD_WIRE_SIZE + 1U);
+    if ((message->header.payload_size != JOIN_PAYLOAD_WIRE_SIZE && (message->header.payload_size != JOIN_PAYLOAD_WIRE_SIZE + 9U || incarnation == 0U)) || rpc_decode_join_payload(message->payload, JOIN_PAYLOAD_WIRE_SIZE, &remote_config) < 0 || node_init(&remote_node, &remote_config) < 0)
     {
         return -1;
     }
@@ -885,8 +485,8 @@ static int register_join(PeerContext *peer, const Message *message)
         return -1;
     }
 
-    registration = superpeer_register_node(peer->superpeer, &remote_node);
-    if (registration == SUPERPEER_REGISTER_ERROR)
+    registration = superpeer_is_registered(peer->superpeer, &remote_node.id) ? SUPERPEER_MEMBER_UPDATED : SUPERPEER_MEMBER_ADDED;
+    if (heartbeat_register(peer->heartbeat, &remote_node, incarnation) < 0)
     {
         return -1;
     }
@@ -906,18 +506,22 @@ static int register_announcement(PeerContext *peer, const Message *message)
     NodeID owner;
 
     memcpy(owner.bytes, message->header.source_node, NODE_ID_SIZE);
+    heartbeat_gate_lock(peer->heartbeat);
     if (!superpeer_is_registered(peer->superpeer, &owner))
     {
+        heartbeat_gate_unlock(peer->heartbeat);
         errno = EACCES;
         return -1;
     }
     MetadataChunk *chunks = NULL;
     if (transfer_decode_announcement(message->payload, message->header.payload_size, &document, &chunks) < 0)
     {
+        heartbeat_gate_unlock(peer->heartbeat);
         return -1;
     }
     int status = directory_announce(peer->directory, &document, chunks, &owner);
     free(chunks);
+    heartbeat_gate_unlock(peer->heartbeat);
     return status;
 }
 
@@ -1036,7 +640,18 @@ static void handle_client(void *context, int client_fd)
         {
             NodeID departed;
             memcpy(departed.bytes, message.header.source_node, NODE_ID_SIZE);
-            if (!node_id_is_zero(departed.bytes) && superpeer_unregister_node(peer->superpeer, &departed) == 0) (void)metadata_remove_peer(peer->metadata, &departed);
+            heartbeat_gate_lock(peer->heartbeat);
+            SuperPeerMember leaving;
+            int known = superpeer_find_member(peer->superpeer, &departed, &leaving) == 0;
+            int valid_leave = message.header.payload_size == 0U ? !known || leaving.incarnation == 0U : message.header.payload_size == 9U && message.payload[0] == 1U && known && wire_get_u64(message.payload + 1U) == leaving.incarnation && memcmp(message.header.destination_node, peer->local_node.id.bytes, NODE_ID_SIZE) == 0;
+            if (!valid_leave)
+            {
+                heartbeat_gate_unlock(peer->heartbeat); errno = ESTALE;
+                (void)send_reply(peer, client_fd, &message, M_ERROR, NULL, 0U, 0);
+                message_free(&message); message_init(&message); continue;
+            }
+            if (!node_id_is_zero(departed.bytes) && superpeer_unregister_node(peer->superpeer, &departed) == 0) { (void)metadata_remove_peer(peer->metadata, &departed); (void)heartbeat_checkpoint(peer->heartbeat); }
+            heartbeat_gate_unlock(peer->heartbeat);
             if (send_reply(peer, client_fd, &message, M_ACK, NULL, 0U, 0) < 0)
             {
                 fprintf(stderr, "Falha ao enviar ACK de LEAVE.\n");
@@ -1062,11 +677,24 @@ static void handle_client(void *context, int client_fd)
                 break;
             }
         }
+        else if (message.header.message_type == M_HEARTBEAT || message.header.message_type == M_GOSSIP)
+        {
+            uint8_t *payload = NULL; uint32_t size = 0U; Message_Type type = M_ERROR;
+            if (heartbeat_handle(peer->heartbeat, &message, &type, &payload, &size) < 0) type = M_ERROR;
+            int sent = send_reply(peer, client_fd, &message, type, payload, size, 0);
+            free(payload);
+            if (sent < 0) { message_free(&message); break; }
+        }
         else if (message.header.message_type >= M_CHORD_INFO && message.header.message_type <= M_CHORD_FINGER)
         {
             uint8_t payload[CHORD_ROUTE_WIRE_SIZE];
             uint32_t payload_size = 0U;
             Message_Type response_type = M_ERROR;
+            if (message.header.message_type == M_CHORD_NOTIFY && message.header.payload_size == JOIN_PAYLOAD_WIRE_SIZE)
+            {
+                NodeConfig candidate;
+                if (rpc_decode_join_payload(message.payload, message.header.payload_size, &candidate) == 0) (void)heartbeat_discover(peer->heartbeat, &candidate);
+            }
             if (chord_network_handle(peer->chord, &message, &response_type, payload, &payload_size) < 0) { response_type = M_ERROR; payload_size = 0U; }
             if (send_reply(peer, client_fd, &message, response_type, payload, payload_size, 0) < 0) { message_free(&message); break; }
         }
@@ -1286,9 +914,61 @@ static void print_usage(const char *program_name)
     fprintf(stderr, "Uso: %s <porta-local> [<ip-remoto> <porta-remota>]\n" "   ou: %s --port <porta> [--chord-host <ip> --chord-port <porta>]\n" "   ou: %s --cmd <ping|join|leave> --host <ip> --port <porta>\n", program_name, program_name, program_name);
 }
 
+/* Efeitos locais ordenados pelo gate do detector; não há RPC nestes callbacks. */
+static void membership_failure(void *context, const SuperPeerMember *member)
+{
+    PeerContext *peer = context;
+    if (member->node.role == NODE_ROLE_SUPERPEER) (void)chord_forget(peer->chord, &member->node.id);
+    else if (member->local_registration) (void)metadata_remove_peer(peer->metadata, &member->node.id);
+}
+
+static void refresh_chord_membership(PeerContext *peer)
+{
+    ChordPeer neighbor;
+    if (chord_get_successor(peer->chord, &neighbor) == 0) (void)heartbeat_discover(peer->heartbeat, &neighbor.config);
+    int exists;
+    if (chord_get_predecessor(peer->chord, &neighbor, &exists) == 0 && exists) (void)heartbeat_discover(peer->heartbeat, &neighbor.config);
+    for (unsigned i = 0U; i < CHORD_FINGER_COUNT; ++i) if (chord_get_finger(peer->chord, i, &neighbor) == 0) (void)heartbeat_discover(peer->heartbeat, &neighbor.config);
+    SuperPeerMember *members; size_t count;
+    heartbeat_gate_lock(peer->heartbeat);
+    if (membership_snapshot(peer->superpeer, &members, &count) == 0)
+    {
+        ChordPeer *alive = calloc(count, sizeof(*alive)); size_t n = 0U;
+        if (alive != NULL)
+        {
+            int successor_unavailable = 0;
+            ChordPeer current_successor;
+            (void)chord_get_successor(peer->chord, &current_successor);
+            for (size_t i = 0U; i < count; ++i)
+            {
+                if (members[i].node.role != NODE_ROLE_SUPERPEER || node_id_equal(&members[i].node.id, &peer->local_node.id)) continue;
+                if (members[i].state >= SUPERPEER_MEMBER_FAILED) (void)chord_forget(peer->chord, &members[i].node.id);
+                if (node_id_equal(&members[i].node.id, &current_successor.id) && members[i].state != SUPERPEER_MEMBER_ALIVE) successor_unavailable = 1;
+                if (members[i].state == SUPERPEER_MEMBER_ALIVE && members[i].incarnation > 0U && members[i].last_seen != 0)
+                {
+                    (void)chord_allow(peer->chord, &members[i].node.id);
+                    alive[n++] = (ChordPeer){members[i].node.id, members[i].node.config};
+                }
+            }
+            /* Antes da descoberta direta, mantém o sucessor aprendido no JOIN Chord. */
+            if (n > 0U || successor_unavailable) (void)chord_repair(peer->chord, alive, n);
+            free(alive);
+        }
+        free(members);
+    }
+    heartbeat_gate_unlock(peer->heartbeat);
+}
+
 /* Inicializa identidade, sincronização e servidor; no encerramento espera clientes antes de destruir o estado. */
 static int superpeer_run(int argc, char **argv)
 {
+    /* O roteiro do professor mistura stdout de processos no mesmo arquivo: nunca sobrescrever linhas já anexadas. */
+    struct stat log_stat;
+    if (fstat(STDOUT_FILENO, &log_stat) == 0 && S_ISREG(log_stat.st_mode))
+    {
+        int flags = fcntl(STDOUT_FILENO, F_GETFL);
+        if (flags >= 0) (void)fcntl(STDOUT_FILENO, F_SETFL, flags | O_APPEND);
+    }
     NodeArguments arguments;
     PeerContext peer;
     pthread_t accept_thread;
@@ -1329,6 +1009,13 @@ static int superpeer_run(int argc, char **argv)
         return EXIT_FAILURE;
     }
 
+    char membership_directory[512];
+    (void)snprintf(membership_directory, sizeof(membership_directory), ".superpeer_storage/%u", (unsigned)arguments.local_port);
+    if (app_config.data_dir[0] != '\0') strcpy(membership_directory, app_config.data_dir);
+    if (heartbeat_create(&peer.local_node, peer.superpeer, membership_directory, membership_failure, &peer, &peer.heartbeat) < 0)
+    {
+        perror("membership initialization"); directory_destroy(peer.directory); metadata_destroy(peer.metadata); chord_destroy(peer.chord); superpeer_destroy(peer.superpeer); return EXIT_FAILURE;
+    }
     peer.server_fd = network_create_server(arguments.local_port, PEER_BACKLOG);
     if (peer.server_fd < 0 || concurrent_server_create(peer.server_fd, handle_client, &peer, &peer.runtime) < 0)
     {
@@ -1337,6 +1024,7 @@ static int superpeer_run(int argc, char **argv)
             (void)network_shutdown(peer.server_fd);
         }
         directory_destroy(peer.directory);
+        heartbeat_destroy(peer.heartbeat);
         metadata_destroy(peer.metadata);
         chord_destroy(peer.chord);
         superpeer_destroy(peer.superpeer);
@@ -1358,6 +1046,7 @@ static int superpeer_run(int argc, char **argv)
         fprintf(stderr, "pthread_create: %s\n", strerror(thread_result));
         concurrent_server_destroy(peer.runtime);
         directory_destroy(peer.directory);
+        heartbeat_destroy(peer.heartbeat);
         metadata_destroy(peer.metadata);
         chord_destroy(peer.chord);
         superpeer_destroy(peer.superpeer);
@@ -1375,15 +1064,20 @@ static int superpeer_run(int argc, char **argv)
         g_running = 0;
     }
 
+    if (heartbeat_start(peer.heartbeat) < 0) { perror("heartbeat start"); g_running = 0; }
+
     /* Mantem o processo vivo para aceitar novos clientes. */
     unsigned finger_index = 0U;
     while (g_running)
     {
+        refresh_chord_membership(&peer);
+        int64_t previous_deadline = network_deadline_set(network_monotonic_ms() + heartbeat_budget(peer.heartbeat));
         for (unsigned count = 0U; count < 16U && g_running; ++count)
         {
-            if (chord_network_maintain(peer.chord, finger_index) < 0) break;
+            (void)chord_network_maintain(peer.chord, finger_index);
             finger_index = (finger_index + 1U) % CHORD_FINGER_COUNT;
         }
+        network_deadline_set(previous_deadline);
         (void)sleep(1U);
     }
 
@@ -1391,6 +1085,7 @@ static int superpeer_run(int argc, char **argv)
     concurrent_server_stop(peer.runtime);
     (void)pthread_join(accept_thread, NULL);
     concurrent_server_destroy(peer.runtime);
+    heartbeat_destroy(peer.heartbeat);
     directory_destroy(peer.directory);
     metadata_destroy(peer.metadata);
     chord_destroy(peer.chord);
@@ -1404,5 +1099,3 @@ int main(int argc, char **argv)
 {
     return superpeer_run(argc, argv);
 }
-
-#endif

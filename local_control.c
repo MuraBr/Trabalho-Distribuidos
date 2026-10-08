@@ -200,7 +200,17 @@ int local_control_command(uint16_t local_port, int upload, const char *file, con
     if (destination != NULL && absolute_path(destination, cwd, target) < 0) return -1;
     fd = socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0);
     if (fd < 0) return -1;
-    if (connect(fd, (struct sockaddr *)&address, sizeof(address)) < 0)
+    /* O listener TCP pode abrir antes de JOIN e IPC ficarem prontos; espera curta, sem criar cliente anônimo. */
+    int64_t startup_deadline = network_monotonic_ms() + 1500;
+    int connected;
+    while ((connected = connect(fd, (struct sockaddr *)&address, sizeof(address))) < 0 && (errno == ENOENT || errno == ECONNREFUSED) && network_monotonic_ms() < startup_deadline)
+    {
+        close(fd);
+        (void)poll(NULL, 0U, 25);
+        fd = socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0);
+        if (fd < 0) return -1;
+    }
+    if (connected < 0)
     {
         fprintf(stderr, "Peer local %u indisponível; inicie peer serve ou selecione --local-peer-port.\n", (unsigned)local_port);
         goto cleanup;

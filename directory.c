@@ -98,7 +98,7 @@ int directory_lookup(Directory *directory, TransferSelectorType type, const Obje
         {
             SuperPeerMember member;
 
-            if (superpeer_find_member(directory->superpeer, &owners[owner_index], &member) == 0)
+            if (superpeer_find_member(directory->superpeer, &owners[owner_index], &member) == 0 && member.local_registration && member.state < SUPERPEER_MEMBER_FAILED)
             {
                 TransferEndpoint *endpoint = &endpoints[valid_count++];
 

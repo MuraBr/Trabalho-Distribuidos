@@ -9,3 +9,6 @@
 /.deps/
 /bin/test_storage_atomic
 /bin/test_chord
+bin/test_membership
+bin/test_control
+tests/c1/logs/node_*.log

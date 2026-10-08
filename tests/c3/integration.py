@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Verifica entrada e roteamento Chord entre tres processos Super Peer."""
 import hashlib
+import argparse
 import os
 from pathlib import Path
 import re
@@ -13,7 +14,10 @@ import time
 import zlib
 
 root = Path(tempfile.mkdtemp(prefix="pd-chord-"))
-binary = Path(__file__).resolve().parents[2] / "bin" / "superpeer"
+parser = argparse.ArgumentParser()
+parser.add_argument("--bin-dir", default=str(Path(__file__).resolve().parents[2] / "bin"))
+args = parser.parse_args()
+binary = Path(args.bin_dir).resolve() / "superpeer"
 processes = []
 
 def free_port():

@@ -17,5 +17,8 @@ ssize_t network_send_all(int sock, const void *buffer, size_t tam);
 ssize_t network_recv_exact(int sock, void *buffer, size_t tam);
 /* Tenta encerrar os dois sentidos e sempre chama close; o retorno reflete o resultado de close. */
 int network_shutdown(int sock);
+/* Deadline total por thread; zero restaura o comportamento C1/C2. */
+int64_t network_deadline_set(int64_t deadline);
+int64_t network_monotonic_ms(void);
 
 #endif /* NETWORK_H */

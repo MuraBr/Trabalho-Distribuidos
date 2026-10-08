@@ -1,7 +1,16 @@
 #include "chord_network.h"
 #include "rpc.h"
+#include "network.h"
 #include <errno.h>
 #include <string.h>
+#include <stdlib.h>
+
+/* A configuração é imutável após iniciar as threads; o detector valida seus limites. */
+static unsigned control_budget(void)
+{
+    const char *text = getenv("C3_RPC_MS");
+    return text == NULL ? 1000U : (unsigned)strtoul(text, NULL, 10);
+}
 
 /* Descritores na rede reutilizam o formato validado do JOIN de 64 bytes. */
 static int decode_peer(const uint8_t *payload, uint32_t size, ChordPeer *peer)
@@ -21,7 +30,7 @@ static int encode_peer(const ChordPeer *peer, uint8_t output[CHORD_PEER_WIRE_SIZ
 static int call_peer(Chord *chord, const ChordPeer *target, Message_Type type, const uint8_t *payload, uint32_t size, Message *response)
 {
     ChordPeer local;
-    if (chord_local(chord, &local) < 0 || rpc_call(target->config.ip, target->config.port, &local.id, &target->id, type, payload, size, response) < 0) return -1;
+    if (chord_local(chord, &local) < 0 || rpc_call_deadline(target->config.ip, target->config.port, &local.id, &target->id, type, payload, size, response, control_budget()) < 0) return -1;
     return 0;
 }
 
@@ -31,10 +40,14 @@ static int find_from(Chord *chord, const ChordPeer *first, const NodeID *key, Ch
     ChordPeer current;
     ChordPeer local;
     ChordPeer next;
+    NodeID visited[CHORD_FINGER_COUNT + 1U];
+    unsigned visited_count = 0U;
     if (chord == NULL || first == NULL || key == NULL || output == NULL || chord_local(chord, &local) < 0) { errno = EINVAL; return -1; }
     current = *first;
     for (unsigned hop = 0U; hop < CHORD_FINGER_COUNT + 1U; ++hop)
     {
+        for (unsigned i = 0U; i < visited_count; ++i) if (node_id_equal(&current.id, &visited[i])) { errno = ELOOP; return -1; }
+        visited[visited_count++] = current.id;
         int complete;
         if (node_id_equal(&current.id, &local.id))
         {
@@ -43,7 +56,20 @@ static int find_from(Chord *chord, const ChordPeer *first, const NodeID *key, Ch
         else
         {
             Message response;
-            if (call_peer(chord, &current, M_CHORD_ROUTE, key->bytes, NODE_ID_SIZE, &response) < 0) return -1;
+            if (call_peer(chord, &current, M_CHORD_ROUTE, key->bytes, NODE_ID_SIZE, &response) < 0)
+            {
+                /* Tenta outro salto conhecido, sem declarar FAILED por uma única RPC. */
+                ChordPeer alternative; int found = 0;
+                for (unsigned i = CHORD_FINGER_COUNT; i-- > 0U;)
+                {
+                    if (chord_get_finger(chord, i, &alternative) < 0 || node_id_equal(&alternative.id, &local.id)) continue;
+                    int seen = 0;
+                    for (unsigned j = 0U; j < visited_count; ++j) if (node_id_equal(&alternative.id, &visited[j])) seen = 1;
+                    if (!seen) { current = alternative; found = 1; break; }
+                }
+                if (!found) { errno = EHOSTUNREACH; return -1; }
+                continue;
+            }
             if (response.header.message_type != M_CHORD_ROUTE || response.header.payload_size != CHORD_ROUTE_WIRE_SIZE || response.payload[0] > 1U || decode_peer(response.payload + 1U, CHORD_PEER_WIRE_SIZE, &next) < 0)
             {
                 message_free(&response); errno = EBADMSG; return -1;
@@ -51,7 +77,20 @@ static int find_from(Chord *chord, const ChordPeer *first, const NodeID *key, Ch
             complete = response.payload[0] != 0U;
             message_free(&response);
         }
-        if (complete) { *output = next; return 0; }
+        if (complete)
+        {
+            /* O owner também precisa responder: não devolver silenciosamente um nó morto. */
+            if (!node_id_equal(&next.id, &local.id))
+            {
+                Message check;
+                if (call_peer(chord, &next, M_CHORD_INFO, NULL, 0U, &check) < 0) { current = next; continue; }
+                ChordPeer confirmed;
+                int valid = check.header.message_type == M_CHORD_INFO && decode_peer(check.payload, check.header.payload_size, &confirmed) == 0 && node_id_equal(&confirmed.id, &next.id);
+                message_free(&check);
+                if (!valid) { errno = EBADMSG; return -1; }
+            }
+            *output = next; return 0;
+        }
         if (node_id_equal(&next.id, &current.id)) { errno = ELOOP; return -1; }
         current = next;
     }
@@ -74,7 +113,7 @@ int chord_network_join(Chord *chord, const char *host, uint16_t port)
     ChordPeer successor;
     Message response;
     if (chord == NULL || host == NULL || chord_local(chord, &local) < 0) { errno = EINVAL; return -1; }
-    if (rpc_call(host, port, &local.id, NULL, M_CHORD_INFO, NULL, 0U, &response) < 0) return -1;
+    if (rpc_call_deadline(host, port, &local.id, NULL, M_CHORD_INFO, NULL, 0U, &response, control_budget()) < 0) return -1;
     if (response.header.message_type != M_CHORD_INFO || response.header.payload_size != CHORD_PEER_WIRE_SIZE || decode_peer(response.payload, CHORD_PEER_WIRE_SIZE, &bootstrap) < 0 || memcmp(bootstrap.id.bytes, response.header.source_node, NODE_ID_SIZE) != 0)
     {
         message_free(&response); errno = EBADMSG; return -1;

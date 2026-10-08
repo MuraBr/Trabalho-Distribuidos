@@ -1,5 +1,13 @@
 # Continuidade do checkpoint 3 para o aluno 1
 
+## Continuação implementada em 07/10/2026
+
+As tarefas 1-4 foram integradas: heartbeat de Peer e Super Peer, estados de falha, Gossip e reparo do anel. O contrato, comandos, testes e limites reais estão em `checkpoint_3_aluno_1.md`. O item 5 (metadados distribuídos) permanece para combinar com o Aluno 2. O estado recebido em 05/10 e a lista abaixo são preservados como histórico.
+
+Membership foi extraído para membership.c; a API superpeer_* continua em superpeer.h. Os novos codecs e o serviço de controle estão em gossip.c e heartbeat.c. Tempos padrão: 5 s entre heartbeats, suspeita aos 15 s, falha confirmada a partir de 20 s e remoção aos 30 s. Localizações são conservadas durante SUSPECT e retiradas em FAILED/LEAVE. O Peer retenta o mesmo Super Peer e anuncia os manifests após reinício.
+
+Testes executados: make test, integração C2, integração Chord, novos testes locais C3 e suíte TCP de falhas com cinco nós; execução com tempos reais e builds de sanitizadores. Resultados e limitações (inclusive o caso de alias no roteiro disponível do professor) constam no relatório. requisitos_aluno_1.md não foi modificado.
+
 ## Estado recebido em 05/10/2026
 
 O aluno 2 implementou o anel Chord entre Super Peers: sucessor, predecessor, 256 fingers, lookup de responsável, join, stabilize, notify e fix_fingers. `chord.c` é a API local, `chord_network.c` faz as trocas TCP e `superpeer.c` chama a manutenção periódica. `make test-c3-local` verifica a API e `python3 tests/c3/integration.py` verifica três processos pela rede. A consulta de documentos permanece local; não há migração ou replicação dos índices. Heartbeat, Gossip e estados de falha ainda são tarefas abertas.

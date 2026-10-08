@@ -172,9 +172,9 @@ try:
         fields, data = reply(s)
         check(fields[1] == 2 and data == bytes([1, 6]), "LOOKUP sem identidade rejeitado especificamente")
     with socket.create_connection(("127.0.0.1", sp_port), timeout=5) as s:
-        s.sendall(frame(13, b""))
+        s.sendall(frame(15, b""))
         fields, data = reply(s)
-        check(fields[1] == 2 and data == bytes([1, 5]), "heartbeat permanece não implementado")
+        check(fields[1] == 2 and data == bytes([1, 5]), "eleição C4 permanece não implementada")
 
     # Serialização independente e corrupção em requests reais ao Peer.
     def exchange(payload):

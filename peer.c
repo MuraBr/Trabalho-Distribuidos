@@ -1,6 +1,9 @@
 #define _POSIX_C_SOURCE 200809L
 #include "app_config.h"
 #include "local_control.h"
+#include "heartbeat.h"
+#include "wire.h"
+#include <pthread.h>
 
 #include "concurrent_server.h"
 #include "network.h"
@@ -36,7 +39,19 @@ typedef struct
     ConcurrentServer *runtime;
     char superpeer_host[NODE_ADDRESS_SIZE];
     uint16_t superpeer_port;
+    Heartbeat *heartbeat;
+    pthread_mutex_t identity_mutex;
 } PeerService;
+
+static int reconnect_service(void *context);
+
+static NodeID superpeer_identity(PeerService *service)
+{
+    pthread_mutex_lock(&service->identity_mutex);
+    NodeID id = service->superpeer_id;
+    pthread_mutex_unlock(&service->identity_mutex);
+    return id;
+}
 
 static volatile sig_atomic_t service_server_fd = -1;
 
@@ -83,11 +98,13 @@ static int send_response(PeerService *service, int socket_fd, const Message *req
 
 static int join_superpeer(PeerService *service)
 {
-    uint8_t payload[JOIN_PAYLOAD_WIRE_SIZE];
+    uint8_t payload[JOIN_PAYLOAD_WIRE_SIZE + 9U];
     Message response;
     int status;
 
-    if (rpc_encode_join_payload(&service->node.config, payload) < 0 || rpc_call(service->superpeer_host, service->superpeer_port, &service->node.id, NULL, M_JOIN, payload, JOIN_PAYLOAD_WIRE_SIZE, &response) < 0)
+    payload[JOIN_PAYLOAD_WIRE_SIZE] = 1U;
+    wire_put_u64(payload + JOIN_PAYLOAD_WIRE_SIZE + 1U, heartbeat_incarnation(service->heartbeat));
+    if (rpc_encode_join_payload(&service->node.config, payload) < 0 || rpc_call_deadline(service->superpeer_host, service->superpeer_port, &service->node.id, NULL, M_JOIN, payload, sizeof(payload), &response, heartbeat_budget(service->heartbeat)) < 0)
     {
         return -1;
     }
@@ -96,9 +113,9 @@ static int join_superpeer(PeerService *service)
     {
         NodeConfig remote_config;
         Node remote_node;
-        if (rpc_decode_join_payload(response.payload, response.header.payload_size, &remote_config) < 0 || node_init(&remote_node, &remote_config) < 0 || memcmp(remote_node.id.bytes, response.header.source_node, NODE_ID_SIZE) != 0) status = -1;
+        if (rpc_decode_join_payload(response.payload, response.header.payload_size, &remote_config) < 0 || node_init(&remote_node, &remote_config) < 0 || memcmp(remote_node.id.bytes, response.header.source_node, NODE_ID_SIZE) != 0 || heartbeat_peer_target(service->heartbeat, &remote_config, reconnect_service) < 0) status = -1;
     }
-    if (status == 0) memcpy(service->superpeer_id.bytes, response.header.source_node, NODE_ID_SIZE);
+    if (status == 0) { pthread_mutex_lock(&service->identity_mutex); memcpy(service->superpeer_id.bytes, response.header.source_node, NODE_ID_SIZE); pthread_mutex_unlock(&service->identity_mutex); }
     message_free(&response);
     if (status < 0)
     {
@@ -115,10 +132,11 @@ static int announce_document(PeerService *service, const TransferDocument *docum
     int status = -1;
 
     MetadataChunk *chunks = NULL;
+    NodeID remote_id = superpeer_identity(service);
     if (storage_descriptors(service->storage, &document->id, &chunks) < 0) return -1;
     int encoded = transfer_encode_announcement(document, chunks, &payload, &payload_size);
     free(chunks);
-    if (encoded < 0 || rpc_call(service->superpeer_host, service->superpeer_port, &service->node.id, &service->superpeer_id, M_STORE, payload, payload_size, &response) < 0)
+    if (encoded < 0 || rpc_call_deadline(service->superpeer_host, service->superpeer_port, &service->node.id, &remote_id, M_STORE, payload, payload_size, &response, heartbeat_budget(service->heartbeat)) < 0)
     {
         free(payload);
         return -1;
@@ -248,7 +266,14 @@ static void serve_connection(void *context, int socket_fd)
             message_free(&message);
             return;
         }
-        if (message.header.message_type == (uint8_t)M_STORE)
+        if (message.header.message_type == M_HEARTBEAT)
+        {
+            uint8_t *payload = NULL; uint32_t size = 0U; Message_Type type = M_ERROR;
+            if (heartbeat_handle(service->heartbeat, &message, &type, &payload, &size) < 0) type = M_ERROR;
+            (void)send_response(service, socket_fd, &message, type, payload, size);
+            free(payload);
+        }
+        else if (message.header.message_type == (uint8_t)M_STORE)
         {
             (void)handle_store(service, socket_fd, &message);
         }
@@ -294,6 +319,18 @@ static int initialize_service(PeerService *service, uint16_t local_port, const c
     {
         return -1;
     }
+    int error = pthread_mutex_init(&service->identity_mutex, NULL);
+    if (error != 0) { storage_destroy(service->storage); errno = error; return -1; }
+    if (heartbeat_create(&service->node, NULL, storage_path, NULL, service, &service->heartbeat) < 0) { pthread_mutex_destroy(&service->identity_mutex); storage_destroy(service->storage); return -1; }
+    return 0;
+}
+
+/* Reconexão ao endpoint configurado: mantém identidade e anuncia os manifests finalizados. */
+static int reconnect_service(void *context)
+{
+    PeerService *service = context;
+    if (join_superpeer(service) < 0 || announce_catalog(service) < 0) return -1;
+    printf("Peer reconnected; catalog announced\n"); fflush(stdout);
     return 0;
 }
 
@@ -308,6 +345,10 @@ static int peer_service_run(uint16_t local_port, const char *superpeer_host, uin
         perror("peer initialization");
         return EXIT_FAILURE;
     }
+    /* Identidade já está durável antes de abrir TCP; facilita diagnóstico durante o JOIN. */
+    printf("NodeID: ");
+    for (size_t index = 0U; index < NODE_ID_SIZE; ++index) printf("%02x", (unsigned)service.node.id.bytes[index]);
+    printf("\n"); fflush(stdout);
     service.server_fd = network_create_server(local_port, PEER_BACKLOG);
     if (service.server_fd < 0 || concurrent_server_create(service.server_fd, serve_connection, &service, &service.runtime) < 0)
     {
@@ -325,25 +366,30 @@ static int peer_service_run(uint16_t local_port, const char *superpeer_host, uin
         goto cleanup;
     }
     service_server_fd = service.server_fd;
+    if (heartbeat_start(service.heartbeat) < 0) { perror("heartbeat start"); goto cleanup; }
     (void)signal(SIGINT, stop_service);
     (void)signal(SIGTERM, stop_service);
-    printf("Peer storage started\nNodeID: ");
-    for (size_t index = 0U; index < NODE_ID_SIZE; ++index)
-    {
-        printf("%02x", (unsigned)service.node.id.bytes[index]);
-    }
-    if (app_config.data_dir[0] != '\0') printf("\nStorage: %s\n", app_config.data_dir);
-    else printf("\nStorage: .peer_storage/%" PRIu16 "\n", local_port);
+    printf("Peer storage started\n");
+    if (app_config.data_dir[0] != '\0') printf("Storage: %s\n", app_config.data_dir);
+    else printf("Storage: .peer_storage/%" PRIu16 "\n", local_port);
     fflush(stdout);
     status = concurrent_server_run(service.runtime) == 0 ? EXIT_SUCCESS : EXIT_FAILURE;
 
 cleanup:
     service_server_fd = -1;
+    /* Os handlers podem usar o detector: interrompe o listener e aguarda conexões primeiro. */
+    if (service.runtime != NULL) concurrent_server_stop(service.runtime);
     local_control_stop(service.control);
+    if (service.runtime != NULL) { concurrent_server_destroy(service.runtime); service.runtime = NULL; service.server_fd = -1; }
+    heartbeat_stop(service.heartbeat);
+    uint8_t leave[9] = {1U};
+    wire_put_u64(leave + 1U, heartbeat_incarnation(service.heartbeat));
+    heartbeat_destroy(service.heartbeat);
+    service.heartbeat = NULL;
     if (joined)
     {
         Message response;
-        if (rpc_call(service.superpeer_host, service.superpeer_port, &service.node.id, &service.superpeer_id, M_LEAVE, NULL, 0U, &response) == 0) message_free(&response);
+        if (rpc_call_deadline(service.superpeer_host, service.superpeer_port, &service.node.id, &service.superpeer_id, M_LEAVE, leave, sizeof(leave), &response, 1000U) == 0) message_free(&response);
     }
     if (service.runtime != NULL)
     {
@@ -354,6 +400,7 @@ cleanup:
         (void)network_shutdown(service.server_fd);
     }
     storage_destroy(service.storage);
+    pthread_mutex_destroy(&service.identity_mutex);
     return status;
 }
 

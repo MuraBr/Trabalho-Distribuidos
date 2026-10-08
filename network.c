@@ -22,15 +22,32 @@ static int timeout_ms(const char *name, int fallback)
     return errno == 0 && end != value && *end == '\0' && seconds > 0 && seconds <= 3600 ? (int)seconds * 1000 : fallback;
 }
 
-static int64_t now_ms(void)
+static _Thread_local int64_t control_deadline;
+
+int64_t network_deadline_set(int64_t deadline)
+{
+    int64_t previous = control_deadline;
+    control_deadline = deadline;
+    return previous;
+}
+
+int64_t network_monotonic_ms(void)
 {
     struct timespec value;
     if (clock_gettime(CLOCK_MONOTONIC, &value) < 0) return -1;
     return (int64_t)value.tv_sec * 1000 + value.tv_nsec / 1000000;
 }
 
+static int64_t now_ms(void) { return network_monotonic_ms(); }
+
+static int64_t bounded_deadline(int64_t deadline)
+{
+    return control_deadline > 0 && control_deadline < deadline ? control_deadline : deadline;
+}
+
 static int wait_ready(int fd, short events, int64_t deadline)
 {
+    deadline = bounded_deadline(deadline);
     struct pollfd descriptor = {.fd = fd, .events = events};
     for (;;)
     {
@@ -95,6 +112,7 @@ ssize_t network_send_all(int sock, const void *buffer, size_t size)
     if (size > (size_t)SSIZE_MAX || (buffer == NULL && size != 0U)) { errno = EINVAL; return -1; }
     while (done < size)
     {
+        if (control_deadline > 0 && now_ms() >= control_deadline) { errno = ETIMEDOUT; return -1; }
         ssize_t count = send(sock, data + done, size - done, MSG_NOSIGNAL | MSG_DONTWAIT);
         if (count > 0) { done += (size_t)count; deadline = now_ms() + timeout; continue; }
         if (count == 0) { errno = EPIPE; return -1; }
@@ -113,6 +131,7 @@ ssize_t network_recv_exact(int sock, void *buffer, size_t size)
     if (size > (size_t)SSIZE_MAX || (buffer == NULL && size != 0U)) { errno = EINVAL; return -1; }
     while (done < size)
     {
+        if (control_deadline > 0 && now_ms() >= control_deadline) { errno = ETIMEDOUT; return -1; }
         ssize_t count = recv(sock, data + done, size - done, MSG_DONTWAIT);
         if (count > 0) { done += (size_t)count; deadline = now_ms() + timeout; continue; }
         if (count == 0) return (ssize_t)done;

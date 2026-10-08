@@ -130,3 +130,17 @@ int rpc_decode_join_payload(const uint8_t *payload, size_t payload_size, NodeCon
     }
     return 0;
 }
+
+/* O prazo é local à thread e inclui conexão, envio e resposta, inclusive bytes lentos. */
+int rpc_call_deadline(const char *host, uint16_t port, const NodeID *source, const NodeID *destination, Message_Type type, const uint8_t *payload, uint32_t payload_size, Message *response, unsigned timeout_ms)
+{
+    if (timeout_ms == 0U) { errno = EINVAL; return -1; }
+    int64_t deadline = network_monotonic_ms() + (int64_t)timeout_ms;
+    int64_t previous = network_deadline_set(deadline);
+    if (previous > 0 && previous < deadline) network_deadline_set(previous);
+    int result = rpc_call(host, port, source, destination, type, payload, payload_size, response);
+    int error = errno;
+    network_deadline_set(previous);
+    errno = error;
+    return result;
+}

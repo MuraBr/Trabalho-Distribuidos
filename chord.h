@@ -23,5 +23,8 @@ int chord_notify(Chord *chord, const ChordPeer *peer);
 int chord_consider_predecessor(Chord *chord, const ChordPeer *candidate);
 int chord_set_finger(Chord *chord, unsigned index, const ChordPeer *peer);
 int chord_local(Chord *chord, ChordPeer *output);
+int chord_forget(Chord *chord, const NodeID *id);
+int chord_allow(Chord *chord, const NodeID *id);
+int chord_repair(Chord *chord, const ChordPeer *alive, size_t count);
 
 #endif

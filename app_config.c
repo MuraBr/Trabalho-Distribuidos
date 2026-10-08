@@ -14,6 +14,13 @@ AppConfig app_config;
 
 static int assign(const char *key, const char *value)
 {
+    const char *control = NULL;
+    if (strcmp(key, "heartbeat-ms") == 0) control = "C3_HEARTBEAT_MS";
+    else if (strcmp(key, "suspect-ms") == 0) control = "C3_SUSPECT_MS";
+    else if (strcmp(key, "failed-ms") == 0) control = "C3_FAILED_MS";
+    else if (strcmp(key, "removed-ms") == 0) control = "C3_REMOVED_MS";
+    else if (strcmp(key, "control-timeout-ms") == 0) control = "C3_RPC_MS";
+    if (control != NULL) return setenv(control, value, 1);
     char *target = NULL;
     size_t capacity = NODE_ADDRESS_SIZE;
     if (strcmp(key, "ip") == 0 || strcmp(key, "advertise-ip") == 0) target = app_config.advertised;
@@ -77,7 +84,7 @@ int app_config_load(int *argc, char **argv, int superpeer)
     {
         const char *key = argv[i];
         int config = strcmp(key, "--config") == 0 || strcmp(key, "-f") == 0;
-        int custom = strcmp(key, "--bind") == 0 || strcmp(key, "--advertise-ip") == 0 || strcmp(key, "--data-dir") == 0 || strcmp(key, "--superpeer-host") == 0 || strcmp(key, "--superpeer-port") == 0;
+        int custom = strcmp(key, "--bind") == 0 || strcmp(key, "--advertise-ip") == 0 || strcmp(key, "--data-dir") == 0 || strcmp(key, "--superpeer-host") == 0 || strcmp(key, "--superpeer-port") == 0 || strcmp(key, "--heartbeat-ms") == 0 || strcmp(key, "--suspect-ms") == 0 || strcmp(key, "--failed-ms") == 0 || strcmp(key, "--removed-ms") == 0 || strcmp(key, "--control-timeout-ms") == 0;
         if (!superpeer && *argc > 1 && strcmp(argv[1], "serve") == 0 && strcmp(key, "--port") == 0) custom = 1;
         if (!config && !custom) continue;
         if (i + 1 >= *argc) { errno = EINVAL; return -1; }

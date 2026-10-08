@@ -10,7 +10,10 @@
 
 typedef enum
 {
-    SUPERPEER_MEMBER_ALIVE = 0
+    SUPERPEER_MEMBER_ALIVE = 0,
+    SUPERPEER_MEMBER_SUSPECT = 1,
+    SUPERPEER_MEMBER_FAILED = 2,
+    SUPERPEER_MEMBER_REMOVED = 3
 } SuperPeerMemberState;
 
 typedef struct
@@ -18,6 +21,12 @@ typedef struct
     Node node;
     SuperPeerMemberState state;
     time_t last_seen;
+    NodeID home;
+    NodeID reporter;
+    uint64_t incarnation, sequence, version;
+    int64_t observed_ms, probe_ms;
+    unsigned failed_probes;
+    int local_registration;
 } SuperPeerMember;
 
 typedef struct
@@ -56,16 +65,28 @@ int superpeer_get_node(const SuperPeer *superpeer, Node *output);
 /* Adds a member or refreshes the existing member with the same NodeID. */
 SuperPeerRegistrationResult superpeer_register_node(SuperPeer *superpeer, const Node *node);
 
-/* Removes a non-local member identified by its NodeID. */
+/* Saída lógica: conserva tombstone e exclui o membro das consultas de registro ativo. */
 int superpeer_unregister_node(SuperPeer *superpeer, const NodeID *node_id);
 
 /* Copies a registered member into output. */
 int superpeer_find_member(const SuperPeer *superpeer, const NodeID *node_id, SuperPeerMember *output);
 
-/* Returns the current number of registered members. */
+/* Conta membros locais ALIVE/SUSPECT, incluindo o nó local; tombstones ficam no snapshot C3. */
 size_t superpeer_member_count(const SuperPeer *superpeer);
 
 /* Returns one when node_id is registered and zero otherwise. */
 int superpeer_is_registered(const SuperPeer *superpeer, const NodeID *node_id);
+
+/* API C3: snapshots independentes e tempo monotônico fornecido pelo detector. */
+SuperPeerRegistrationResult membership_register(SuperPeer *superpeer, const Node *node, const NodeID *home, uint64_t incarnation, int64_t now);
+int membership_heartbeat(SuperPeer *superpeer, const SuperPeerMember *member, int64_t now);
+int membership_snapshot(SuperPeer *superpeer, SuperPeerMember **output, size_t *count);
+int membership_merge(SuperPeer *superpeer, const SuperPeerMember *member);
+int membership_probe(SuperPeer *superpeer, const NodeID *id, uint64_t incarnation, uint64_t sequence, int64_t now, int success);
+int membership_tick(SuperPeer *superpeer, int64_t now, unsigned suspect_ms, unsigned failed_ms, unsigned removed_ms);
+int membership_local(SuperPeer *superpeer, const Node *node, uint64_t incarnation, uint64_t sequence);
+int membership_save(SuperPeer *superpeer, const char *path);
+int membership_load(SuperPeer *superpeer, const char *path);
+const char *membership_state_name(SuperPeerMemberState state);
 
 #endif

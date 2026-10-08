@@ -52,14 +52,83 @@ static char *trim(char *text)
     return text;
 }
 
+static int config_port(const char *text, uint16_t *port)
+{
+    char *end;
+    errno = 0;
+    unsigned long number = strtoul(text, &end, 10);
+    if (errno != 0 || end == text || *end != '\0' || number == 0UL || number > UINT16_MAX) { errno = EINVAL; return -1; }
+    *port = (uint16_t)number;
+    return 0;
+}
+
+static int requested_port(int argc, char **argv, uint16_t *port)
+{
+    for (int i = 1; i + 1 < argc; ++i) if (strcmp(argv[i], "--port") == 0) return config_port(argv[i + 1], port);
+    errno = EINVAL;
+    return -1;
+}
+
+static int load_superpeer_roster(FILE *file, uint16_t port)
+{
+    char line[1024];
+    char bootstrap_host[NODE_ADDRESS_SIZE] = {0};
+    uint16_t bootstrap_port = 0U;
+    int matches = 0;
+    rewind(file);
+    while (fgets(line, sizeof(line), file) != NULL)
+    {
+        char *fields[6];
+        char *cursor = trim(line);
+        if (*cursor == '\0' || *cursor == '#') continue;
+        for (size_t i = 0U; i < 5U; ++i)
+        {
+            fields[i] = cursor;
+            char *comma = strchr(cursor, ',');
+            if (comma == NULL) { errno = EINVAL; return -1; }
+            *comma = '\0';
+            cursor = comma + 1;
+        }
+        fields[5] = cursor;
+        if (strchr(fields[5], ',') != NULL) { errno = EINVAL; return -1; }
+        for (size_t i = 0U; i < 6U; ++i) fields[i] = trim(fields[i]);
+        uint16_t entry_port;
+        struct in_addr address;
+        if (*fields[0] == '\0' || strcmp(fields[1], "superpeer") != 0 || inet_pton(AF_INET, fields[2], &address) != 1 || config_port(fields[3], &entry_port) < 0) { errno = EINVAL; return -1; }
+        /* O primeiro registro é o ponto de entrada dos demais Super Peers. */
+        if (bootstrap_port == 0U)
+        {
+            if (strlen(fields[2]) >= sizeof(bootstrap_host)) { errno = EINVAL; return -1; }
+            strcpy(bootstrap_host, fields[2]);
+            bootstrap_port = entry_port;
+        }
+        if (entry_port != port) continue;
+        if (++matches > 1 || strlen(fields[0]) >= sizeof(app_config.node_name)) { errno = EINVAL; return -1; }
+        strcpy(app_config.node_name, fields[0]);
+        if (assign("ip", fields[2]) < 0 || assign("bind", fields[2]) < 0) return -1;
+        app_config.port = entry_port;
+    }
+    if (ferror(file)) return -1;
+    if (matches != 1) { errno = ENOENT; return -1; }
+    if (port != bootstrap_port)
+    {
+        strcpy(app_config.chord_host, bootstrap_host);
+        app_config.chord_port = bootstrap_port;
+    }
+    return 0;
+}
+
 int app_config_load(int *argc, char **argv, int superpeer)
 {
     memset(&app_config, 0, sizeof(app_config));
     strcpy(app_config.advertised, "127.0.0.1");
     strcpy(app_config.bind_ip, "0.0.0.0");
     strcpy(app_config.superpeer, "127.0.0.1");
+    app_config.chord_host[0] = '\0';
     app_config.port = superpeer ? 55101U : 55102U;
     app_config.superpeer_port = 55101U;
+    app_config.chord_port = 0U;
+    app_config.node_name[0] = '\0';
     for (int i = 1; i + 1 < *argc; ++i)
     {
         if (strcmp(argv[i], "--config") != 0 && strcmp(argv[i], "-f") != 0) continue;
@@ -67,6 +136,22 @@ int app_config_load(int *argc, char **argv, int superpeer)
         if (file == NULL) return -1;
         char line[1024];
         int status = 0;
+        int roster = 0;
+        while (fgets(line, sizeof(line), file) != NULL)
+        {
+            char *content = trim(line);
+            if (*content == '\0' || *content == '#') continue;
+            roster = strchr(content, ',') != NULL && strchr(content, '=') == NULL;
+            break;
+        }
+        if (roster)
+        {
+            uint16_t port;
+            if (!superpeer || requested_port(*argc, argv, &port) < 0 || load_superpeer_roster(file, port) < 0) status = -1;
+        }
+        else
+        {
+            rewind(file);
         while (fgets(line, sizeof(line), file) != NULL)
         {
             char *key = trim(line);
@@ -75,6 +160,7 @@ int app_config_load(int *argc, char **argv, int superpeer)
             if (equal == NULL) { errno = EINVAL; status = -1; break; }
             *equal++ = '\0';
             if (assign(trim(key), trim(equal)) < 0) { status = -1; break; }
+        }
         }
         if (ferror(file)) status = -1;
         fclose(file);

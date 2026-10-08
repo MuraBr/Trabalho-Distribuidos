@@ -1,6 +1,10 @@
 # Requisitos do trabalho — Aluno 2
 
-## Integração C3 vigente - 07/10/2026
+## Integração C3 vigente - 08/10/2026
+
+O `runc3.sh` original foi preservado. `tests/config/c3.conf` aponta para o inventário `c3.conf.txt`; `app_config.c` seleciona a linha correspondente a `--port`, usando nome, papel, IP e porta. O primeiro registro é o bootstrap Chord para os demais nós; a inicialização tenta novamente por até 30 segundos para permitir que o script inicie os processos em sequência sem aguardar cada um. Os campos finais do CSV permanecem metadados opacos, e a identidade segue derivada e persistida.
+
+Evidências desta alteração: `bash runc3.sh` passou 5/5 verificações, incluindo successor, finger table, Gossip/heartbeat e detecção SUSPECT/FAILED após encerrar SP3. `make test-c3 C3_CONFIG=c3.conf.txt` também passou nos testes locais, na integração Chord TCP e nas 17 verificações de falha/reparo. O log do roteiro está em `/tmp/bittorrent-tests/c3.log`. O comando do cliente `topology` consulta sucessor, predecessor e fingers; `lookup --object-id` roteia uma chave Chord, não consulta metadados de documentos.
 
 Complemento de integração dos dois alunos: chord_forget agora conserva bloqueio do NodeID; setters/notify/reparo recusam respostas antigas para FAILED/REMOVED. chord_allow só é chamado após ALIVE com evidência direta da instância atual. Foi acrescentado make test-c3 reunindo testes locais e TCP. As 17 verificações integradas passaram, incluindo upload, roteamento de ObjectID real, queda de sucessor, download durante reparo e reentrada do Super Peer com o mesmo NodeID. A regressão C2 passou 46 verificações. Evidências e fronteiras: integracao_checkpoint_3.md. A API de metadados não foi transformada em lookup distribuído.
 

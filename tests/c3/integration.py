@@ -12,27 +12,34 @@ import subprocess
 import tempfile
 import time
 import zlib
+from config import load_superpeer_config
 
 root = Path(tempfile.mkdtemp(prefix="pd-chord-"))
 parser = argparse.ArgumentParser()
 parser.add_argument("--bin-dir", default=str(Path(__file__).resolve().parents[2] / "bin"))
+parser.add_argument("--config")
 args = parser.parse_args()
+config_path = str(Path(args.config).resolve()) if args.config else None
 binary = Path(args.bin_dir).resolve() / "superpeer"
 processes = []
+hosts = {}
 
 def free_port():
     with socket.socket() as sock:
         sock.bind(("127.0.0.1", 0))
         return sock.getsockname()[1]
 
-def start(port, bootstrap=None):
+def start(port, bootstrap=None, entry=None, bootstrap_host="127.0.0.1"):
     args = [str(binary), "--port", str(port)]
-    if bootstrap is not None:
-        args += ["--chord-host", "127.0.0.1", "--chord-port", str(bootstrap)]
+    args += args_for_config()
+    host = entry["host"] if entry else "127.0.0.1"
+    if bootstrap is not None and not config_path:
+        args += ["--chord-host", bootstrap_host, "--chord-port", str(bootstrap)]
     path = root / f"{port}.log"
     with path.open("w") as log:
         process = subprocess.Popen(args, cwd=root, stdout=log, stderr=subprocess.STDOUT, env=dict(os.environ, PEER_IO_TIMEOUT="2", PEER_CONNECT_TIMEOUT="1"))
     processes.append(process)
+    hosts[port] = host
     for _ in range(100):
         content = path.read_text()
         if process.poll() is not None:
@@ -42,6 +49,15 @@ def start(port, bootstrap=None):
             return bytes.fromhex(found.group(1))
         time.sleep(.05)
     raise AssertionError(f"Super Peer {port} nao iniciou: {path.read_text()}")
+
+def args_for_config():
+    return ["--config", config_path] if config_path else []
+
+def client_command(command, host, port, *options):
+    client = binary.parent / "client"
+    result = subprocess.run([str(client), "--cmd", command, "--host", host, "--port", str(port), *options], cwd=root, text=True, capture_output=True, timeout=5)
+    assert result.returncode == 0, result.stdout + result.stderr
+    return result.stdout
 
 def exact(sock, size):
     result = b""
@@ -56,7 +72,7 @@ def request(port, kind, payload=b""):
     transaction = os.urandom(16)
     header = struct.pack("!BB32s32s16sQII", 1, kind, bytes(32), bytes(32), transaction, int(time.time()), len(payload), 0)
     frame = header[:-4] + struct.pack("!I", zlib.crc32(header + payload)) + payload
-    with socket.create_connection(("127.0.0.1", port), timeout=2) as sock:
+    with socket.create_connection((hosts.get(port, "127.0.0.1"), port), timeout=2) as sock:
         sock.settimeout(2)
         sock.sendall(frame)
         received = exact(sock, 98)
@@ -86,8 +102,13 @@ def lookup(entry, key):
     raise AssertionError("Lookup nao terminou")
 
 try:
-    ports = [free_port() for _ in range(3)]
-    ids = [start(ports[0]), start(ports[1], ports[0]), start(ports[2], ports[0])]
+    entries = load_superpeer_config(args.config) if args.config else []
+    if entries and len(entries) < 3:
+        raise ValueError("A configuração C3 precisa de pelo menos três Super Peers")
+    selected = entries[:3]
+    ports = [entry["port"] for entry in selected] if selected else [free_port() for _ in range(3)]
+    bootstrap_host = selected[0]["host"] if selected else "127.0.0.1"
+    ids = [start(ports[0], entry=selected[0] if selected else None), start(ports[1], ports[0], selected[1] if selected else None, bootstrap_host), start(ports[2], ports[0], selected[2] if selected else None, bootstrap_host)]
     sorted_ids = sorted(ids)
     deadline = time.monotonic() + 20
     while True:
@@ -107,6 +128,10 @@ try:
             if time.monotonic() >= deadline:
                 raise
             time.sleep(.2)
+    topology = client_command("topology", bootstrap_host, ports[0])
+    assert "Successor:" in topology and "Finger" in topology, topology
+    lookup_output = client_command("lookup", bootstrap_host, ports[0], "--object-id", "ab" * 32)
+    assert "Lookup" in lookup_output and "Owner:" in lookup_output, lookup_output
     # O laco de manutencao atualiza 16 entradas por segundo; a ultima requer ate 16 ciclos.
     deadline = time.monotonic() + 22
     while True:

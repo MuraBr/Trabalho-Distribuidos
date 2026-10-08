@@ -87,8 +87,8 @@ test-c3-membership: $(BIN_DIR)/test_membership $(BIN_DIR)/test_control
 
 .PHONY: test-c3
 test-c3: all test-c3-local test-c3-membership
-	python3 tests/c3/integration.py --bin-dir "$(BIN_DIR)"
-	python3 tests/c3/failures.py --bin-dir "$(BIN_DIR)"
+	python3 tests/c3/integration.py --bin-dir "$(BIN_DIR)" $(if $(C3_CONFIG),--config "$(C3_CONFIG)",)
+	python3 tests/c3/failures.py --bin-dir "$(BIN_DIR)" $(if $(C3_CONFIG),--config "$(C3_CONFIG)",)
 
 $(BIN_DIR)/test_control: membership.c gossip.c heartbeat.c rpc.c transfer_protocol.c protocol.c network.c node.c tests/c3/test_control.c $(wildcard *.h) | $(BIN_DIR)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -pthread -I. membership.c gossip.c heartbeat.c rpc.c transfer_protocol.c protocol.c network.c node.c tests/c3/test_control.c -o $@ $(LDLIBS)

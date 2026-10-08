@@ -6,6 +6,7 @@
 #include <pthread.h>
 
 #include "concurrent_server.h"
+#include "chord_network.h"
 #include "network.h"
 #include "node.h"
 #include "protocol.h"
@@ -523,12 +524,93 @@ static int legacy_command(const char *command, const char *host, uint16_t port)
     return status;
 }
 
+static int chord_client_call(const char *host, uint16_t port, Message_Type type, const uint8_t *payload, uint32_t payload_size, Message *response)
+{
+    if (rpc_call(host, port, NULL, NULL, type, payload, payload_size, response) < 0) return -1;
+    if (response->header.message_type != (uint8_t)type) { message_free(response); errno = EREMOTEIO; return -1; }
+    return 0;
+}
+
+static int print_chord_peer(const char *label, const uint8_t *payload, uint32_t size)
+{
+    NodeConfig config;
+    Node node;
+    if (rpc_decode_join_payload(payload, size, &config) < 0 || node_init(&node, &config) < 0) return -1;
+    printf("%s %s:%u NodeID=", label, config.ip, (unsigned)config.port);
+    for (size_t i = 0U; i < NODE_ID_SIZE; ++i) printf("%02x", (unsigned)node.id.bytes[i]);
+    putchar('\n');
+    return 0;
+}
+
+static int topology_command(const char *host, uint16_t port)
+{
+    Message response;
+    uint8_t index = 0U;
+    if (chord_client_call(host, port, M_CHORD_FINGER, &index, 1U, &response) < 0) return -1;
+    int status = response.header.payload_size == CHORD_PEER_WIRE_SIZE ? print_chord_peer("Successor:", response.payload, response.header.payload_size) : -1;
+    if (status == 0) status = print_chord_peer("Finger[0]:", response.payload, response.header.payload_size);
+    message_free(&response);
+    if (status < 0) { errno = EBADMSG; return -1; }
+
+    if (chord_client_call(host, port, M_CHORD_PREDECESSOR, NULL, 0U, &response) < 0) return -1;
+    if (response.header.payload_size == 0U) printf("Predecessor: indisponivel\n");
+    else if (response.header.payload_size != CHORD_PEER_WIRE_SIZE || print_chord_peer("Predecessor:", response.payload, response.header.payload_size) < 0) status = -1;
+    message_free(&response);
+    if (status < 0) { errno = EBADMSG; return -1; }
+
+    index = UINT8_MAX;
+    if (chord_client_call(host, port, M_CHORD_FINGER, &index, 1U, &response) < 0) return -1;
+    status = response.header.payload_size == CHORD_PEER_WIRE_SIZE ? print_chord_peer("Finger[255]:", response.payload, response.header.payload_size) : -1;
+    message_free(&response);
+    if (status < 0) { errno = EBADMSG; return -1; }
+    return 0;
+}
+
+static int lookup_command(const char *host, uint16_t port, const char *object_id)
+{
+    NodeID key;
+    NodeID visited[CHORD_FINGER_COUNT];
+    size_t visited_count = 0U;
+    char current_host[NODE_ADDRESS_SIZE];
+    if (node_id_from_hex(&key, object_id) < 0 || strlen(host) >= sizeof(current_host)) { errno = EINVAL; return -1; }
+    strcpy(current_host, host);
+    for (unsigned hop = 0U; hop < CHORD_FINGER_COUNT; ++hop)
+    {
+        Message response;
+        if (chord_client_call(current_host, port, M_CHORD_ROUTE, key.bytes, NODE_ID_SIZE, &response) < 0) return -1;
+        if (response.header.payload_size != CHORD_ROUTE_WIRE_SIZE || response.payload[0] > 1U) { message_free(&response); errno = EBADMSG; return -1; }
+        NodeID current;
+        memcpy(current.bytes, response.header.source_node, NODE_ID_SIZE);
+        for (size_t i = 0U; i < visited_count; ++i) if (node_id_equal(&visited[i], &current)) { message_free(&response); errno = ELOOP; return -1; }
+        visited[visited_count++] = current;
+        int complete = response.payload[0] != 0U;
+        NodeConfig next;
+        Node owner;
+        int status = rpc_decode_join_payload(response.payload + 1U, CHORD_PEER_WIRE_SIZE, &next);
+        if (status == 0) status = node_init(&owner, &next);
+        message_free(&response);
+        if (status < 0) return -1;
+        if (complete)
+        {
+            printf("Lookup concluido em %u saltos\nOwner: %s:%u NodeID=", hop + 1U, next.ip, (unsigned)next.port);
+            for (size_t i = 0U; i < NODE_ID_SIZE; ++i) printf("%02x", (unsigned)owner.id.bytes[i]);
+            putchar('\n');
+            return 0;
+        }
+        strcpy(current_host, next.ip);
+        port = next.port;
+    }
+    errno = ELOOP;
+    return -1;
+}
+
 static int option_command(int argc, char **argv)
 {
     const char *command = NULL;
     const char *host = NULL;
     const char *file = NULL;
     const char *output = NULL;
+    const char *object_id = NULL;
     uint16_t port = 0U;
     int index;
 
@@ -558,6 +640,10 @@ static int option_command(int argc, char **argv)
         {
             file = argv[index + 1];
         }
+        else if (strcmp(argv[index], "--object-id") == 0)
+        {
+            object_id = argv[index + 1];
+        }
         else if (strcmp(argv[index], "--output") == 0)
         {
             output = argv[index + 1];
@@ -577,6 +663,16 @@ static int option_command(int argc, char **argv)
     {
         errno = EINVAL;
         return -1;
+    }
+    if (strcmp(command, "topology") == 0)
+    {
+        if (file != NULL || output != NULL || object_id != NULL) { errno = EINVAL; return -1; }
+        return topology_command(host, port);
+    }
+    if (strcmp(command, "lookup") == 0)
+    {
+        if (file != NULL || output != NULL || object_id == NULL || strlen(object_id) != NODE_ID_SIZE * 2U) { errno = EINVAL; return -1; }
+        return lookup_command(host, port, object_id);
     }
     if (strcmp(command, "upload") == 0)
     {
@@ -606,7 +702,7 @@ static int option_command(int argc, char **argv)
 
 static void usage(const char *program)
 {
-    fprintf(stderr, "Uso:\n  %s serve <porta-peer> <host-superpeer> <porta-superpeer>\n  %s upload <arquivo.pdf> [<host-peer> <porta-peer>]\n  %s download <nome-ou-objectid> [<destino>] [<host-superpeer> <porta-superpeer>]\n  %s benchmark <arquivo.pdf>\n  %s --cmd <ping|join|leave|upload|download> --host <ip> --port <porta> [--file <arquivo>] [--output <destino>]\n", program, program, program, program, program);
+    fprintf(stderr, "Uso:\n  %s serve <porta-peer> <host-superpeer> <porta-superpeer>\n  %s upload <arquivo.pdf> [<host-peer> <porta-peer>]\n  %s download <nome-ou-objectid> [<destino>] [<host-superpeer> <porta-superpeer>]\n  %s benchmark <arquivo.pdf>\n  %s --cmd <ping|join|leave|upload|download|topology|lookup> --host <ip> --port <porta> [--file <arquivo>] [--object-id <sha256>] [--output <destino>]\n", program, program, program, program, program);
 }
 
 int main(int argc, char **argv)

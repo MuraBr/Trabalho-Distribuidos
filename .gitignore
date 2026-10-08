@@ -11,4 +11,5 @@
 /bin/test_chord
 bin/test_membership
 bin/test_control
+__pycache__/
 tests/c1/logs/node_*.log

@@ -12,14 +12,21 @@ import subprocess
 import tempfile
 import time
 import zlib
+from config import load_superpeer_config
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--bin-dir", default="bin")
 parser.add_argument("--real-time", action="store_true")
+parser.add_argument("--config")
 args = parser.parse_args()
 bins = Path(args.bin_dir).resolve()
 root = Path(tempfile.mkdtemp(prefix="pd-c3-failures-"))
 processes = []
+hosts = {}
+configured_nodes = load_superpeer_config(args.config) if args.config else []
+if configured_nodes and len(configured_nodes) != 5:
+    raise ValueError("O cenário de Gossip C3 precisa de exatamente cinco Super Peers na configuração")
+config_by_port = {entry["port"]: entry for entry in configured_nodes}
 passed = 0
 env = dict(os.environ)
 if not args.real_time:
@@ -53,6 +60,11 @@ def launch(name, command, marker):
     with log.open("a") as output:
         p = subprocess.Popen([str(bins / command[0]), *map(str, command[1:]), "--data-dir", str(directory)], env=env, cwd=root, stdout=output, stderr=subprocess.STDOUT)
     processes.append(p)
+    if "--port" in command:
+        port_index = command.index("--port") + 1
+        if port_index < len(command):
+            entry = config_by_port.get(int(command[port_index]))
+            hosts[int(command[port_index])] = entry["host"] if entry else "127.0.0.1"
     # O log pode conter uma inicialização antiga: conferir listener e processo atual também.
     wait(lambda: p.poll() is not None or marker in log.read_text()[old_size:], 15)
     assert p.poll() is None, log.read_text()
@@ -101,7 +113,7 @@ def request(number, kind, payload=b"", source=bytes(32), destination=bytes(32)):
     tx = os.urandom(16)
     header = struct.pack("!BB32s32s16sQII", 1, kind, source, destination, tx, int(time.time()), len(payload), 0)
     frame = header[:-4] + struct.pack("!I", zlib.crc32(header + payload)) + payload
-    with socket.create_connection(("127.0.0.1", number), timeout=2) as s:
+    with socket.create_connection((hosts.get(number, "127.0.0.1"), number), timeout=2) as s:
         s.settimeout(3)
         s.sendall(frame)
         reply = exact(s, 98)
@@ -185,12 +197,16 @@ try:
 
     # Cinco processos: Gossip deve disseminar conhecimento além dos vizinhos Chord.
     overlay = []
-    bootstrap = port()
+    bootstrap = configured_nodes[0]["port"] if configured_nodes else port()
+    bootstrap_host = configured_nodes[0]["host"] if configured_nodes else "127.0.0.1"
     for i in range(5):
-        number = bootstrap if i == 0 else port()
+        entry = configured_nodes[i] if configured_nodes else None
+        number = entry["port"] if entry else bootstrap if i == 0 else port()
         options = ["superpeer", "--port", number]
-        if i:
-            options += ["--chord-host", "127.0.0.1", "--chord-port", bootstrap]
+        if entry:
+            options += ["--config", str(Path(args.config).resolve())]
+        if i and not entry:
+            options += ["--chord-host", bootstrap_host, "--chord-port", bootstrap]
         p, directory, log = launch(f"ring{i}", options, "NodeID:")
         overlay.append((p, directory, log, number, identity(log)))
         time.sleep(.4)
@@ -240,7 +256,13 @@ try:
     check(transfer_after_failure.read_bytes() == document.read_bytes(), "upload/download seguem íntegros durante reparo do overlay")
     # O retorno deve manter NodeID, incrementar época e desfazer o bloqueio do anel.
     victim_epoch = ledger(survivors[0][1])[successor]["incarnation"]
-    returning, returning_directory, returning_log = launch(victim[1].name, ["superpeer", "--port", victim[3], "--chord-host", "127.0.0.1", "--chord-port", survivors[0][3]], "NodeID:")
+    returning_entry = config_by_port.get(victim[3])
+    returning_options = ["superpeer", "--port", victim[3]]
+    if returning_entry:
+        returning_options += ["--config", str(Path(args.config).resolve())]
+    if not returning_entry:
+        returning_options += ["--chord-host", hosts.get(survivors[0][3], "127.0.0.1"), "--chord-port", survivors[0][3]]
+    returning, returning_directory, returning_log = launch(victim[1].name, returning_options, "NodeID:")
     wait(lambda: all(state(d, successor) == 0 and ledger(d)[successor]["incarnation"] > victim_epoch for _, d, _, _, _ in survivors), 25)
     check(identity(returning_log) == successor, "Super Peer reentra com mesmo NodeID e incarnação maior")
     def rejoined():

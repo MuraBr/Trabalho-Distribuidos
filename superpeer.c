@@ -147,8 +147,10 @@ static int parse_node_arguments(int argc, char **argv, NodeArguments *arguments)
     }
 
     memset(arguments, 0, sizeof(*arguments));
-    arguments->node_name = "peer";
+    arguments->node_name = app_config.node_name[0] == '\0' ? "peer" : app_config.node_name;
     arguments->local_port = app_config.port;
+    arguments->chord_host = app_config.chord_host[0] == '\0' ? NULL : app_config.chord_host;
+    arguments->chord_port = app_config.chord_port;
     if (argc == 1) return 0;
 
     /* Preserva a interface posicional original: peer <porta> [<ip> <porta>]. */
@@ -1058,13 +1060,18 @@ static int superpeer_run(int argc, char **argv)
         fprintf(stderr, "Nao foi possivel concluir o JOIN remoto.\n");
     }
 
-    if (arguments.chord_host != NULL && chord_network_join(peer.chord, arguments.chord_host, arguments.chord_port) < 0)
+    /* O inventário permite iniciar processos em paralelo enquanto o bootstrap sobe. */
+    int chord_joined = arguments.chord_host == NULL;
+    for (unsigned attempt = 0U; arguments.chord_host != NULL && attempt < 30U && g_running; ++attempt)
     {
-        fprintf(stderr, "Nao foi possivel entrar no anel Chord.\n");
-        g_running = 0;
+        if (chord_network_join(peer.chord, arguments.chord_host, arguments.chord_port) == 0) { chord_joined = 1; break; }
+        if (attempt == 0U) fprintf(stderr, "Aguardando bootstrap Chord %s:%u.\n", arguments.chord_host, (unsigned)arguments.chord_port);
+        (void)sleep(1U);
     }
+    if (!chord_joined) { fprintf(stderr, "Nao foi possivel entrar no anel Chord.\n"); g_running = 0; }
 
     if (heartbeat_start(peer.heartbeat) < 0) { perror("heartbeat start"); g_running = 0; }
+    else { printf("GOSSIP/heartbeat ativo\n"); fflush(stdout); }
 
     /* Mantem o processo vivo para aceitar novos clientes. */
     unsigned finger_index = 0U;

@@ -5,7 +5,7 @@
 #!/usr/bin/env bash
 set -u
 
-source "$(dirname "${BASH_SOURCE[0]}")/env.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/redvidassobretrabalhodepd/env.sh"
 
 PASS=0
 FAIL=0

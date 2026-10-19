@@ -12,7 +12,7 @@ CPPFLAGS += -I$(CURDIR)/.deps/usr/include -I$(CURDIR)/.deps/usr/include/x86_64-l
 endif
 LDFLAGS ?=
 
-.PHONY: all clean test test-aluno2 test-c2 deps
+.PHONY: all clean test test-aluno2 test-c2 test-c4-local test-c4 deps
 
 # Headers oficiais locais, sem sudo; somente para Debian/Ubuntu sem pacotes -dev.
 deps:
@@ -28,10 +28,10 @@ $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
 
 
-$(BIN_DIR)/superpeer: membership.c gossip.c heartbeat.c app_config.c app_config.h transfer_types.h remote_error.h network.c network.h concurrent_server.c concurrent_server.h protocol.c protocol.h transfer_protocol.c transfer_protocol.h chord.c chord.h chord_network.c chord_network.h \
+$(BIN_DIR)/superpeer: membership.c gossip.c heartbeat.c c4_cluster.c c4_cluster.h c4_log.c c4_log.h app_config.c app_config.h transfer_types.h remote_error.h network.c network.h concurrent_server.c concurrent_server.h protocol.c protocol.h transfer_protocol.c transfer_protocol.h chord.c chord.h chord_network.c chord_network.h \
                       node.c node.h common.h metadata.c metadata.h directory.c directory.h \
                       superpeer.c superpeer.h rpc.c rpc.h | $(BIN_DIR)
-	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -pthread membership.c gossip.c heartbeat.c app_config.c network.c concurrent_server.c protocol.c node.c chord.c chord_network.c \
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -pthread membership.c gossip.c heartbeat.c c4_cluster.c c4_log.c app_config.c network.c concurrent_server.c protocol.c node.c chord.c chord_network.c \
 		transfer_protocol.c rpc.c metadata.c directory.c superpeer.c \
 		-o $@ $(LDLIBS)
 
@@ -53,9 +53,21 @@ test: all test-aluno2 test-c3-membership
 	$(MAKE) -C tests/c1
 	./tests/c1/test_protocol
 	$(MAKE) test-c2
+	$(MAKE) test-c4-local
+
+$(BIN_DIR)/test_c4_log: protocol.c network.c tests/c4/test_log.c c4_log.c c4_log.h protocol.h network.h | $(BIN_DIR)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -pthread -I. protocol.c network.c c4_log.c tests/c4/test_log.c -o $@ $(LDLIBS)
+
+.PHONY: test-c4-local
+test-c4-local: $(BIN_DIR)/test_c4_log
+	$(BIN_DIR)/test_c4_log
+
+.PHONY: test-c4
+test-c4: all test-c4-local
+	python3 tests/c4/integration.py --bin-dir "$(BIN_DIR)"
 
 clean:
-	rm -f $(BIN_DIR)/peer $(BIN_DIR)/superpeer $(BIN_DIR)/node $(BIN_DIR)/client $(BIN_DIR)/test_metadata $(BIN_DIR)/test_node_superpeer $(BIN_DIR)/test_transfer_negative $(BIN_DIR)/test_storage_atomic $(BIN_DIR)/test_chord $(BIN_DIR)/test_membership $(BIN_DIR)/test_control
+	rm -f $(BIN_DIR)/peer $(BIN_DIR)/superpeer $(BIN_DIR)/node $(BIN_DIR)/client $(BIN_DIR)/test_metadata $(BIN_DIR)/test_node_superpeer $(BIN_DIR)/test_transfer_negative $(BIN_DIR)/test_storage_atomic $(BIN_DIR)/test_chord $(BIN_DIR)/test_membership $(BIN_DIR)/test_control $(BIN_DIR)/test_c4_log
 	$(MAKE) -C tests/c1 clean
 
 # API local do aluno 2: não depende de sockets nem altera executáveis versionados.

@@ -1,6 +1,18 @@
 # Requisitos do trabalho — Aluno 2
 
-## Integração C3 vigente - 08/10/2026
+## Checkpoint 4 vigente - 19/10/2026
+
+Implementação C4 integrada em `c4_log.c`, `c4_cluster.c` e `superpeer.c`. O algoritmo Bully usa comparação lexicográfica dos NodeIDs e os tipos reservados `M_ELECTION` (15), `M_OK` (16) e `M_COORDINATOR` (17). Após C3 marcar o coordenador como FAILED, os membros ativos elegem o maior NodeID conhecido. `M_SNAPSHOT` (18) recupera entradas existentes; `M_STATE_TRANSFER` (19) replica entradas e as aplica ao diretório de metadados.
+
+O log `c4-operation.log` é append-only e persistente. Cada entrada contém magic `C4LG`, índice u64, versão u64, TransactionID de 16 bytes, tamanho u32, checksum CRC32 u32 e payload. O payload da operação inclui o NodeID proprietário e os bytes serializados do ANNOUNCE C2. CRC32 é calculado sobre o cabeçalho com o campo checksum zerado seguido do payload. A repetição idêntica do TransactionID é idempotente; conflito de conteúdo é rejeitado. Na inicialização, o log é validado e suas operações são reaplicadas ao índice local.
+
+Contrato C4: `M_ELECTION` leva termo, último índice e última versão (24 bytes); `M_OK` responde sem payload; `M_COORDINATOR` leva termo e índice anunciado (16 bytes); `M_SNAPSHOT` consulta um índice u64 e responde com `M_ACK` contendo o registro ou payload vazio; `M_STATE_TRANSFER` carrega o registro `C4LG`. Todos usam o header C1/C2 existente, TransactionID e CRC32 de framing.
+
+`runc4.sh` executa build estrito, testes locais do log e a integração TCP com três Super Peers e um Peer: eleição do maior NodeID, ANNOUNCE replicado, queda do coordenador, eleição após FAILED e nova operação no coordenador substituto. Evidência executada em 19/10/2026: `bash runc4.sh` passou build `-Werror`, teste local e 11 verificações TCP; log em `/tmp/pd-c4-integration-8l7yfzqw`. Após o ajuste de idempotência do TransactionID, `make test CFLAGS='-std=c2x -Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion -Werror'` também passou, incluindo as suítes locais C1–C4.
+
+Limites atuais: o cenário integrado cobre falhas por parada e os membros C3 conhecidos; não comprova consistência em partições de rede. O líder aplica localmente antes de receber todas as respostas das réplicas, então uma interrupção durante a propagação pode deixar uma entrada parcialmente aplicada. O termo de eleição ainda é mantido em memória. Não declarar consenso/SMR forte nem disponibilidade de 99,5% como concluídos. 2PC e IST continuam no C5.
+
+## Integração C3 histórica - 08/10/2026
 
 O `runc3.sh` original foi preservado. `tests/config/c3.conf` aponta para o inventário `c3.conf.txt`; `app_config.c` seleciona a linha correspondente a `--port`, usando nome, papel, IP e porta. O primeiro registro é o bootstrap Chord para os demais nós; a inicialização tenta novamente por até 30 segundos para permitir que o script inicie os processos em sequência sem aguardar cada um. Os campos finais do CSV permanecem metadados opacos, e a identidade segue derivada e persistida.
 
@@ -14,7 +26,7 @@ O Aluno 2 mantém a responsabilidade pelo overlay/índice; foram acrescentadas A
 
 Evidências nesta integração: build estrito -Werror; make test; API local de membership/codec/deadline; C1 10/10, roteiro legado 14/14, C2 próprio 20/20; integração C2 com 46 verificações; Chord TCP de três processos; queda e reparo de anel com cinco processos. Testes locais e TCP permanecem resultados distintos. Builds ASan/UBSan e ThreadSanitizer também foram executados, sem diagnósticos nas suítes concluídas. Detalhes, diretórios de evidência e resultados negativos constam de `checkpoint_3_aluno_1.md`.
 
-Pendências atuais: roteamento distribuído de M_LOOKUP/M_STORE, migração/replicação de metadados, consenso, eleição e metas de desempenho. O índice continua local/volátil. O roteiro C2 disponível do professor teve 26 PASS/1 FAIL por alias de nome para ObjectID idêntico; não foi declarado aprovado. A análise completa -fanalyzer reportou diagnóstico de vazamento em metadata.c preexistente; os módulos C3 analisados separadamente passaram. As seções datadas abaixo descrevem revisões históricas, não substituem este estado.
+Pendências atuais: consenso em partições de rede, confirmação/commit atômico das entradas, persistência do termo de eleição, roteamento distribuído de M_LOOKUP/M_STORE e metas de desempenho. Cada Super Peer reconstitui seu índice local a partir do log próprio, mas a recuperação não garante commit distribuído após falha parcial. O roteiro C2 disponível do professor teve 26 PASS/1 FAIL por alias de nome para ObjectID idêntico; não foi declarado aprovado. A análise completa -fanalyzer reportou diagnóstico de vazamento em metadata.c preexistente; os módulos C3 analisados separadamente passaram. As seções datadas abaixo descrevem revisões históricas, não substituem este estado.
 
 ## Avanço do checkpoint 3 — 05/10/2026
 
@@ -71,7 +83,7 @@ Atualizar este documento a cada avanço do aluno 2, mantendo requisitos, impleme
 | Metadados, ObjectID e chunks (C2) | Implementados e integrados | API local preservada; `directory.c` adapta ANNOUNCE/LOOKUP e resolve localizações pela tabela de membros |
 | Chord (C3) | Implementado no overlay, integração parcial com o produto | API local e TCP testados com 3 Super Peers; `M_LOOKUP`/`M_STORE` de documentos ainda usam índice local e não migram metadados |
 | Gossip, heartbeat e estados de falha (C3) | Integrados em 07/10/2026 pelo Aluno 1 | Detector monotônico, confirmação por sondagem, tombstones, Gossip e reparo de vizinhos; testes locais e TCP descritos no relatório C3 |
-| Log, SMR e estado de eleição (C4) | Pendente | Comparação de NodeIDs disponível e testada, mas sem consenso implementado |
+| Log, SMR e estado de eleição (C4) | Implementação integrada, garantias parciais | `c4_log.c` persiste índice/versão/TransactionID/checksum; `c4_cluster.c` executa Bully, recuperação de entradas e replicação de ANNOUNCE; `runc4.sh` cobre três SPs e recuperação após queda. Sem commit atômico/quórum para partições; ver limites acima |
 | 2PC e IST (C5) | Pendente | Sem implementação |
 | Integração final e metas de desempenho (C6) | Pendente | Sem validação das metas não funcionais |
 

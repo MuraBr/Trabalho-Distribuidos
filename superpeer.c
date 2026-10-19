@@ -1,5 +1,6 @@
 #define _POSIX_C_SOURCE 200809L
 #include "superpeer.h"
+#include "c4_cluster.h"
 #include "heartbeat.h"
 #include "wire.h"
 
@@ -49,6 +50,7 @@ typedef struct
     Directory *directory;
     Chord *chord;
     Heartbeat *heartbeat;
+    C4Cluster *c4;
 } PeerContext;
 
 typedef struct
@@ -502,29 +504,95 @@ static int register_join(PeerContext *peer, const Message *message)
     return 0;
 }
 
-static int register_announcement(PeerContext *peer, const Message *message)
+/* Reaplica um ANNOUNCE validado do log à máquina de estado de metadados. */
+static int apply_c4_entry(void *context, const C4LogEntry *entry)
 {
+    PeerContext *peer = context;
     TransferDocument document;
     NodeID owner;
-
-    memcpy(owner.bytes, message->header.source_node, NODE_ID_SIZE);
-    heartbeat_gate_lock(peer->heartbeat);
-    if (!superpeer_is_registered(peer->superpeer, &owner))
-    {
-        heartbeat_gate_unlock(peer->heartbeat);
-        errno = EACCES;
-        return -1;
-    }
     MetadataChunk *chunks = NULL;
-    if (transfer_decode_announcement(message->payload, message->header.payload_size, &document, &chunks) < 0)
+    int status;
+    if (entry == NULL || entry->payload_size <= NODE_ID_SIZE || entry->payload == NULL)
     {
-        heartbeat_gate_unlock(peer->heartbeat);
+        errno = EBADMSG;
         return -1;
     }
-    int status = directory_announce(peer->directory, &document, chunks, &owner);
+    memcpy(owner.bytes, entry->payload, NODE_ID_SIZE);
+    if (transfer_decode_announcement(entry->payload + NODE_ID_SIZE, entry->payload_size - NODE_ID_SIZE, &document, &chunks) < 0)
+    {
+        return -1;
+    }
+    status = directory_announce(peer->directory, &document, chunks, &owner);
     free(chunks);
-    heartbeat_gate_unlock(peer->heartbeat);
     return status;
+}
+
+/* Encaminha ao coordenador ou registra e replica a operação antes de confirmar ANNOUNCE. */
+static int process_announcement(PeerContext *peer, const NodeID *owner, const uint8_t *payload, uint32_t payload_size, const uint8_t transaction_id[TRANSACTION_ID_SIZE])
+{
+    NodeID coordinator;
+    SuperPeerMember destination;
+    uint8_t *forward_payload;
+    Message response;
+    int result;
+    if (c4_cluster_is_leader(peer->c4)) return c4_cluster_submit(peer->c4, transaction_id, owner, payload, payload_size);
+    if (c4_cluster_get_leader(peer->c4, &coordinator) < 0 || superpeer_find_member(peer->superpeer, &coordinator, &destination) < 0 || destination.node.role != NODE_ROLE_SUPERPEER || destination.state >= SUPERPEER_MEMBER_FAILED)
+    {
+        errno = EHOSTUNREACH;
+        return -1;
+    }
+    if (payload_size > MAX_PAYLOAD_SIZE - NODE_ID_SIZE - TRANSACTION_ID_SIZE)
+    {
+        errno = EMSGSIZE;
+        return -1;
+    }
+    forward_payload = malloc(NODE_ID_SIZE + TRANSACTION_ID_SIZE + payload_size);
+    if (forward_payload == NULL) return -1;
+    memcpy(forward_payload, owner->bytes, NODE_ID_SIZE);
+    memcpy(forward_payload + NODE_ID_SIZE, transaction_id, TRANSACTION_ID_SIZE);
+    memcpy(forward_payload + NODE_ID_SIZE + TRANSACTION_ID_SIZE, payload, payload_size);
+    message_init(&response);
+    result = rpc_call_deadline(destination.node.config.ip, destination.node.config.port, &peer->local_node.id, &coordinator, M_STORE, forward_payload, NODE_ID_SIZE + TRANSACTION_ID_SIZE + payload_size, &response, C4_CLUSTER_RPC_TIMEOUT_MS);
+    free(forward_payload);
+    if (result == 0 && response.header.message_type != (uint8_t)M_ACK)
+    {
+        errno = EREMOTEIO;
+        result = -1;
+    }
+    message_free(&response);
+    return result;
+}
+
+/* Valida o Peer ou desembrulha uma operação encaminhada por outro Super Peer. */
+static int handle_announcement(PeerContext *peer, const Message *message)
+{
+    NodeID owner;
+    SuperPeerMember source;
+    const uint8_t *announcement = message->payload;
+    uint32_t announcement_size = message->header.payload_size;
+    uint8_t transaction_id[TRANSACTION_ID_SIZE];
+    NodeID source_id;
+    memcpy(source_id.bytes, message->header.source_node, NODE_ID_SIZE);
+    if (superpeer_find_member(peer->superpeer, &source_id, &source) < 0) { errno = EACCES; return -1; }
+    if (source.node.role == NODE_ROLE_SUPERPEER)
+    {
+        if (message->header.payload_size <= NODE_ID_SIZE + TRANSACTION_ID_SIZE) { errno = EBADMSG; return -1; }
+        memcpy(owner.bytes, message->payload, NODE_ID_SIZE);
+        memcpy(transaction_id, message->payload + NODE_ID_SIZE, TRANSACTION_ID_SIZE);
+        announcement = message->payload + NODE_ID_SIZE + TRANSACTION_ID_SIZE;
+        announcement_size = message->header.payload_size - NODE_ID_SIZE - TRANSACTION_ID_SIZE;
+    }
+    else
+    {
+        owner = source_id;
+        memcpy(transaction_id, message->header.transaction_id, TRANSACTION_ID_SIZE);
+        heartbeat_gate_lock(peer->heartbeat);
+        int registered = superpeer_is_registered(peer->superpeer, &owner);
+        heartbeat_gate_unlock(peer->heartbeat);
+        if (!registered) { errno = EACCES; return -1; }
+    }
+    if (announcement_size == 0U || announcement[0] != TRANSFER_STORE_ANNOUNCE) { errno = EBADMSG; return -1; }
+    return process_announcement(peer, &owner, announcement, announcement_size, transaction_id);
 }
 
 static int answer_lookup(PeerContext *peer, int client_fd, const Message *message)
@@ -661,9 +729,9 @@ static void handle_client(void *context, int client_fd)
                 break;
             }
         }
-        else if (message.header.message_type == (uint8_t)M_STORE && message.header.payload_size > 0U && message.payload[0] == TRANSFER_STORE_ANNOUNCE)
+        else if (message.header.message_type == (uint8_t)M_STORE && message.header.payload_size > 0U)
         {
-            Message_Type response_type = register_announcement(peer, &message) == 0 ? M_ACK : M_ERROR;
+            Message_Type response_type = handle_announcement(peer, &message) == 0 ? M_ACK : M_ERROR;
 
             if (send_reply(peer, client_fd, &message, response_type, NULL, 0U, 0) < 0)
             {
@@ -684,6 +752,16 @@ static void handle_client(void *context, int client_fd)
             uint8_t *payload = NULL; uint32_t size = 0U; Message_Type type = M_ERROR;
             if (heartbeat_handle(peer->heartbeat, &message, &type, &payload, &size) < 0) type = M_ERROR;
             int sent = send_reply(peer, client_fd, &message, type, payload, size, 0);
+            free(payload);
+            if (sent < 0) { message_free(&message); break; }
+        }
+        else if (message.header.message_type == M_ELECTION || message.header.message_type == M_COORDINATOR || message.header.message_type == M_SNAPSHOT || message.header.message_type == M_STATE_TRANSFER)
+        {
+            uint8_t *payload = NULL;
+            uint32_t size = 0U;
+            Message_Type response_type = M_ERROR;
+            if (c4_cluster_handle(peer->c4, &message, &response_type, &payload, &size) < 0) response_type = M_ERROR;
+            int sent = send_reply(peer, client_fd, &message, response_type, payload, size, 0);
             free(payload);
             if (sent < 0) { message_free(&message); break; }
         }
@@ -1018,6 +1096,17 @@ static int superpeer_run(int argc, char **argv)
     {
         perror("membership initialization"); directory_destroy(peer.directory); metadata_destroy(peer.metadata); chord_destroy(peer.chord); superpeer_destroy(peer.superpeer); return EXIT_FAILURE;
     }
+    char c4_log_path[600];
+    if (snprintf(c4_log_path, sizeof(c4_log_path), "%s/c4-operation.log", membership_directory) >= (int)sizeof(c4_log_path) || c4_cluster_create(&peer.local_node, peer.superpeer, c4_log_path, apply_c4_entry, &peer, &peer.c4) < 0)
+    {
+        perror("C4 log initialization");
+        directory_destroy(peer.directory);
+        heartbeat_destroy(peer.heartbeat);
+        metadata_destroy(peer.metadata);
+        chord_destroy(peer.chord);
+        superpeer_destroy(peer.superpeer);
+        return EXIT_FAILURE;
+    }
     peer.server_fd = network_create_server(arguments.local_port, PEER_BACKLOG);
     if (peer.server_fd < 0 || concurrent_server_create(peer.server_fd, handle_client, &peer, &peer.runtime) < 0)
     {
@@ -1026,6 +1115,7 @@ static int superpeer_run(int argc, char **argv)
             (void)network_shutdown(peer.server_fd);
         }
         directory_destroy(peer.directory);
+        c4_cluster_destroy(peer.c4);
         heartbeat_destroy(peer.heartbeat);
         metadata_destroy(peer.metadata);
         chord_destroy(peer.chord);
@@ -1048,6 +1138,7 @@ static int superpeer_run(int argc, char **argv)
         fprintf(stderr, "pthread_create: %s\n", strerror(thread_result));
         concurrent_server_destroy(peer.runtime);
         directory_destroy(peer.directory);
+        c4_cluster_destroy(peer.c4);
         heartbeat_destroy(peer.heartbeat);
         metadata_destroy(peer.metadata);
         chord_destroy(peer.chord);
@@ -1072,12 +1163,14 @@ static int superpeer_run(int argc, char **argv)
 
     if (heartbeat_start(peer.heartbeat) < 0) { perror("heartbeat start"); g_running = 0; }
     else { printf("GOSSIP/heartbeat ativo\n"); fflush(stdout); }
+    (void)c4_cluster_tick(peer.c4);
 
     /* Mantem o processo vivo para aceitar novos clientes. */
     unsigned finger_index = 0U;
     while (g_running)
     {
         refresh_chord_membership(&peer);
+        if (c4_cluster_tick(peer.c4) < 0) perror("C4 election tick");
         int64_t previous_deadline = network_deadline_set(network_monotonic_ms() + heartbeat_budget(peer.heartbeat));
         for (unsigned count = 0U; count < 16U && g_running; ++count)
         {
@@ -1093,6 +1186,7 @@ static int superpeer_run(int argc, char **argv)
     (void)pthread_join(accept_thread, NULL);
     concurrent_server_destroy(peer.runtime);
     heartbeat_destroy(peer.heartbeat);
+    c4_cluster_destroy(peer.c4);
     directory_destroy(peer.directory);
     metadata_destroy(peer.metadata);
     chord_destroy(peer.chord);

@@ -1,6 +1,22 @@
 # Guia de apresentação — código do aluno 2
 
-## Organização vigente C3 - 07/10/2026
+## Organização vigente C4 - 19/10/2026
+
+### Eleição e replicação no Checkpoint 4
+
+`c4_cluster.c` integra Bully ao atendimento TCP do Super Peer. O candidato envia `M_ELECTION` aos Super Peers ativos de NodeID maior; eles respondem `M_OK` e iniciam sua própria eleição. Quando não há resposta de candidato superior, o nó assume e anuncia `M_COORDINATOR`. Se a membership C3 marca o coordenador como FAILED, os demais iniciam nova eleição. O maior NodeID conhecido e ativo tem prioridade.
+
+`c4_log.c` mantém `c4-operation.log` como sequência persistente de registros `C4LG`. O cabeçalho guarda índice, versão, TransactionID de 16 bytes, tamanho e CRC32; em seguida vem o payload serializado. O checksum cobre o cabeçalho com o campo zerado e o payload. Índices e versões avançam juntos. Repetições idênticas do TransactionID não acrescentam uma entrada, enquanto uma repetição com conteúdo divergente retorna conflito.
+
+No produto, a operação conectada ao log é o ANNOUNCE C2. O coordenador guarda o NodeID do Peer e os bytes do ANNOUNCE, aplica a operação ao diretório e envia a entrada por `M_STATE_TRANSFER` às réplicas. Um nó eleito consulta entradas com `M_SNAPSHOT`, recupera as que faltam, anuncia o novo coordenador e sincroniza o log conhecido. Ao reiniciar, cada Super Peer valida seu arquivo e reaplica as operações ao índice local.
+
+`runc4.sh` compila com `-Werror`, executa o teste local de persistência/ordem/checksum/replay e inicia três Super Peers e um Peer para a integração TCP. O cenário valida eleição pelo maior NodeID, ANNOUNCE nas réplicas, queda do coordenador, reeleição após FAILED e continuidade com uma nova operação.
+
+Contrato de mensagens: `M_ELECTION` carrega termo, último índice e versão em 24 bytes; `M_OK` tem corpo vazio; `M_COORDINATOR` carrega termo e último índice em 16 bytes; `M_SNAPSHOT` consulta um índice u64; `M_STATE_TRANSFER` leva o registro `C4LG` com checksum próprio. As cinco mensagens continuam usando o framing TCP, TransactionID e CRC32 definidos anteriormente.
+
+Limites demonstrados: a aplicação local ocorre antes de todas as confirmações de réplica; uma falha durante a propagação pode deixar logs diferentes. O termo da eleição não é persistido. A suíte cobre falhas por parada, não prova consistência forte sob partição nem as metas globais de disponibilidade/desempenho. 2PC e IST continuam no C5.
+
+## Organização histórica C3 - 07/10/2026
 
 Complemento de integração: chord_forget limpa referências e mantém lista de NodeIDs indisponíveis para barrar respostas TCP atrasadas. chord_allow libera o ID depois que o integrador confirma ALIVE por contato direto; versões/rumores não substituem esse contato. Os métodos de atualização e chord_repair verificam a lista sob mutex. Antes da confirmação inicial, o sucessor de bootstrap é preservado. make test-c3 reúne as APIs locais com testes de três e cinco Super Peers; a suíte ampliada passou 17 verificações TCP, incluindo queda e volta do mesmo Super Peer. Veja integracao_checkpoint_3.md para comandos, evidências e distinção entre lookup Chord de chave e consulta local de metadados.
 

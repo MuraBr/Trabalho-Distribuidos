@@ -1,0 +1,367 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [7 0 R 9 0 R 11 0 R 13 0 R 15 0 R 17 0 R 19 0 R] /Count 7 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier /Encoding /WinAnsiEncoding >>
+endobj
+6 0 obj
+<< /Length 1475 >>
+stream
+1.000 1.000 1.000 rg 0.0 0.0 595.0 842.0 re f
+0.100 0.280 0.440 rg 0.0 0.0 16.0 842.0 re f
+0.230 0.360 0.490 rg BT /F2 8.5 Tf 1 0 0 1 52.0 790.0 Tm (TRABALHO DE PROGRAMACAO DISTRIBUIDA) Tj ET
+0.100 0.420 0.620 RG 2.0 w 52.0 770.0 m 543.0 770.0 l S
+0.080 0.200 0.320 rg BT /F2 25.0 Tf 1 0 0 1 52.0 672.0 Tm (Guia t\351cnico \227 Parte do Aluno 1) Tj ET
+0.080 0.490 0.680 RG 4.0 w 52.0 623.0 m 130.0 623.0 l S
+0.230 0.310 0.390 rg BT /F1 12.0 Tf 1 0 0 1 52.0 594.0 Tm (Programa\347\343o Distribu\355da | vis\343o de implementa\347\343o e integra\347\343o | revis\343o) Tj ET
+0.230 0.310 0.390 rg BT /F1 12.0 Tf 1 0 0 1 52.0 549.0 Tm (de 20/10/2026) Tj ET
+0.940 0.960 0.980 rg 52.0 184.0 491.0 75.0 re f
+0.080 0.370 0.550 rg BT /F2 9.0 Tf 1 0 0 1 68.0 235.0 Tm (GUIA EXPLICATIVO) Tj ET
+0.200 0.260 0.320 rg BT /F1 9.0 Tf 1 0 0 1 68.0 216.0 Tm (Fluxos, m\363dulos, fun\347\365es, decis\365es, evid\352ncias e pend\352ncias) Tj ET
+0.350 0.400 0.450 rg BT /F1 8.0 Tf 1 0 0 1 68.0 198.0 Tm (Leitura baseada no c\363digo e na documenta\347\343o do reposit\363rio) Tj ET
+0.250 0.320 0.400 rg BT /F2 9.0 Tf 1 0 0 1 52.0 72.0 Tm (Revis\343o: 20/10/2026) Tj ET
+0.350 0.400 0.450 rg BT /F1 8.0 Tf 1 0 0 1 52.0 52.0 Tm (Uso did\341tico: implementa\347\343o atual separada de requisitos e trabalho futuro) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 770.0 Tm (Programa\347\343o Distribu\355da | vis\343o de implementa\347\343o e integra\347\343o | revis\343o de 20/10/2026) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 6 0 R >>
+endobj
+8 0 obj
+<< /Length 5926 >>
+stream
+0.780 0.830 0.880 RG 0.7 w 52.0 779.0 m 543.0 779.0 l S
+0.200 0.310 0.420 rg BT /F2 7.5 Tf 1 0 0 1 52.0 790.0 Tm (GUIA T\311CNICO | PROGRAMA\307\303O DISTRIBU\315DA) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 736.0 Tm (1. Objetivo e leitura do estado) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 714.0 m 88.0 714.0 l S
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 708.0 Tm (Este guia acompanha o c\363digo e os registros do projeto. Ele explica os fluxos que est\343o) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 694.7 Tm (implementados, as responsabilidades atribu\355das ao Aluno 1, as escolhas feitas e as diferen\347as entre) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 681.4 Tm (o comportamento atual e o objetivo geral do trabalho. \223Esperado\224 descreve o contrato do checkpoint;) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 668.1 Tm (\223implementado\224 descreve apenas o que o c\363digo e as evid\352ncias dispon\355veis sustentam.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 649.8 Tm (O Aluno 1 concentra a comunica\347\343o e o produto de arquivos: framing TCP, armazenamento dos documentos) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 636.5 Tm (nos Peers, transfer\352ncia de chunks, metadados publicados no Super Peer e, no C3, o servi\347o de) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 623.2 Tm (membership, heartbeat e dissemina\347\343o Gossip. A topologia Chord e a identidade NodeID s\343o) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 609.9 Tm (responsabilidades do Aluno 2, embora os m\363dulos dos dois alunos componham os mesmos execut\341veis.) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 571.6 Tm (2. Arquitetura em uma p\341gina) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 549.6 m 88.0 549.6 l S
+0.950 0.960 0.970 rg 52.0 442.8 491.0 105.8 re f
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 534.6 Tm (                   controle e cat\341logo) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 524.4 Tm (CLI local --IPC--> Peer ativo --TCP JOIN/HEARTBEAT/ANNOUNCE--> Super Peer) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 514.2 Tm (                       |                                       |) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 504.0 Tm (                       | TCP STORE/GET de chunks               | \355ndice local) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 493.8 Tm (                       v                                       | metadados e) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 483.6 Tm (                 outros Peers <------------ LOOKUP -------------+ localiza\347\365es) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 473.4 Tm () Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 463.2 Tm (Upload:   arquivo -> ObjectID -> chunks -> compress\343o -> Peer -> ANNOUNCE no Super Peer) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 453.0 Tm (Download: LOOKUP -> localiza\347\365es -> chunks direto dos Peers -> valida\347\343o -> arquivo final) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 442.8 Tm (O Super Peer guarda metadados e localiza\347\365es; ele n\343o armazena os bytes do PDF. Cada Peer conserva) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 429.5 Tm (seus chunks e manifests. A CLI conversa com o Peer ativo por canal Unix privado; esse canal escolhe) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 416.2 Tm (um processo local que j\341 ingressou na rede, n\343o cria um Peer an\364nimo.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 397.9 Tm (Os execut\341veis padr\343o s\343o bin/superpeer e bin/peer. Os nomes bin/node e bin/client s\343o links) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 384.6 Tm (simb\363licos para manter compatibilidade com roteiros antigos. Os dois processos t\352m main pr\363prios.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 371.3 Tm (concurrent_server.c compartilha o ciclo de atendimento por conex\343o.) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 333.0 Tm (3. Checkpoint 1: transporte e protocolo) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 311.0 m 88.0 311.0 l S
+0.100 0.390 0.550 rg BT /F2 12.0 Tf 1 0 0 1 52.0 291.0 Tm (Caminho de uma mensagem) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 272.0 Tm (- A aplica\347\343o preenche tipo, origem, destino, TransactionID e payload.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 253.7 Tm (- protocol_send_message valida os limites, serializa o header e calcula o CRC32.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 235.4 Tm (- network_send_all repete send at\351 enviar todos os bytes, inclusive quando o sistema) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 222.1 Tm (aceita somente uma parte.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 203.8 Tm (- O receptor usa network_recv_exact para obter o header fixo e depois exatamente o payload) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 190.5 Tm (indicado pelo tamanho.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 172.2 Tm (- protocol_deserialize_header e protocol_validate_header verificam a estrutura;) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 158.9 Tm (protocol_receive_message confere o CRC antes de entregar a mensagem ao handler.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 140.6 Tm (O header tem 98 bytes, os inteiros wire usam big-endian, o TransactionID tem 16 bytes e o payload) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 127.3 Tm (m\341ximo \351 5 MiB. O CRC32 cobre header e payload. A conex\343o TCP \351 um fluxo de bytes, n\343o preserva) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 114.0 Tm (fronteiras de mensagens; por isso o tamanho do payload faz parte do framing.) Tj ET
+0.100 0.390 0.550 rg BT /F2 12.0 Tf 1 0 0 1 52.0 81.7 Tm (M\363dulos e fun\347\365es importantes) Tj ET
+endstream
+endobj
+9 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 8 0 R >>
+endobj
+10 0 obj
+<< /Length 5777 >>
+stream
+0.780 0.830 0.880 RG 0.7 w 52.0 779.0 m 543.0 779.0 l S
+0.200 0.310 0.420 rg BT /F2 7.5 Tf 1 0 0 1 52.0 790.0 Tm (GUIA T\311CNICO | PROGRAMA\307\303O DISTRIBU\315DA) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 756.0 Tm (- network.c: network_create_server, network_connect, network_send_all, network_recv_exact) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 742.7 Tm (e network_shutdown encapsulam sockets POSIX e fechamento previs\355vel.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 724.4 Tm (- protocol.c: protocol_serialize_header, protocol_deserialize_header,) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 711.1 Tm (protocol_validate_header, protocol_send_message e protocol_receive_message definem o) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 697.8 Tm (formato wire comum.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 679.5 Tm (- concurrent_server.c: aceita conex\365es e administra workers para que um cliente lento n\343o) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 666.2 Tm (bloqueie todos os outros.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 647.9 Tm (- rpc.c: implementa chamadas request/response com prazo, correla\347\343o, endere\347o e identidade) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 634.6 Tm (do destino.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 616.3 Tm (- peer.c: inicia o servidor do Peer, processa transfer\352ncia de chunks, JOIN e controles) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 603.0 Tm (relacionados.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 584.7 Tm (- superpeer.c: recebe JOIN, STORE/ANNOUNCE e LOOKUP, al\351m de integrar os servi\347os C3/C4.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 566.4 Tm (As mensagens usam serializa\347\343o expl\355cita. O programa n\343o envia struct C diretamente pela rede:) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 553.1 Tm (padding, alinhamento e ordem de bytes variam entre compiladores e arquiteturas.) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 514.8 Tm (4. Checkpoint 2: documentos e chunks) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 492.8 m 88.0 492.8 l S
+0.100 0.390 0.550 rg BT /F2 12.0 Tf 1 0 0 1 52.0 472.8 Tm (Upload esperado e implementado) Tj ET
+0.950 0.960 0.970 rg 52.0 312.2 491.0 146.6 re f
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 444.8 Tm (arquivo PDF) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 434.6 Tm (   | valida\347\343o da extens\343o e leitura incremental) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 424.4 Tm (   v) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 414.2 Tm (ObjectID = SHA-256\(arquivo inteiro\)) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 404.0 Tm (   | divis\343o em chunks de 4 MiB) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 393.8 Tm (   +- cada chunk: SHA-256 dos bytes originais + compress\343o LZ4) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 383.6 Tm (   v) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 373.4 Tm (workers enviam STORE/CHUNK a um Peer) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 363.2 Tm (   | Peer valida, grava em pending e confirma o documento) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 353.0 Tm (   v) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 342.8 Tm (COMMIT recomp\365e e verifica o arquivo -> publica\347\343o em objects) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 332.6 Tm (   |) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 322.4 Tm (   +- ANNOUNCE informa ao Super Peer metadados e localiza\347\365es) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 312.2 Tm (- content_validate_pdf aceita extens\343o .pdf sem exigir uma assinatura interna, permitindo) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 298.9 Tm (tamb\351m fixtures sint\351ticas.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 280.6 Tm (- object_id_file calcula o ObjectID do arquivo inteiro; os chunks t\352m 4 MiB \(4 MiB =) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 267.3 Tm (4.194.304 bytes\).) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 249.0 Tm (- file_client_upload divide os trabalhos por \355ndice e usa pread, para workers) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 235.7 Tm (independentes n\343o compartilharem posi\347\343o de arquivo.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 217.4 Tm (- Cada chunk recebe SHA-256 dos dados n\343o comprimidos e LZ4 individual. Workers abrem) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 204.1 Tm (conex\365es pr\363prias e enviam os dados e descritores.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 185.8 Tm (- storage_begin cria ou retoma estado pendente. storage_put_chunk valida \355ndice, offset,) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 172.5 Tm (tamanho e hash antes de persistir o chunk.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 154.2 Tm (- storage_commit remonta em ordem, confere tamanho e ObjectID e s\363 ent\343o publica o) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 140.9 Tm (manifesto final.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 122.6 Tm (- announce_document codifica o cat\341logo e pede ao Super Peer que registre metadados e) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 109.3 Tm (localiza\347\365es. O cliente s\363 confirma sucesso depois do ACK.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 91.0 Tm (O processo do Peer armazena os bytes. directory.c adapta mensagens de rede para a API de metadados) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 77.7 Tm (do Super Peer. O \355ndice n\343o recebe os pr\363prios arquivos.) Tj ET
+endstream
+endobj
+11 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 10 0 R >>
+endobj
+12 0 obj
+<< /Length 5509 >>
+stream
+0.780 0.830 0.880 RG 0.7 w 52.0 779.0 m 543.0 779.0 l S
+0.200 0.310 0.420 rg BT /F2 7.5 Tf 1 0 0 1 52.0 790.0 Tm (GUIA T\311CNICO | PROGRAMA\307\303O DISTRIBU\315DA) Tj ET
+0.100 0.390 0.550 rg BT /F2 12.0 Tf 1 0 0 1 52.0 742.0 Tm (Download esperado e implementado) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 723.0 Tm (- file_client_download envia LOOKUP por nome ou ObjectID.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 704.7 Tm (- O Super Peer retorna o registro do documento e as localiza\347\365es dispon\355veis para cada) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 691.4 Tm (chunk.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 673.1 Tm (- O destino tempor\341rio <destino>.part \351 criado sem sobrescrever um arquivo existente.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 654.8 Tm (- Workers pedem chunks diretamente aos Peers. Se uma localiza\347\343o falha, tentam a pr\363xima) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 641.5 Tm (localiza\347\343o anunciada.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 623.2 Tm (- O Peer valida framing/CRC, descritor, descompress\343o LZ4 e SHA-256 por chunk; pwrite) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 609.9 Tm (coloca cada bloco no offset esperado.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 591.6 Tm (- Ao final, o cliente sincroniza e calcula o SHA-256 do arquivo recomposto. S\363 publica o) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 578.3 Tm (destino final se ele coincide com o ObjectID.) Tj ET
+0.100 0.390 0.550 rg BT /F2 12.0 Tf 1 0 0 1 52.0 546.0 Tm (Persist\352ncia e fun\347\365es de armazenamento) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 527.0 Tm (storage.c usa .peer_storage/<porta>/pending para documentos incompletos e objects para documentos) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 513.7 Tm (confirmados. Os caminhos s\343o formados pelo ObjectID, nunca por nomes recebidos da rede. Manifests) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 500.4 Tm (bin\341rios versionados guardam descritores, estado e dono. Escritas usam arquivos tempor\341rios, fsync e) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 487.1 Tm (rename para evitar publicar conte\372do pela metade. Na inicializa\347\343o, manifests s\343o revalidados;) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 473.8 Tm (documentos finais \355ntegros s\343o anunciados novamente ap\363s o JOIN.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 455.5 Tm (Fun\347\365es para localizar no fluxo: storage_create, storage_begin, storage_put_chunk, storage_commit,) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 442.2 Tm (storage_find, storage_read_chunk, storage_list e storage_descriptors. No cliente:) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 428.9 Tm (file_client_upload, file_client_download, lookup_document, upload_worker, download_worker e) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 415.6 Tm (execute_workers.) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 377.3 Tm (5. Concorr\352ncia e escolhas t\351cnicas do C2) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 355.3 m 88.0 355.3 l S
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 349.3 Tm (- O limite \351 5 MiB para permitir que a representa\347\343o comprimida de um chunk de 4 MiB caiba) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 336.0 Tm (em uma mensagem.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 317.7 Tm (- LZ4 \351 por chunk: o Peer valida e serve blocos individualmente, e uma falha n\343o exige) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 304.4 Tm (retransmitir o documento inteiro.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 286.1 Tm (- Pools POSIX processam chunks em paralelo. O padr\343o limita workers ao m\355nimo entre CPUs,) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 272.8 Tm (chunks e oito; PEER_TRANSFER_THREADS permite configurar de 1 a 32.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 254.5 Tm (- Cada worker usa uma conex\343o TCP pr\363pria. Isso separa o estado do framing e permite que) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 241.2 Tm (um chunk tente outra localiza\347\343o sem coordenar o socket compartilhado.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 222.9 Tm (- Uma fila de trabalhos e o primeiro erro s\343o protegidos por mutex. Workers n\343o avan\347am) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 209.6 Tm (sobre o mesmo chunk.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 191.3 Tm (- Um arquivo parcial nunca aparece como destino final; o nome tempor\341rio e o rename) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 178.0 Tm (protegem a publica\347\343o.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 159.7 Tm (- SHA-256 \351 fornecido por libcrypto, CRC32 por zlib e LZ4 pela biblioteca externa) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 146.4 Tm (liblz4.so.1.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 128.1 Tm (S\343o escolhas de confiabilidade e simplicidade. O benchmark existe, mas os resultados hist\363ricos n\343o) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 114.8 Tm (demonstram por si s\363 a meta global de throughput de 500 MB/s.) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 76.5 Tm (6. Checkpoint 3: membership, heartbeat e Gossip) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 54.5 m 88.0 54.5 l S
+endstream
+endobj
+13 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 12 0 R >>
+endobj
+14 0 obj
+<< /Length 5928 >>
+stream
+0.780 0.830 0.880 RG 0.7 w 52.0 779.0 m 543.0 779.0 l S
+0.200 0.310 0.420 rg BT /F2 7.5 Tf 1 0 0 1 52.0 790.0 Tm (GUIA T\311CNICO | PROGRAMA\307\303O DISTRIBU\315DA) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 756.0 Tm (No C3, a parte do Aluno 1 mant\351m a vis\343o de membros e detecta falhas. O Aluno 2 fornece identidade e) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 742.7 Tm (Chord; a integra\347\343o do detector com o overlay invalida vizinhos quando h\341 falha.) Tj ET
+0.950 0.960 0.970 rg 52.0 674.6 491.0 54.8 re f
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 715.4 Tm (heartbeat direto v\341lido ---------------------------> ALIVE) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 705.2 Tm (aus\352ncia de evid\352ncia direta -----------------------> SUSPECT) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 695.0 Tm (tempo excedido + duas sondagens negativas ---------> FAILED) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 684.8 Tm (tempo excedido ap\363s FAILED ------------------------> REMOVED \(tombstone\)) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 674.6 Tm (Os padr\365es documentados s\343o heartbeat de 5 s, suspeita ap\363s 15 s, falha ap\363s 20 s e remo\347\343o ap\363s 30) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 661.3 Tm (s. Duas sondagens negativas precisam ocorrer depois da suspeita, com pelo menos 1 s entre elas. S\343o) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 648.0 Tm (limiares configur\341veis, n\343o prova matem\341tica de que o processo morreu: uma parti\347\343o ou atraso de) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 634.7 Tm (rede tamb\351m pode causar suspeita.) Tj ET
+0.100 0.390 0.550 rg BT /F2 12.0 Tf 1 0 0 1 52.0 602.4 Tm (Fun\347\365es e m\363dulos C3) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 583.4 Tm (- membership.c: tabela sob mutex, registro/consulta, snapshots, transi\347\365es, merge e) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 570.1 Tm (persist\352ncia. APIs superpeer_ permanecem est\341veis para n\343o quebrar consumidores C1/C2.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 551.8 Tm (- membership_heartbeat, membership_tick, membership_probe e membership_merge: aplicam) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 538.5 Tm (evid\352ncia direta, prazos, sondagens e regras determin\355sticas de merge.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 520.2 Tm (- heartbeat.c: heartbeat_create, heartbeat_start, heartbeat_handle, heartbeat_register,) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 506.9 Tm (heartbeat_discover e heartbeat_peer_target coordenam o servi\347o e o reconectar do Peer.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 488.6 Tm (- gossip.c: gossip_encode_record e gossip_decode_record codificam campos wire sem expor) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 475.3 Tm (ponteiros, padding ou rel\363gios locais.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 457.0 Tm (- peer.c: emite heartbeats, responde a controles, refaz JOIN no endpoint configurado e) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 443.7 Tm (anuncia manifests depois de se recuperar.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 425.4 Tm (- superpeer.c: trata heartbeat/Gossip, aplica as consequ\352ncias locais da falha e integra o) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 412.1 Tm (detector ao Chord.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 393.8 Tm (- concurrent_server.c: espera atendimentos ativos antes de destruir o contexto) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 380.5 Tm (compartilhado.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 362.2 Tm (O registro Gossip tem 186 bytes; HEARTBEAT carrega um registro com vers\343o, totalizando 187 bytes.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 348.9 Tm (GOSSIP leva o estado do emissor e at\351 64 registros. Incarna\347\343o, sequ\352ncia, estado, observador e) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 335.6 Tm (vers\343o resolvem mensagens repetidas ou atrasadas. A c\363pia ALIVE recebida por Gossip n\343o substitui) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 322.3 Tm (heartbeat direto para renovar disponibilidade.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 304.0 Tm (membership.bin mant\351m o ledger persistente; node.incarnation distingue rein\355cios da mesma identidade) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 290.7 Tm (e node.uuid mant\351m o NodeID est\341vel. O disco n\343o guarda bytes de PDF. O tombstone REMOVED impede que) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 277.4 Tm (mensagem antiga ressuscite um n\363 removido.) Tj ET
+0.100 0.390 0.550 rg BT /F2 12.0 Tf 1 0 0 1 52.0 245.1 Tm (Como deveria funcionar a recupera\347\343o) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 226.1 Tm (Um Peer reiniciado conserva seus chunks e manifest, incrementa incarna\347\343o, refaz JOIN e anuncia) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 212.8 Tm (documentos conclu\355dos. O Super Peer deve reconhecer a nova inst\342ncia antes de aceitar mensagens) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 199.5 Tm (antigas. Se o membro \351 outro Super Peer, a integra\347\343o chama chord_forget ao marcar FAILED/REMOVED; a) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 186.2 Tm (parte do Aluno 2 repara a topologia e s\363 libera o NodeID de novo depois de uma confirma\347\343o direta da) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 172.9 Tm (inst\342ncia atual.) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 134.6 Tm (7. O que est\341 feito e o que permanece) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 112.6 m 88.0 112.6 l S
+0.100 0.390 0.550 rg BT /F2 12.0 Tf 1 0 0 1 52.0 92.6 Tm (Evid\352ncia registrada para C1/C2) Tj ET
+endstream
+endobj
+15 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 14 0 R >>
+endobj
+16 0 obj
+<< /Length 6081 >>
+stream
+0.780 0.830 0.880 RG 0.7 w 52.0 779.0 m 543.0 779.0 l S
+0.200 0.310 0.420 rg BT /F2 7.5 Tf 1 0 0 1 52.0 790.0 Tm (GUIA T\311CNICO | PROGRAMA\307\303O DISTRIBU\315DA) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 756.0 Tm (Os documentos do projeto registram C1 10/10, roteiro Peer anterior 14/14, C2 pr\363prio 20/20,) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 742.7 Tm (integra\347\343o C2 com 46 verifica\347\365es, compara\347\343o byte a byte, transfer\352ncias multichunk, fallback de) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 729.4 Tm (localiza\347\343o, reinicializa\347\343o, identidade est\341vel, an\372ncio repetido idempotente e rejei\347\365es. Tamb\351m) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 716.1 Tm (registram build C2x com -Werror e execu\347\365es isoladas ASan/UBSan e ThreadSanitizer. Esses s\343o) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 702.8 Tm (resultados datados no reposit\363rio; n\343o significam que todo teste foi repetido nesta sess\343o.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 684.5 Tm (Para o C3 integrado, make test-c3 re\372ne APIs locais e TCP. O relat\363rio registra testes de tr\352s e) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 671.2 Tm (cinco Super Peers, queda/reparo de sucessor, download \355ntegro durante reparo e volta do Super Peer) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 657.9 Tm (com a mesma identidade e incarna\347\343o maior. Teste da API local e integra\347\343o real por TCP s\343o) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 644.6 Tm (evid\352ncias distintas.) Tj ET
+0.100 0.390 0.550 rg BT /F2 12.0 Tf 1 0 0 1 52.0 612.3 Tm (Pend\352ncias e fronteiras) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 593.3 Tm (- O \355ndice de documentos permanece local ao Super Peer; Gossip de membership e Chord n\343o) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 580.0 Tm (replicam nem migram metadados.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 561.7 Tm (- Uma consulta Chord localiza um respons\341vel por chave, mas directory_lookup ainda n\343o) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 548.4 Tm (encaminha a consulta distribu\355da a qualquer Super Peer.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 530.1 Tm (- Consist\352ncia forte entre cat\341logos, disponibilidade de 99,5%, lookup m\351dio O\(log N\) e) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 516.8 Tm (throughput acima da meta n\343o est\343o demonstrados globalmente.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 498.5 Tm (- Checkpoints posteriores do Aluno 1: cache LFU, cache hit/miss e eviction; integra\347\343o) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 485.2 Tm (final com r\351plica/transfer\352ncia. N\343o declarar esses itens como prontos com base em) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 471.9 Tm (chunks persistentes ou Gossip.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 453.6 Tm (- A falha de rede pode ser confundida com falha de processo; o detector reduz falsos) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 440.3 Tm (positivos com confirma\347\343o, mas n\343o elimina a ambiguidade de uma parti\347\343o.) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 402.0 Tm (8. Como demonstrar a parte do Aluno 1) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 380.0 m 88.0 380.0 l S
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 374.0 Tm (Abra terminais separados na raiz do projeto:) Tj ET
+0.950 0.960 0.970 rg 52.0 285.5 491.0 75.2 re f
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 346.7 Tm (make) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 336.5 Tm (./bin/superpeer --port 55101 --name superpeer) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 326.3 Tm (./bin/peer serve 55102 127.0.0.1 55101) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 316.1 Tm (./bin/peer serve 55103 127.0.0.1 55101) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 305.9 Tm (./bin/peer upload trabalho_2026_SD.pdf 127.0.0.1 55102) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 295.7 Tm (./bin/peer download trabalho_2026_SD.pdf copia.pdf 127.0.0.1 55101) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 285.5 Tm (Para integra\347\343o C3, iniciar Super Peers adicionais no overlay \351 uma tarefa compartilhada: o servi\347o) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 272.2 Tm (do Aluno 1 detecta estados; Chord do Aluno 2 mant\351m a topologia. Use diret\363rios de armazenamento) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 258.9 Tm (exclusivos por processo e preserve manifests/UUID/incarna\347\343o ao demonstrar rein\355cio.) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 220.6 Tm (9. Explica\347\343o curta para apresenta\347\343o) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 198.6 m 88.0 198.6 l S
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 192.6 Tm (\223O Peer mant\351m os bytes dos arquivos e o Super Peer mant\351m o cat\341logo e as localiza\347\365es. No upload,) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 179.3 Tm (o cliente calcula o SHA-256 do arquivo, divide em chunks, comprime cada um e envia em paralelo. O) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 166.0 Tm (Peer valida e persiste os blocos antes de confirmar o documento; s\363 ent\343o anuncia os metadados. No) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 152.7 Tm (download, o Super Peer indica quais Peers possuem os chunks, e o cliente busca diretamente deles,) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 139.4 Tm (valida cada bloco e o arquivo completo e publica o destino sem sobrescrever arquivos. No C3,) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 126.1 Tm (heartbeats diretos e sondagens sustentam os estados de falha, enquanto Gossip dissemina eventos.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 112.8 Tm (Essas evid\352ncias de membership n\343o significam consenso nem replica\347\343o do cat\341logo.\224) Tj ET
+endstream
+endobj
+17 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 16 0 R >>
+endobj
+18 0 obj
+<< /Length 2316 >>
+stream
+0.780 0.830 0.880 RG 0.7 w 52.0 779.0 m 543.0 779.0 l S
+0.200 0.310 0.420 rg BT /F2 7.5 Tf 1 0 0 1 52.0 790.0 Tm (GUIA T\311CNICO | PROGRAMA\307\303O DISTRIBU\315DA) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 736.0 Tm (10. Refer\352ncias internas) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 714.0 m 88.0 714.0 l S
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 708.0 Tm (Fontes principais: requisitos_aluno_1.md, explicacao_codigo_aluno_1.md, checkpoint_3_aluno_1.md,) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 694.7 Tm (integracao_checkpoint_3.md, protocolo_checkpoint_2.md, refatoracao_checkpoint_2.md, headers e) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 681.4 Tm (implementa\347\365es dos m\363dulos citados. Os requisitos hist\363ricos ficam separados do estado atual pelos) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 668.1 Tm (relat\363rios datados.) Tj ET
+0.820 0.850 0.880 RG 0.5 w 52.0 43.0 m 543.0 43.0 l S
+0.380 0.430 0.480 rg BT /F1 7.3 Tf 1 0 0 1 52.0 29.0 Tm (Guia t\351cnico \227 Parte do Aluno 1) Tj ET
+0.380 0.430 0.480 rg BT /F1 7.3 Tf 1 0 0 1 483.0 29.0 Tm (Pagina 2 de 7) Tj ET
+0.820 0.850 0.880 RG 0.5 w 52.0 43.0 m 543.0 43.0 l S
+0.380 0.430 0.480 rg BT /F1 7.3 Tf 1 0 0 1 52.0 29.0 Tm (Guia t\351cnico \227 Parte do Aluno 1) Tj ET
+0.380 0.430 0.480 rg BT /F1 7.3 Tf 1 0 0 1 483.0 29.0 Tm (Pagina 3 de 7) Tj ET
+0.820 0.850 0.880 RG 0.5 w 52.0 43.0 m 543.0 43.0 l S
+0.380 0.430 0.480 rg BT /F1 7.3 Tf 1 0 0 1 52.0 29.0 Tm (Guia t\351cnico \227 Parte do Aluno 1) Tj ET
+0.380 0.430 0.480 rg BT /F1 7.3 Tf 1 0 0 1 483.0 29.0 Tm (Pagina 4 de 7) Tj ET
+0.820 0.850 0.880 RG 0.5 w 52.0 43.0 m 543.0 43.0 l S
+0.380 0.430 0.480 rg BT /F1 7.3 Tf 1 0 0 1 52.0 29.0 Tm (Guia t\351cnico \227 Parte do Aluno 1) Tj ET
+0.380 0.430 0.480 rg BT /F1 7.3 Tf 1 0 0 1 483.0 29.0 Tm (Pagina 5 de 7) Tj ET
+0.820 0.850 0.880 RG 0.5 w 52.0 43.0 m 543.0 43.0 l S
+0.380 0.430 0.480 rg BT /F1 7.3 Tf 1 0 0 1 52.0 29.0 Tm (Guia t\351cnico \227 Parte do Aluno 1) Tj ET
+0.380 0.430 0.480 rg BT /F1 7.3 Tf 1 0 0 1 483.0 29.0 Tm (Pagina 6 de 7) Tj ET
+0.820 0.850 0.880 RG 0.5 w 52.0 43.0 m 543.0 43.0 l S
+0.380 0.430 0.480 rg BT /F1 7.3 Tf 1 0 0 1 52.0 29.0 Tm (Guia t\351cnico \227 Parte do Aluno 1) Tj ET
+0.380 0.430 0.480 rg BT /F1 7.3 Tf 1 0 0 1 483.0 29.0 Tm (Pagina 7 de 7) Tj ET
+endstream
+endobj
+19 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 18 0 R >>
+endobj
+xref
+0 20
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000162 00000 n 
+0000000259 00000 n 
+0000000361 00000 n 
+0000000456 00000 n 
+0000001982 00000 n 
+0000002128 00000 n 
+0000008105 00000 n 
+0000008251 00000 n 
+0000014080 00000 n 
+0000014228 00000 n 
+0000019789 00000 n 
+0000019937 00000 n 
+0000025917 00000 n 
+0000026065 00000 n 
+0000032198 00000 n 
+0000032346 00000 n 
+0000034714 00000 n 
+trailer
+<< /Size 20 /Root 1 0 R >>
+startxref
+34862
+%%EOF

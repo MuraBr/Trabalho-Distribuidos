@@ -423,6 +423,10 @@ int c4_cluster_tick(C4Cluster *cluster)
         free(members);
         return 0;
     }
+    printf("C4 ELECTION iniciado NodeID=");
+    for (index = 0U; index < NODE_ID_SIZE; ++index) printf("%02x", cluster->local.id.bytes[index]);
+    printf(" term=%llu\n", (unsigned long long)cluster->term);
+    fflush(stdout);
     for (index = 0U; index < count; ++index)
     {
         uint8_t payload[C4_ELECTION_PAYLOAD_SIZE];

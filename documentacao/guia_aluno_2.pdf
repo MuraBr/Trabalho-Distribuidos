@@ -1,0 +1,324 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [7 0 R 9 0 R 11 0 R 13 0 R 15 0 R 17 0 R] /Count 6 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier /Encoding /WinAnsiEncoding >>
+endobj
+6 0 obj
+<< /Length 1423 >>
+stream
+1.000 1.000 1.000 rg 0.0 0.0 595.0 842.0 re f
+0.100 0.280 0.440 rg 0.0 0.0 16.0 842.0 re f
+0.230 0.360 0.490 rg BT /F2 8.5 Tf 1 0 0 1 52.0 790.0 Tm (TRABALHO DE PROGRAMACAO DISTRIBUIDA) Tj ET
+0.100 0.420 0.620 RG 2.0 w 52.0 770.0 m 543.0 770.0 l S
+0.080 0.200 0.320 rg BT /F2 25.0 Tf 1 0 0 1 52.0 672.0 Tm (Guia t\351cnico \227 Parte do Aluno 2) Tj ET
+0.080 0.490 0.680 RG 4.0 w 52.0 623.0 m 130.0 623.0 l S
+0.230 0.310 0.390 rg BT /F1 12.0 Tf 1 0 0 1 52.0 594.0 Tm (Programa\347\343o Distribu\355da | identidade, overlay e C4 | revis\343o de) Tj ET
+0.230 0.310 0.390 rg BT /F1 12.0 Tf 1 0 0 1 52.0 549.0 Tm (20/10/2026) Tj ET
+0.940 0.960 0.980 rg 52.0 184.0 491.0 75.0 re f
+0.080 0.370 0.550 rg BT /F2 9.0 Tf 1 0 0 1 68.0 235.0 Tm (GUIA EXPLICATIVO) Tj ET
+0.200 0.260 0.320 rg BT /F1 9.0 Tf 1 0 0 1 68.0 216.0 Tm (Fluxos, m\363dulos, fun\347\365es, decis\365es, evid\352ncias e pend\352ncias) Tj ET
+0.350 0.400 0.450 rg BT /F1 8.0 Tf 1 0 0 1 68.0 198.0 Tm (Leitura baseada no c\363digo e na documenta\347\343o do reposit\363rio) Tj ET
+0.250 0.320 0.400 rg BT /F2 9.0 Tf 1 0 0 1 52.0 72.0 Tm (Revis\343o: 20/10/2026) Tj ET
+0.350 0.400 0.450 rg BT /F1 8.0 Tf 1 0 0 1 52.0 52.0 Tm (Uso did\341tico: implementa\347\343o atual separada de requisitos e trabalho futuro) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 770.0 Tm (Programa\347\343o Distribu\355da | identidade, overlay e C4 | revis\343o de 20/10/2026) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 6 0 R >>
+endobj
+8 0 obj
+<< /Length 5861 >>
+stream
+0.780 0.830 0.880 RG 0.7 w 52.0 779.0 m 543.0 779.0 l S
+0.200 0.310 0.420 rg BT /F2 7.5 Tf 1 0 0 1 52.0 790.0 Tm (GUIA T\311CNICO | PROGRAMA\307\303O DISTRIBU\315DA) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 736.0 Tm (1. Objetivo e leitura do estado) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 714.0 m 88.0 714.0 l S
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 708.0 Tm (Este guia explica a identidade dos n\363s, as APIs de membro, o overlay Chord e a implementa\347\343o C4 de) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 694.7 Tm (elei\347\343o/log replicado. Ele distingue as APIs locais do tr\341fego TCP e apresenta, separadamente,) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 681.4 Tm (requisito previsto, comportamento implementado, evid\352ncia de execu\347\343o e pend\352ncia.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 663.1 Tm (A divis\343o evoluiu ao longo dos checkpoints. O Aluno 2 mant\351m a base de identidade e cadastro do) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 649.8 Tm (Super Peer, a API local de metadados/\355ndice e o overlay Chord. O servi\347o C3 de membership,) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 636.5 Tm (heartbeat, confirma\347\343o e Gossip \351 responsabilidade integrada do Aluno 1; o Aluno 2 fornece as) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 623.2 Tm (opera\347\365es Chord que esse servi\347o invalida/repara. No C4, c4_cluster.c liga Bully e replica\347\343o do) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 609.9 Tm (ANNOUNCE ao Super Peer.) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 571.6 Tm (2. Arquitetura e fronteiras) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 549.6 m 88.0 549.6 l S
+0.950 0.960 0.970 rg 52.0 422.4 491.0 126.2 re f
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 534.6 Tm (node.c: configura\347\343o + UUID --SHA-256--> NodeID de 32 bytes) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 524.4 Tm (                                                |) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 514.2 Tm (                                                v) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 504.0 Tm (Super Peer: membership + metadados locais + Chord + C4) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 493.8 Tm (     |                          |                       |) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 483.6 Tm (     +- JOIN/LEAVE C1/C2        +- Chord 20\22624         +- C4 15\22619) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 473.4 Tm (     |                          |                       |) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 463.2 Tm (     +- tabela local            +- lookup de chave      +- log/elei\347\343o) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 453.0 Tm () Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 442.8 Tm (Peer ativo -- JOIN/ANNOUNCE/LOOKUP --> Super Peer) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 432.6 Tm (Super Peers -- heartbeat/Gossip -----> membership e reparo Chord) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 422.4 Tm (bin/superpeer e bin/peer s\343o processos diferentes. bin/node e bin/client s\343o aliases para) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 409.1 Tm (compatibilidade. O Super Peer recebe os protocolos pelo mesmo listener TCP e encaminha cada tipo ao) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 395.8 Tm (m\363dulo correspondente. A API local e a integra\347\343o pela rede s\343o camadas diferentes: chamar uma) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 382.5 Tm (fun\347\343o C n\343o demonstra que o framing, o socket, a identidade remota e a resposta funcionam.) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 344.2 Tm (3. Identidade: configura\347\343o, UUID e NodeID) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 322.2 m 88.0 322.2 l S
+0.100 0.390 0.550 rg BT /F2 12.0 Tf 1 0 0 1 52.0 302.2 Tm (Como a identidade \351 calculada) Tj ET
+0.950 0.960 0.970 rg 52.0 233.4 491.0 54.8 re f
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 274.2 Tm (IP normalizado em bytes + porta em ordem de rede + UUID de 16 bytes) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 264.0 Tm (                              | SHA-256) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 253.8 Tm (                              v) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 243.6 Tm (                        NodeID de 32 bytes) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 233.4 Tm (node_config_validate valida porta e endere\347o; node_config_init_with_uuid normaliza e copia uma) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 220.1 Tm (identidade conhecida; node_generate_uuid obt\351m 16 bytes aleat\363rios; node_compute_id calcula SHA-256;) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 206.8 Tm (node_init monta o Node com PID e papel; node_validate recalcula a identidade e confere coer\352ncia.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 193.5 Tm (node_id_compare d\341 a ordem lexicogr\341fica usada como prioridade Bully. Conversores hexadecimais s\343o) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 180.2 Tm (usados em diagn\363stico e CLI.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 161.9 Tm (O processo persiste node.uuid por porta para manter o NodeID depois de reiniciar. O PID identifica) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 148.6 Tm (apenas o processo local: n\343o \351 identidade remota nem \351 enviado. NodeID coerente valida a rela\347\343o) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 135.3 Tm (entre dados e hash, mas n\343o autentica criptograficamente uma m\341quina.) Tj ET
+0.100 0.390 0.550 rg BT /F2 12.0 Tf 1 0 0 1 52.0 103.0 Tm (Decis\365es) Tj ET
+endstream
+endobj
+9 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 8 0 R >>
+endobj
+10 0 obj
+<< /Length 5540 >>
+stream
+0.780 0.830 0.880 RG 0.7 w 52.0 779.0 m 543.0 779.0 l S
+0.200 0.310 0.420 rg BT /F2 7.5 Tf 1 0 0 1 52.0 790.0 Tm (GUIA T\311CNICO | PROGRAMA\307\303O DISTRIBU\315DA) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 756.0 Tm (- UUID est\341vel, IP/porta em ordem de rede e hash bin\341rio evitam que o identificador) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 742.7 Tm (dependa da grafia do endere\347o ou da ordem de bytes do host.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 724.4 Tm (- O wire transporta campos definidos e n\343o a mem\363ria bruta de struct Node.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 706.1 Tm (- O papel Peer/Super Peer n\343o faz parte do NodeID, para que a identidade dependa do) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 692.8 Tm (endpoint e da inst\342ncia, n\343o de um campo de aplica\347\343o.) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 654.5 Tm (4. Cadastro de membros: API local e JOIN TCP) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 632.5 m 88.0 632.5 l S
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 626.5 Tm (membership.c encapsula SuperPeer e preserva fun\347\365es p\372blicas declaradas em superpeer.h.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 613.2 Tm (superpeer_create registra o pr\363prio Super Peer; superpeer_register_node valida NodeID e inclui ou) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 599.9 Tm (atualiza; superpeer_find_member devolve uma c\363pia; superpeer_member_count conta membros ativos) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 586.6 Tm (segundo a regra vigente; superpeer_unregister_node registra a sa\355da/remo\347\343o apropriada. O mutex) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 573.3 Tm (protege busca e muta\347\343o. membership_snapshot devolve uma c\363pia que o chamador libera.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 555.0 Tm (Esse bloco constitui a API local. Na integra\347\343o via rede, superpeer.c recebe JOIN, valida) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 541.7 Tm (origem/destino e o payload expl\355cito, reconstr\363i NodeConfig, recalcula NodeID e s\363 retorna ACK) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 528.4 Tm (depois do cadastro. directory.c adapta ANNOUNCE/LOOKUP ao \355ndice e \340 tabela de membros. O formato) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 515.1 Tm (JOIN legado usa descritor de 64 bytes; as extens\365es C3 acrescentam incarna\347\343o sem alterar a resposta) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 501.8 Tm (ACK antiga.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 483.5 Tm (N\343o confundir:) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 465.2 Tm (- superpeer_register_node: chamada local de cadastro;) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 446.9 Tm (- handler TCP JOIN: recebe e valida mensagem wire e ent\343o chama a API;) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 428.6 Tm (- membership_merge: aplica uma observa\347\343o de Gossip segundo incarna\347\343o, sequ\352ncia, estado) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 415.3 Tm (e origem;) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 397.0 Tm (- chord_network_join: ingresso no anel Chord, n\343o \351 JOIN de Peer.) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 358.7 Tm (5. Metadados e \355ndice C2) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 336.7 m 88.0 336.7 l S
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 330.7 Tm (metadata.c mant\351m uma API local para documentos e localiza\347\365es; directory.c transforma o protocolo) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 317.4 Tm (de rede para essa API. A FileMetadata e o wire n\343o devem ser tratados como a mesma estrutura. Um) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 304.1 Tm (documento pode ter registros de localiza\347\343o por chunk; a consulta local resolve os NodeIDs com a) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 290.8 Tm (tabela de membros e filtra disponibilidade conforme o estado.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 272.5 Tm (Na vers\343o integrada, ANNOUNCE chega depois que o Peer finaliza o upload. O Super Peer registra) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 259.2 Tm (metadados e NodeID propriet\341rio, mas n\343o armazena o PDF. O download usa as localiza\347\365es devolvidas e) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 245.9 Tm (conecta diretamente aos Peers. Uma API local de metadata n\343o prova lookup distribu\355do: Chord) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 232.6 Tm (encontra o respons\341vel por uma chave, mas a consulta de documentos continua local e n\343o migra) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 219.3 Tm (\355ndices.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 201.0 Tm (Fun\347\365es para seguir: metadata_create, metadata_announce, metadata_find_document,) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 187.7 Tm (metadata_remove_peer; em directory.c, os handlers de ANNOUNCE/LOOKUP, e em superpeer.c,) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 174.4 Tm (process_announcement e answer_lookup.) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 136.1 Tm (6. Checkpoint 3: Chord e integra\347\343o com falhas) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 114.1 m 88.0 114.1 l S
+0.100 0.390 0.550 rg BT /F2 12.0 Tf 1 0 0 1 52.0 94.1 Tm (Modelo de overlay) Tj ET
+endstream
+endobj
+11 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 10 0 R >>
+endobj
+12 0 obj
+<< /Length 5804 >>
+stream
+0.780 0.830 0.880 RG 0.7 w 52.0 779.0 m 543.0 779.0 l S
+0.200 0.310 0.420 rg BT /F2 7.5 Tf 1 0 0 1 52.0 790.0 Tm (GUIA T\311CNICO | PROGRAMA\307\303O DISTRIBU\315DA) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 756.0 Tm (Cada Super Peer tem NodeID de 256 bits e ocupa uma posi\347\343o circular. A API local mant\351m sucessor,) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 742.7 Tm (predecessor e 256 fingers. chord_id_add_power calcula \(id + 2^i\) mod 2^256;) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 729.4 Tm (chord_interval_open_closed e chord_interval_open_open comparam intervalos circulares; chord_route) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 716.1 Tm (escolhe o pr\363ximo salto a partir da tabela local.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 697.8 Tm (Fun\347\365es da API local: chord_create, chord_local, chord_get_successor, chord_get_predecessor,) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 684.5 Tm (chord_get_finger, chord_set_successor, chord_notify, chord_consider_predecessor, chord_set_finger e) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 671.2 Tm (chord_route. chord_forget invalida refer\352ncias e bloqueia NodeID indispon\355vel; chord_allow libera) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 657.9 Tm (depois de confirma\347\343o de inst\342ncia atual; chord_repair escolhe candidato vivo em ordem circular.) Tj ET
+0.100 0.390 0.550 rg BT /F2 12.0 Tf 1 0 0 1 52.0 625.6 Tm (Integra\347\343o TCP) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 606.6 Tm (chord_network.c implementa o wire e o tr\341fego real. chord_network_join contata bootstrap;) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 593.3 Tm (chord_network_find faz lookup de uma chave pelo overlay; chord_network_maintain executa tarefas de) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 580.0 Tm (manuten\347\343o/finger. chord_network_handle valida as mensagens recebidas e responde pelo listener Super) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 566.7 Tm (Peer. Os tipos Chord s\343o 20\22624, no mesmo header C1/C2 de 98 bytes.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 548.4 Tm (O primeiro registro do invent\341rio pode ser bootstrap. Outros Super Peers tentam entrar no anel; o) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 535.1 Tm (Super Peer mant\351m stabilize/notify/fix_fingers. O limite de saltos, conjunto visitado, prazo de RPC) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 521.8 Tm (e alternativas evitam loops e chamadas indefinidas.) Tj ET
+0.100 0.390 0.550 rg BT /F2 12.0 Tf 1 0 0 1 52.0 489.5 Tm (Rela\347\343o com o membership do Aluno 1) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 470.5 Tm (O detector C3 do Aluno 1 julga ALIVE/SUSPECT/FAILED/REMOVED com heartbeat, sondagens e Gossip. Ao) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 457.2 Tm (confirmar FAILED/REMOVED, o integrador chama chord_forget; isso limpa sucessor/predecessor/fingers.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 443.9 Tm (Uma RPC iniciada antes da falha pode terminar atrasada, ent\343o o NodeID bloqueado n\343o deve aceitar) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 430.6 Tm (resposta velha. chord_allow ocorre ap\363s evid\352ncia direta de ALIVE da inst\342ncia atual. chord_repair) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 417.3 Tm (refaz sucessor circular; a manuten\347\343o Chord recomp\365e as demais refer\352ncias.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 399.0 Tm (Isso repara topologia, n\343o o \355ndice de documentos. Gossip \351 dissemina\347\343o de membership, n\343o) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 385.7 Tm (consenso; JOIN de Peer n\343o equivale a ingresso Chord.) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 347.4 Tm (7. Checkpoint 4: Bully, operation log e replica\347\343o) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 325.4 m 88.0 325.4 l S
+0.100 0.390 0.550 rg BT /F2 12.0 Tf 1 0 0 1 52.0 305.4 Tm (Elei\347\343o esperada) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 286.4 Tm (- Um membro inicia elei\347\343o quando o cluster come\347a ou quando o l\355der observado fica) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 273.1 Tm (FAILED.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 254.8 Tm (- Envia M_ELECTION aos Super Peers ativos com NodeID maior, incluindo termo e posi\347\343o) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 241.5 Tm (conhecida do log.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 223.2 Tm (- Um candidato superior responde M_OK e inicia sua pr\363pria elei\347\343o.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 204.9 Tm (- Se n\343o houver resposta de candidato superior, o n\363 assume lideran\347a e anuncia) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 191.6 Tm (M_COORDINATOR.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 173.3 Tm (- Os membros aceitam o coordenador se termo e prioridade forem v\341lidos.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 155.0 Tm (No c\363digo, c4_cluster_tick coordena as tentativas, c4_cluster_handle recebe) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 141.7 Tm (elei\347\343o/coordenador/recupera\347\343o, c4_become_coordinator recupera entradas e publica lideran\347a, e) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 128.4 Tm (c4_cluster_is_leader/c4_cluster_get_leader permitem consultar o estado. Desde 20/10/2026, cada) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 115.1 Tm (rodada registra C4 ELECTION no log para deixar vis\355vel a evid\352ncia operacional.) Tj ET
+0.100 0.390 0.550 rg BT /F2 12.0 Tf 1 0 0 1 52.0 82.8 Tm (Log persistente) Tj ET
+endstream
+endobj
+13 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 12 0 R >>
+endobj
+14 0 obj
+<< /Length 5870 >>
+stream
+0.780 0.830 0.880 RG 0.7 w 52.0 779.0 m 543.0 779.0 l S
+0.200 0.310 0.420 rg BT /F2 7.5 Tf 1 0 0 1 52.0 790.0 Tm (GUIA T\311CNICO | PROGRAMA\307\303O DISTRIBU\315DA) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 756.0 Tm (c4_log.c guarda registros append-only C4LG. Cabe\347alho: \355ndice u64, vers\343o u64, TransactionID de 16) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 742.7 Tm (bytes, tamanho u32 e CRC32; depois vem o payload. c4_log_open valida e carrega; c4_log_append cria) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 729.4 Tm (entrada; c4_log_append_entry replica uma entrada j\341 formada; encode/decode serializam wire;) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 716.1 Tm (c4_log_get l\352 por \355ndice; c4_log_get_transaction suporta idempot\352ncia; getters exp\365em \372ltimo) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 702.8 Tm (\355ndice/vers\343o.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 684.5 Tm (Uma repeti\347\343o do mesmo TransactionID e mesmo conte\372do n\343o duplica entrada; conte\372do diferente com o) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 671.2 Tm (mesmo ID gera conflito. Ao iniciar, cada Super Peer revalida o arquivo e reaplica suas entradas ao) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 657.9 Tm (diret\363rio.) Tj ET
+0.100 0.390 0.550 rg BT /F2 12.0 Tf 1 0 0 1 52.0 625.6 Tm (ANNOUNCE replicado) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 606.6 Tm (O fluxo C4 ligado ao produto \351 ANNOUNCE C2. process_announcement exige Peer cadastrado. Se o Super) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 593.3 Tm (Peer n\343o \351 l\355der, encaminha a opera\347\343o ao coordenador. O l\355der grava a opera\347\343o, aplica localmente e) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 580.0 Tm (envia registro via M_STATE_TRANSFER \340s r\351plicas. Um candidato eleito consulta registros com) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 566.7 Tm (M_SNAPSHOT, recupera os que faltam, anuncia lideran\347a e tenta sincronizar logs.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 548.4 Tm (Tipos C4: M_ELECTION \(15, 24 bytes\), M_OK \(16, sem corpo\), M_COORDINATOR \(17, 16 bytes\), M_SNAPSHOT) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 535.1 Tm (\(18, consulta por \355ndice\) e M_STATE_TRANSFER \(19, registro C4LG\). Todos usam framing, TransactionID) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 521.8 Tm (e CRC existentes; o registro persistente tamb\351m tem checksum pr\363prio.) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 483.5 Tm (8. Escolhas, garantias e limites) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 461.5 m 88.0 461.5 l S
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 455.5 Tm (- NodeID lexicogr\341fico d\341 prioridade total e determin\355stica a Bully; n\343o fornece) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 442.2 Tm (autentica\347\343o nem qu\363rum.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 423.9 Tm (- Chord mant\351m topologia em estruturas locais sob mutex e faz RPC fora do mutex; reduz) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 410.6 Tm (conten\347\343o e evita esperar por rede segurando trava.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 392.3 Tm (- Prazos de RPC limitam espera por conex\365es, envio e recebimento lento.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 374.0 Tm (- Log com \355ndice, vers\343o e TransactionID permite replay, recupera\347\343o e deduplica\347\343o de) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 360.7 Tm (opera\347\365es.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 342.4 Tm (- Snapshot transfere opera\347\365es ausentes por \355ndice; state transfer mant\351m r\351plica do log e) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 329.1 Tm (aplica ANNOUNCE no n\363 destino.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 310.8 Tm (- O l\355der aplica localmente antes de todas as confirma\347\365es. Interrup\347\343o durante replica\347\343o) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 297.5 Tm (pode deixar estado parcial.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 279.2 Tm (- Termo C4 \351 mantido em mem\363ria, n\343o persistido.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 260.9 Tm (- A implementa\347\343o de Bully mais log replicado n\343o prova consenso forte. Falhas por parada) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 247.6 Tm (n\343o cobrem parti\347\365es; n\343o se comprovam disponibilidade de 99,5%, consist\352ncia forte ou) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 234.3 Tm (metas globais de desempenho.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 216.0 Tm (- C5 ainda deve trazer 2PC e IST; ambos permanecem pendentes.) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 177.7 Tm (9. Evid\352ncias e limites dos testes) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 155.7 m 88.0 155.7 l S
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 149.7 Tm (Os registros do projeto documentam API local de identidade/membership, testes locais C2/C3, Chord) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 136.4 Tm (TCP com tr\352s Super Peers, reparo com cinco processos e integra\347\343o C4 via runc4.sh com teste local do) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 123.1 Tm (log e 11 verifica\347\365es TCP. Esses resultados t\352m escopos diferentes: API local prova comportamento de) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 109.8 Tm (fun\347\343o; integra\347\343o TCP prova os fluxos exercitados entre processos; nenhum desses resultados prova) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 96.5 Tm (toler\342ncia a parti\347\365es ou todas as execu\347\365es poss\355veis.) Tj ET
+endstream
+endobj
+15 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 14 0 R >>
+endobj
+16 0 obj
+<< /Length 5078 >>
+stream
+0.780 0.830 0.880 RG 0.7 w 52.0 779.0 m 543.0 779.0 l S
+0.200 0.310 0.420 rg BT /F2 7.5 Tf 1 0 0 1 52.0 790.0 Tm (GUIA T\311CNICO | PROGRAMA\307\303O DISTRIBU\315DA) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 756.0 Tm (Em 20/10/2026, make all recompilou o bin\341rio e bash tests/c4/run.sh passou 4/4 quando executado com) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 742.7 Tm (permiss\343o para sockets locais. O c\363digo passou a emitir C4 ELECTION, que era o texto esperado pelo) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 729.4 Tm (roteiro. Esse runner chama bin/client --cmd put e --cmd state, op\347\365es rejeitadas pelo cliente atual) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 716.1 Tm (e ignoradas pelo roteiro; portanto esse PASS n\343o comprova PUT replicado. A valida\347\343o C4 espec\355fica) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 702.8 Tm (documentada para runc4.sh \351 evid\352ncia separada. O roteiro n\343o foi alterado.) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 664.5 Tm (10. Demonstra\347\343o e explica\347\343o curta) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 642.5 m 88.0 642.5 l S
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 636.5 Tm (Para demonstrar o overlay com tr\352s Super Peers, em terminais separados:) Tj ET
+0.950 0.960 0.970 rg 52.0 568.4 491.0 54.8 re f
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 609.2 Tm (make) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 599.0 Tm (./bin/superpeer --port 55101) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 588.8 Tm (./bin/superpeer --port 55111 --chord-host 127.0.0.1 --chord-port 55101) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 578.6 Tm (./bin/superpeer --port 55121 --chord-host 127.0.0.1 --chord-port 55101) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 568.4 Tm (Use invent\341rio de configura\347\343o se quiser reproduzir a sele\347\343o de n\363 por porta. O comando topology) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 555.1 Tm (mostra refer\352ncias do overlay; lookup --object-id roteia uma chave Chord e n\343o consulta) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 541.8 Tm (automaticamente todos os cat\341logos.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 523.5 Tm (\223O NodeID transforma IP, porta e UUID em uma identidade est\341vel. O Super Peer valida JOIN e mant\351m) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 510.2 Tm (os membros. No C3, Chord organiza Super Peers numa faixa circular para rotear chaves; o detector de) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 496.9 Tm (falhas pode invalidar vizinhos e o Chord repara a topologia. No C4, o maior NodeID ativo tem) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 483.6 Tm (prioridade Bully. O l\355der registra ANNOUNCEs num log persistente e tenta replic\341-los; n\363s eleitos) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 470.3 Tm (recuperam entradas por \355ndice. Como n\343o h\341 commit at\364mico nem termo persistido, isso melhora) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 457.0 Tm (recupera\347\343o, mas n\343o equivale a consenso forte.\224) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 418.7 Tm (11. Refer\352ncias internas) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 396.7 m 88.0 396.7 l S
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 390.7 Tm (Fontes principais: requisitos_aluno_2.md, explicacao_codigo_aluno_2.md,) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 377.4 Tm (checkpoint_4_implementacao.md, continuidade_checkpoint_3_aluno_1.md, integracao_checkpoint_3.md,) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 364.1 Tm (headers e implementa\347\365es de node, membership, chord, chord_network, c4_cluster, c4_log, directory e) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 350.8 Tm (superpeer.) Tj ET
+0.820 0.850 0.880 RG 0.5 w 52.0 43.0 m 543.0 43.0 l S
+0.380 0.430 0.480 rg BT /F1 7.3 Tf 1 0 0 1 52.0 29.0 Tm (Guia t\351cnico \227 Parte do Aluno 2) Tj ET
+0.380 0.430 0.480 rg BT /F1 7.3 Tf 1 0 0 1 483.0 29.0 Tm (Pagina 2 de 6) Tj ET
+0.820 0.850 0.880 RG 0.5 w 52.0 43.0 m 543.0 43.0 l S
+0.380 0.430 0.480 rg BT /F1 7.3 Tf 1 0 0 1 52.0 29.0 Tm (Guia t\351cnico \227 Parte do Aluno 2) Tj ET
+0.380 0.430 0.480 rg BT /F1 7.3 Tf 1 0 0 1 483.0 29.0 Tm (Pagina 3 de 6) Tj ET
+0.820 0.850 0.880 RG 0.5 w 52.0 43.0 m 543.0 43.0 l S
+0.380 0.430 0.480 rg BT /F1 7.3 Tf 1 0 0 1 52.0 29.0 Tm (Guia t\351cnico \227 Parte do Aluno 2) Tj ET
+0.380 0.430 0.480 rg BT /F1 7.3 Tf 1 0 0 1 483.0 29.0 Tm (Pagina 4 de 6) Tj ET
+0.820 0.850 0.880 RG 0.5 w 52.0 43.0 m 543.0 43.0 l S
+0.380 0.430 0.480 rg BT /F1 7.3 Tf 1 0 0 1 52.0 29.0 Tm (Guia t\351cnico \227 Parte do Aluno 2) Tj ET
+0.380 0.430 0.480 rg BT /F1 7.3 Tf 1 0 0 1 483.0 29.0 Tm (Pagina 5 de 6) Tj ET
+0.820 0.850 0.880 RG 0.5 w 52.0 43.0 m 543.0 43.0 l S
+0.380 0.430 0.480 rg BT /F1 7.3 Tf 1 0 0 1 52.0 29.0 Tm (Guia t\351cnico \227 Parte do Aluno 2) Tj ET
+0.380 0.430 0.480 rg BT /F1 7.3 Tf 1 0 0 1 483.0 29.0 Tm (Pagina 6 de 6) Tj ET
+endstream
+endobj
+17 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 16 0 R >>
+endobj
+xref
+0 18
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000155 00000 n 
+0000000252 00000 n 
+0000000354 00000 n 
+0000000449 00000 n 
+0000001923 00000 n 
+0000002069 00000 n 
+0000007981 00000 n 
+0000008127 00000 n 
+0000013719 00000 n 
+0000013867 00000 n 
+0000019723 00000 n 
+0000019871 00000 n 
+0000025793 00000 n 
+0000025941 00000 n 
+0000031071 00000 n 
+trailer
+<< /Size 18 /Root 1 0 R >>
+startxref
+31219
+%%EOF

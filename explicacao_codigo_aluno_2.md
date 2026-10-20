@@ -4,7 +4,7 @@
 
 ### Eleição e replicação no Checkpoint 4
 
-`c4_cluster.c` integra Bully ao atendimento TCP do Super Peer. O candidato envia `M_ELECTION` aos Super Peers ativos de NodeID maior; eles respondem `M_OK` e iniciam sua própria eleição. Quando não há resposta de candidato superior, o nó assume e anuncia `M_COORDINATOR`. Se a membership C3 marca o coordenador como FAILED, os demais iniciam nova eleição. O maior NodeID conhecido e ativo tem prioridade.
+`c4_cluster.c` integra Bully ao atendimento TCP do Super Peer. Ao iniciar uma rodada, o candidato registra `C4 ELECTION` no log e envia `M_ELECTION` aos Super Peers ativos de NodeID maior; eles respondem `M_OK` e iniciam sua própria eleição. Quando não há resposta de candidato superior, o nó assume e anuncia `M_COORDINATOR`. Se a membership C3 marca o coordenador como FAILED, os demais iniciam nova eleição. O maior NodeID conhecido e ativo tem prioridade.
 
 `c4_log.c` mantém `c4-operation.log` como sequência persistente de registros `C4LG`. O cabeçalho guarda índice, versão, TransactionID de 16 bytes, tamanho e CRC32; em seguida vem o payload serializado. O checksum cobre o cabeçalho com o campo zerado e o payload. Índices e versões avançam juntos. Repetições idênticas do TransactionID não acrescentam uma entrada, enquanto uma repetição com conteúdo divergente retorna conflito.
 

@@ -276,6 +276,8 @@ def main() -> None:
     documents = [
         (DOCS / "guia_aluno_1.md", DOCS / "guia_aluno_1.pdf"),
         (DOCS / "guia_aluno_2.md", DOCS / "guia_aluno_2.pdf"),
+        (DOCS / "checkpoint4_aluno_1.md", DOCS / "checkpoint4_aluno_1.pdf"),
+        (DOCS / "checkpoint4_aluno_2.md", DOCS / "checkpoint4_aluno_2.pdf"),
     ]
     for source, destination in documents:
         pages = convert(source, destination)

@@ -1,0 +1,256 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [7 0 R 9 0 R 11 0 R 13 0 R 15 0 R] /Count 5 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier /Encoding /WinAnsiEncoding >>
+endobj
+6 0 obj
+<< /Length 1545 >>
+stream
+1.000 1.000 1.000 rg 0.0 0.0 595.0 842.0 re f
+0.100 0.280 0.440 rg 0.0 0.0 16.0 842.0 re f
+0.230 0.360 0.490 rg BT /F2 8.5 Tf 1 0 0 1 52.0 790.0 Tm (TRABALHO DE PROGRAMACAO DISTRIBUIDA) Tj ET
+0.100 0.420 0.620 RG 2.0 w 52.0 770.0 m 543.0 770.0 l S
+0.080 0.200 0.320 rg BT /F2 25.0 Tf 1 0 0 1 52.0 672.0 Tm (Checkpoint 4 \227 log e replica\347\343o do) Tj ET
+0.080 0.200 0.320 rg BT /F2 25.0 Tf 1 0 0 1 52.0 639.0 Tm (Aluno 2) Tj ET
+0.080 0.490 0.680 RG 4.0 w 52.0 590.0 m 130.0 590.0 l S
+0.230 0.310 0.390 rg BT /F1 12.0 Tf 1 0 0 1 52.0 561.0 Tm (Guia do log de opera\347\365es, da integra\347\343o SMR e da recupera\347\343o de estado) Tj ET
+0.230 0.310 0.390 rg BT /F1 12.0 Tf 1 0 0 1 52.0 516.0 Tm (entre Super Peers.) Tj ET
+0.940 0.960 0.980 rg 52.0 184.0 491.0 75.0 re f
+0.080 0.370 0.550 rg BT /F2 9.0 Tf 1 0 0 1 68.0 235.0 Tm (GUIA EXPLICATIVO) Tj ET
+0.200 0.260 0.320 rg BT /F1 9.0 Tf 1 0 0 1 68.0 216.0 Tm (Fluxos, m\363dulos, fun\347\365es, decis\365es, evid\352ncias e pend\352ncias) Tj ET
+0.350 0.400 0.450 rg BT /F1 8.0 Tf 1 0 0 1 68.0 198.0 Tm (Leitura baseada no c\363digo e na documenta\347\343o do reposit\363rio) Tj ET
+0.250 0.320 0.400 rg BT /F2 9.0 Tf 1 0 0 1 52.0 72.0 Tm (Revis\343o: 20/10/2026) Tj ET
+0.350 0.400 0.450 rg BT /F1 8.0 Tf 1 0 0 1 52.0 52.0 Tm (Uso did\341tico: implementa\347\343o atual separada de requisitos e trabalho futuro) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 770.0 Tm (Guia do log de opera\347\365es, da integra\347\343o SMR e da recupera\347\343o de estado entre Super Peers.) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 6 0 R >>
+endobj
+8 0 obj
+<< /Length 5494 >>
+stream
+0.780 0.830 0.880 RG 0.7 w 52.0 779.0 m 543.0 779.0 l S
+0.200 0.310 0.420 rg BT /F2 7.5 Tf 1 0 0 1 52.0 790.0 Tm (GUIA T\311CNICO | PROGRAMA\307\303O DISTRIBU\315DA) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 736.0 Tm (Escopo e estado da entrega) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 714.0 m 88.0 714.0 l S
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 708.0 Tm (A responsabilidade do Aluno 2 no C4 \351 manter um operation log com \355ndice, vers\343o e checksum,) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 694.7 Tm (integrar a m\341quina de estados replicada e guardar o estado necess\341rio \340 elei\347\343o/recupera\347\343o. A) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 681.4 Tm (implementa\347\343o atual est\341 integrada em c4_log.c, c4_cluster.c e superpeer.c. A elei\347\343o Bully tamb\351m) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 668.1 Tm (usa o controlador compartilhado; o guia do Aluno 1 descreve a participa\347\343o no protocolo. As partes) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 654.8 Tm (s\343o conectadas no mesmo processo, n\343o dois subsistemas aut\364nomos.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 636.5 Tm (O log torna ANNOUNCE uma opera\347\343o ordenada e recuper\341vel. Ele n\343o representa consenso forte: a) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 623.2 Tm (implementa\347\343o replica para os membros conhecidos, mas ainda n\343o usa commit at\364mico/qu\363rum para) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 609.9 Tm (resolver falhas parciais.) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 571.6 Tm (Caminho de uma opera\347\343o ANNOUNCE) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 549.6 m 88.0 549.6 l S
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 543.6 Tm (- O Peer envia ANNOUNCE ao Super Peer ao qual est\341 conectado, ou um Super Peer encaminha a) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 530.3 Tm (opera\347\343o ao l\355der conhecido.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 512.0 Tm (- O l\355der valida o remetente e os dados do ANNOUNCE, monta o payload da opera\347\343o com o) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 498.7 Tm (NodeID propriet\341rio e os bytes serializados.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 480.4 Tm (- O l\355der grava a pr\363xima entrada no arquivo local c4-operation.log, atribuindo \355ndice e) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 467.1 Tm (vers\343o.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 448.8 Tm (- A m\341quina de estados aplica o ANNOUNCE ao diret\363rio de metadados local.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 430.5 Tm (- O l\355der envia a entrada como M_STATE_TRANSFER \340s r\351plicas ativas.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 412.2 Tm (- Cada r\351plica valida e registra a entrada, aplica o ANNOUNCE ao pr\363prio diret\363rio e) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 398.9 Tm (confirma a opera\347\343o.) Tj ET
+0.950 0.960 0.970 rg 52.0 259.4 491.0 126.2 re f
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 371.6 Tm (Peer -> Super Peer -> l\355der) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 361.4 Tm (                       |) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 351.2 Tm (                 valida ANNOUNCE) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 341.0 Tm (                       |) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 330.8 Tm (                 append no log) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 320.6 Tm (                       |) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 310.4 Tm (             aplica no diret\363rio local) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 300.2 Tm (                       |) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 290.0 Tm (             M_STATE_TRANSFER \340s r\351plicas) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 279.8 Tm (                       |) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 269.6 Tm (          valida, registra e aplica em cada r\351plica) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 259.4 Tm (O l\355der aplica localmente antes de receber todas as confirma\347\365es. Assim, uma falha no meio da) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 246.1 Tm (propaga\347\343o pode deixar r\351plicas com estados diferentes; o fluxo atual n\343o deve ser descrito como) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 232.8 Tm (commit at\364mico.) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 194.5 Tm (Formato e durabilidade do log) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 172.5 m 88.0 172.5 l S
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 166.5 Tm (c4_log.c mant\351m um arquivo append-only chamado c4-operation.log. Cada entrada cont\351m um cabe\347alho de) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 153.2 Tm (44 bytes seguido do payload:) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 134.9 Tm (| Campo | Tamanho | Descri\347\343o |) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 116.6 Tm (| --- | ---: | --- |) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 98.3 Tm (| Magic C4LG | 4 bytes | Identifica o formato da entrada |) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 80.0 Tm (| \315ndice | 8 bytes | Posi\347\343o monot\364nica da opera\347\343o |) Tj ET
+endstream
+endobj
+9 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 8 0 R >>
+endobj
+10 0 obj
+<< /Length 5699 >>
+stream
+0.780 0.830 0.880 RG 0.7 w 52.0 779.0 m 543.0 779.0 l S
+0.200 0.310 0.420 rg BT /F2 7.5 Tf 1 0 0 1 52.0 790.0 Tm (GUIA T\311CNICO | PROGRAMA\307\303O DISTRIBU\315DA) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 756.0 Tm (| Vers\343o | 8 bytes | Vers\343o associada \340 opera\347\343o |) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 737.7 Tm (| TransactionID | 16 bytes | Identidade da solicita\347\343o |) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 719.4 Tm (| Tamanho | 4 bytes | Comprimento do payload |) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 701.1 Tm (| CRC32 | 4 bytes | Integridade do cabe\347alho e payload |) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 682.8 Tm (| Payload | vari\341vel | Propriet\341rio e ANNOUNCE serializado |) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 664.5 Tm (O CRC32 \351 calculado sobre o cabe\347alho com o campo checksum zerado, seguido pelo payload. Na abertura) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 651.2 Tm (do arquivo, as entradas s\343o lidas e validadas. Uma cauda incompleta \351 truncada; registros v\341lidos) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 637.9 Tm (s\343o reaplicados ao diret\363rio local durante a cria\347\343o do cluster. Esse replay reconstr\363i o estado) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 624.6 Tm (local a partir do disco daquela r\351plica, mas n\343o determina sozinho quais opera\347\365es foram confirmadas) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 611.3 Tm (globalmente.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 593.0 Tm (Uma repeti\347\343o com TransactionID e conte\372do id\352nticos \351 idempotente. O mesmo TransactionID com) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 579.7 Tm (conte\372do diferente \351 rejeitado como conflito. Essa regra evita duplica\347\343o de uma solicita\347\343o) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 566.4 Tm (repetida sem aceitar reutiliza\347\343o inconsistente do identificador.) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 528.1 Tm (Recupera\347\343o ap\363s elei\347\343o) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 506.1 m 88.0 506.1 l S
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 500.1 Tm (O an\372ncio do coordenador informa o \355ndice que ele conhece. O novo l\355der compara o pr\363prio \355ndice com) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 486.8 Tm (o estado dispon\355vel nas r\351plicas e solicita entradas ausentes usando M_SNAPSHOT. A resposta cont\351m o) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 473.5 Tm (registro solicitado em M_ACK, ou payload vazio quando n\343o h\341 entrada naquele \355ndice. As entradas) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 460.2 Tm (recuperadas s\343o incorporadas pelo caminho de transfer\352ncia de estado antes de o l\355der retomar o) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 446.9 Tm (servi\347o.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 428.6 Tm (| Mensagem | Tipo | Payload | Uso |) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 410.3 Tm (| --- | ---: | --- | --- |) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 392.0 Tm (| M_ELECTION | 15 | 24 bytes: termo, \355ndice e vers\343o | Compara\347\343o do estado dos candidatos |) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 373.7 Tm (| M_OK | 16 | vazio | Resposta \340 elei\347\343o |) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 355.4 Tm (| M_COORDINATOR | 17 | 16 bytes: termo e \355ndice | An\372ncio do l\355der e \355ndice conhecido |) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 337.1 Tm (| M_SNAPSHOT | 18 | \355ndice solicitado \(u64\) | Consulta de uma entrada ausente |) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 318.8 Tm (| M_STATE_TRANSFER | 19 | registro C4LG | Replica\347\343o/instala\347\343o de entrada |) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 300.5 Tm (Todas usam o header e o CRC32 do transporte C1/C2; o registro transferido tamb\351m possui checksum) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 287.2 Tm (pr\363prio.) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 248.9 Tm (Fun\347\365es e APIs importantes) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 226.9 m 88.0 226.9 l S
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 220.9 Tm (- c4_log_open: abre ou cria o arquivo, valida entradas e prepara a recupera\347\343o.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 202.6 Tm (- c4_log_append e c4_log_append_entry: persistem opera\347\365es e entradas recebidas,) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 189.3 Tm (respeitando \355ndices e idempot\352ncia.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 171.0 Tm (- fun\347\365es de encode/decode do log: convertem registros C4LG para e de bytes de rede.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 152.7 Tm (- consultas por \355ndice e TransactionID, al\351m de last_index/last_version: permitem) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 139.4 Tm (deduplicar, responder snapshots e comparar progresso.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 121.1 Tm (- c4_cluster_create/c4_cluster_destroy: inicializam e liberam o log, a m\341quina de estados) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 107.8 Tm (e a integra\347\343o com o diret\363rio.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 89.5 Tm (- c4_cluster_submit: caminho de submiss\343o no l\355der; constr\363i a opera\347\343o ANNOUNCE,) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 76.2 Tm (registra, aplica e propaga.) Tj ET
+endstream
+endobj
+11 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 10 0 R >>
+endobj
+12 0 obj
+<< /Length 5474 >>
+stream
+0.780 0.830 0.880 RG 0.7 w 52.0 779.0 m 543.0 779.0 l S
+0.200 0.310 0.420 rg BT /F2 7.5 Tf 1 0 0 1 52.0 790.0 Tm (GUIA T\311CNICO | PROGRAMA\307\303O DISTRIBU\315DA) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 756.0 Tm (- c4_cluster_handle: recebe mensagens C4 e despacha elei\347\343o, snapshot e transfer\352ncia.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 737.7 Tm (- c4_cluster_tick: executa o ciclo peri\363dico de controle e inicia elei\347\343o quando) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 724.4 Tm (necess\341rio.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 706.1 Tm (- c4_cluster_is_leader, c4_cluster_get_leader e consultas do \355ndice: exp\365em o estado) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 692.8 Tm (corrente ao Super Peer.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 674.5 Tm (Em superpeer.c, o controlador \351 acionado no in\355cio e durante o ciclo do servidor; as mensagens de) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 661.2 Tm (protocolo C4 recebidas s\343o encaminhadas a ele. A membership C3 determina quais Super Peers est\343o) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 647.9 Tm (ativos para envio e elei\347\343o.) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 609.6 Tm (Decis\365es de implementa\347\343o) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 587.6 m 88.0 587.6 l S
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 581.6 Tm (- Append-only: simplifica a recupera\347\343o sequencial e preserva o hist\363rico local das) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 568.3 Tm (opera\347\365es.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 550.0 Tm (- \315ndice e vers\343o de 64 bits: oferecem espa\347o para crescimento sem depender de tipos de) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 536.7 Tm (tamanho da plataforma.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 518.4 Tm (- TransactionID e CRC no registro: tratam repeti\347\343o e corrup\347\343o em disco/rede com) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 505.1 Tm (verifica\347\365es independentes.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 486.8 Tm (- Reaplica\347\343o no startup: reconstr\363i o diret\363rio sem exigir que o Peer anuncie tudo antes) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 473.5 Tm (de o Super Peer responder.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 455.2 Tm (- Snapshot por \355ndice: recupera entradas ausentes pontualmente; n\343o \351 ainda o IST) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 441.9 Tm (incremental completo previsto no C5.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 423.6 Tm (- NodeID completo na elei\347\343o: evita priorizar apenas um resumo curto de identidade.) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 385.3 Tm (Evid\352ncias e como interpretar os testes) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 363.3 m 88.0 363.3 l S
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 357.3 Tm (bash runc4.sh foi registrado como aprovado em build estrito -Werror, teste local de) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 344.0 Tm (persist\352ncia/ordem/idempot\352ncia/checksum/serializa\347\343o e 11 verifica\347\365es TCP. A integra\347\343o com tr\352s) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 330.7 Tm (Super Peers e um Peer cobriu elei\347\343o do maior NodeID, ANNOUNCE replicado, parada do l\355der, detec\347\343o) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 317.4 Tm (de FAILED, reelei\347\343o, logs sobreviventes e uma opera\347\343o posterior no l\355der substituto. make test com) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 304.1 Tm (flags estritas tamb\351m passou na revis\343o documentada.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 285.8 Tm (O teste local da API do log n\343o equivale \340 integra\347\343o TCP: o primeiro verifica persist\352ncia e codecs) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 272.5 Tm (isoladamente; o segundo executa processos e mensagens de rede. J\341 bash tests/c4/run.sh passou 4/4) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 259.2 Tm (verifica\347\365es ap\363s recompila\347\343o, mas suas chamadas put e state s\343o rejeitadas pelo cliente e) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 245.9 Tm (ignoradas pelo roteiro \(|| true\). Portanto, esse PASS n\343o prova que o runner replicou uma opera\347\343o) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 232.6 Tm (PUT. O script n\343o foi alterado.) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 194.3 Tm (Pend\352ncias e garantias ainda n\343o demonstradas) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 172.3 m 88.0 172.3 l S
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 166.3 Tm (- N\343o h\341 protocolo de quorum/commit distribu\355do: uma falha durante a replica\347\343o pode) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 153.0 Tm (produzir aplica\347\343o parcial.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 134.7 Tm (- O termo de elei\347\343o \351 vol\341til e n\343o sobrevive ao rein\355cio.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 116.4 Tm (- A recupera\347\343o s\363 pode usar entradas dispon\355veis nas r\351plicas sobreviventes; n\343o resolve) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 103.1 Tm (por si s\363 conflitos de logs divergentes.) Tj ET
+endstream
+endobj
+13 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 12 0 R >>
+endobj
+14 0 obj
+<< /Length 2572 >>
+stream
+0.780 0.830 0.880 RG 0.7 w 52.0 779.0 m 543.0 779.0 l S
+0.200 0.310 0.420 rg BT /F2 7.5 Tf 1 0 0 1 52.0 790.0 Tm (GUIA T\311CNICO | PROGRAMA\307\303O DISTRIBU\315DA) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 756.0 Tm (- Parti\347\365es de rede, toler\342ncia bizantina, consist\352ncia forte, disponibilidade de 99,5% e) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 742.7 Tm (metas gerais de lat\352ncia n\343o foram comprovadas.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 724.4 Tm (- 2PC \(PREPARE, COMMIT, ABORT\) e IST completo s\343o itens do C5 e permanecem pendentes.) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 686.1 Tm (Comandos) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 664.1 m 88.0 664.1 l S
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 658.1 Tm (Na raiz do reposit\363rio:) Tj ET
+0.950 0.960 0.970 rg 52.0 620.6 491.0 24.2 re f
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 630.8 Tm (bash runc4.sh) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 620.6 Tm (Para executar o roteiro dispon\355vel do diret\363rio de testes:) Tj ET
+0.950 0.960 0.970 rg 52.0 583.1 491.0 24.2 re f
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 593.3 Tm (bash tests/c4/run.sh) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 583.1 Tm (Para a su\355te local estrita registrada para a implementa\347\343o integrada:) Tj ET
+0.950 0.960 0.970 rg 52.0 545.6 491.0 24.2 re f
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 555.8 Tm (make test CFLAGS='-std=c2x -Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion -Werror') Tj ET
+0.820 0.850 0.880 RG 0.5 w 52.0 43.0 m 543.0 43.0 l S
+0.380 0.430 0.480 rg BT /F1 7.3 Tf 1 0 0 1 52.0 29.0 Tm (Checkpoint 4 \227 log e replica\347\343o do Aluno 2) Tj ET
+0.380 0.430 0.480 rg BT /F1 7.3 Tf 1 0 0 1 483.0 29.0 Tm (Pagina 2 de 5) Tj ET
+0.820 0.850 0.880 RG 0.5 w 52.0 43.0 m 543.0 43.0 l S
+0.380 0.430 0.480 rg BT /F1 7.3 Tf 1 0 0 1 52.0 29.0 Tm (Checkpoint 4 \227 log e replica\347\343o do Aluno 2) Tj ET
+0.380 0.430 0.480 rg BT /F1 7.3 Tf 1 0 0 1 483.0 29.0 Tm (Pagina 3 de 5) Tj ET
+0.820 0.850 0.880 RG 0.5 w 52.0 43.0 m 543.0 43.0 l S
+0.380 0.430 0.480 rg BT /F1 7.3 Tf 1 0 0 1 52.0 29.0 Tm (Checkpoint 4 \227 log e replica\347\343o do Aluno 2) Tj ET
+0.380 0.430 0.480 rg BT /F1 7.3 Tf 1 0 0 1 483.0 29.0 Tm (Pagina 4 de 5) Tj ET
+0.820 0.850 0.880 RG 0.5 w 52.0 43.0 m 543.0 43.0 l S
+0.380 0.430 0.480 rg BT /F1 7.3 Tf 1 0 0 1 52.0 29.0 Tm (Checkpoint 4 \227 log e replica\347\343o do Aluno 2) Tj ET
+0.380 0.430 0.480 rg BT /F1 7.3 Tf 1 0 0 1 483.0 29.0 Tm (Pagina 5 de 5) Tj ET
+endstream
+endobj
+15 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 14 0 R >>
+endobj
+xref
+0 16
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000148 00000 n 
+0000000245 00000 n 
+0000000347 00000 n 
+0000000442 00000 n 
+0000002038 00000 n 
+0000002184 00000 n 
+0000007729 00000 n 
+0000007875 00000 n 
+0000013626 00000 n 
+0000013774 00000 n 
+0000019300 00000 n 
+0000019448 00000 n 
+0000022072 00000 n 
+trailer
+<< /Size 16 /Root 1 0 R >>
+startxref
+22220
+%%EOF

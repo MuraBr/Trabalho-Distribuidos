@@ -1,0 +1,197 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [7 0 R 9 0 R 11 0 R 13 0 R] /Count 4 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier /Encoding /WinAnsiEncoding >>
+endobj
+6 0 obj
+<< /Length 1513 >>
+stream
+1.000 1.000 1.000 rg 0.0 0.0 595.0 842.0 re f
+0.100 0.280 0.440 rg 0.0 0.0 16.0 842.0 re f
+0.230 0.360 0.490 rg BT /F2 8.5 Tf 1 0 0 1 52.0 790.0 Tm (TRABALHO DE PROGRAMACAO DISTRIBUIDA) Tj ET
+0.100 0.420 0.620 RG 2.0 w 52.0 770.0 m 543.0 770.0 l S
+0.080 0.200 0.320 rg BT /F2 25.0 Tf 1 0 0 1 52.0 672.0 Tm (Checkpoint 4 \227 participa\347\343o do) Tj ET
+0.080 0.200 0.320 rg BT /F2 25.0 Tf 1 0 0 1 52.0 639.0 Tm (Aluno 1) Tj ET
+0.080 0.490 0.680 RG 4.0 w 52.0 590.0 m 130.0 590.0 l S
+0.230 0.310 0.390 rg BT /F1 12.0 Tf 1 0 0 1 52.0 561.0 Tm (Guia do fluxo de elei\347\343o Bully e recupera\347\343o do coordenador no sistema) Tj ET
+0.230 0.310 0.390 rg BT /F1 12.0 Tf 1 0 0 1 52.0 516.0 Tm (integrado.) Tj ET
+0.940 0.960 0.980 rg 52.0 184.0 491.0 75.0 re f
+0.080 0.370 0.550 rg BT /F2 9.0 Tf 1 0 0 1 68.0 235.0 Tm (GUIA EXPLICATIVO) Tj ET
+0.200 0.260 0.320 rg BT /F1 9.0 Tf 1 0 0 1 68.0 216.0 Tm (Fluxos, m\363dulos, fun\347\365es, decis\365es, evid\352ncias e pend\352ncias) Tj ET
+0.350 0.400 0.450 rg BT /F1 8.0 Tf 1 0 0 1 68.0 198.0 Tm (Leitura baseada no c\363digo e na documenta\347\343o do reposit\363rio) Tj ET
+0.250 0.320 0.400 rg BT /F2 9.0 Tf 1 0 0 1 52.0 72.0 Tm (Revis\343o: 20/10/2026) Tj ET
+0.350 0.400 0.450 rg BT /F1 8.0 Tf 1 0 0 1 52.0 52.0 Tm (Uso did\341tico: implementa\347\343o atual separada de requisitos e trabalho futuro) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 770.0 Tm (Guia do fluxo de elei\347\343o Bully e recupera\347\343o do coordenador no sistema integrado.) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 6 0 R >>
+endobj
+8 0 obj
+<< /Length 5584 >>
+stream
+0.780 0.830 0.880 RG 0.7 w 52.0 779.0 m 543.0 779.0 l S
+0.200 0.310 0.420 rg BT /F2 7.5 Tf 1 0 0 1 52.0 790.0 Tm (GUIA T\311CNICO | PROGRAMA\307\303O DISTRIBU\315DA) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 736.0 Tm (Escopo e divis\343o de responsabilidades) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 714.0 m 88.0 714.0 l S
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 708.0 Tm (No Checkpoint 4, a responsabilidade atribu\355da ao Aluno 1 \351 a participa\347\343o no protocolo de elei\347\343o:) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 694.7 Tm (enviar ELECTION, receber OK, anunciar COORDINATOR e iniciar a recupera\347\343o quando o coordenador) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 681.4 Tm (falha. A execu\347\343o est\341 integrada ao c4_cluster.c e ao processo superpeer.c; portanto, n\343o h\341 uma) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 668.1 Tm (implementa\347\343o isolada por aluno em execu\347\343o. Este guia explica a responsabilidade do Aluno 1 dentro) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 654.8 Tm (desse fluxo compartilhado.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 636.5 Tm (O log dur\341vel, a indexa\347\343o/versionamento das entradas e a replica\347\343o SMR s\343o responsabilidades) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 623.2 Tm (atribu\355das ao Aluno 2 e explicadas no guia correspondente. A elei\347\343o usa esses dados para decidir) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 609.9 Tm (qual estado j\341 existe e recuperar entradas ausentes.) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 571.6 Tm (Fluxo da elei\347\343o) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 549.6 m 88.0 549.6 l S
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 543.6 Tm (- O detector de membership do C3 muda o estado do coordenador para FAILED.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 525.3 Tm (- Os Super Peers ativos iniciam uma rodada de elei\347\343o. Cada candidato compara NodeIDs) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 512.0 Tm (completos em ordem lexicogr\341fica; o maior NodeID tem maior prioridade.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 493.7 Tm (- O candidato envia M_ELECTION aos membros ativos de prioridade superior, incluindo seu) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 480.4 Tm (termo e o \355ndice/vers\343o local do log.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 462.1 Tm (- Um Super Peer superior que recebe a solicita\347\343o v\341lida responde com M_OK e tamb\351m inicia) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 448.8 Tm (a pr\363pria elei\347\343o.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 430.5 Tm (- Se o candidato n\343o obtiver resposta de um membro superior, ele se declara coordenador e) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 417.2 Tm (envia M_COORDINATOR aos membros conhecidos.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 398.9 Tm (- Os demais membros atualizam o coordenador conhecido. O novo l\355der busca entradas de log) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 385.6 Tm (que n\343o possui antes de retomar o servi\347o.) Tj ET
+0.950 0.960 0.970 rg 52.0 215.5 491.0 156.8 re f
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 358.3 Tm (coordenador falha) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 348.1 Tm (       |) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 337.9 Tm (       v) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 327.7 Tm (C3 marca FAILED -> candidatos enviam M_ELECTION aos NodeIDs maiores) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 317.5 Tm (                          |) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 307.3 Tm (               +----------+----------+) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 297.1 Tm (               |                     |) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 286.9 Tm (             M_OK                 sem resposta) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 276.7 Tm (               |                     |) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 266.5 Tm (       n\363 superior elege-se     candidato vira l\355der) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 256.3 Tm (                                     |) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 246.1 Tm (                               M_COORDINATOR) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 235.9 Tm (                                     |) Tj ET
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 225.7 Tm (                           recuperar entradas ausentes) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 195.5 Tm (Mensagens e valida\347\343o) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 173.5 m 88.0 173.5 l S
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 167.5 Tm (| Mensagem | Tipo | Payload | Fun\347\343o |) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 149.2 Tm (| --- | ---: | --- | --- |) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 130.9 Tm (| M_ELECTION | 15 | 24 bytes: termo, \372ltimo \355ndice e \372ltima vers\343o | Inicia ou propaga a elei\347\343o |) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 112.6 Tm (| M_OK | 16 | vazio | Confirma que um candidato superior recebeu a elei\347\343o |) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 94.3 Tm (| M_COORDINATOR | 17 | 16 bytes: termo e \355ndice anunciado | Informa quem assumiu a coordena\347\343o |) Tj ET
+endstream
+endobj
+9 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 8 0 R >>
+endobj
+10 0 obj
+<< /Length 5996 >>
+stream
+0.780 0.830 0.880 RG 0.7 w 52.0 779.0 m 543.0 779.0 l S
+0.200 0.310 0.420 rg BT /F2 7.5 Tf 1 0 0 1 52.0 790.0 Tm (GUIA T\311CNICO | PROGRAMA\307\303O DISTRIBU\315DA) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 756.0 Tm (As mensagens usam o framing C1/C2 j\341 existente: header, TransactionID, tamanho do payload e CRC32 de) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 742.7 Tm (transporte. Os handlers tamb\351m verificam os tamanhos esperados e se o remetente \351 um membro) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 729.4 Tm (conhecido/ativo. O maior NodeID \351 uma prioridade determin\355stica; o termo ajuda a distinguir rodadas,) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 716.1 Tm (mas atualmente fica em mem\363ria.) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 677.8 Tm (Fun\347\365es e pontos de integra\347\343o) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 655.8 m 88.0 655.8 l S
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 649.8 Tm (- superpeer.c: recebe mensagens de rede C4 e encaminha ao controlador; a mudan\347a de) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 636.5 Tm (membership para FAILED alimenta o gatilho de elei\347\343o.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 618.2 Tm (- c4_cluster_tick: avan\347a a m\341quina de estados, inicia elei\347\343o e registra o evento C4) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 604.9 Tm (ELECTION no log do processo.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 586.6 Tm (- c4_cluster_handle: processa M_ELECTION, M_OK, M_COORDINATOR, M_SNAPSHOT e) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 573.3 Tm (M_STATE_TRANSFER recebidos.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 555.0 Tm (- rotina de elei\347\343o no c4_cluster.c: enumera Super Peers ativos, compara NodeIDs, envia) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 541.7 Tm (solicita\347\365es e aguarda respostas por timeout.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 523.4 Tm (- rotina que assume a coordena\347\343o: consulta estado faltante antes de definir o n\363 como) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 510.1 Tm (l\355der e divulgar o novo coordenador.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 491.8 Tm (Esses pontos s\343o partes de uma m\341quina integrada. Os nomes exatos dos helpers internos podem mudar;) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 478.5 Tm (o contrato observ\341vel \351 o conjunto de mensagens, transi\347\365es de estado e recupera\347\343o descritos acima.) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 440.2 Tm (Como deve funcionar e o que foi demonstrado) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 418.2 m 88.0 418.2 l S
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 412.2 Tm (O comportamento esperado \351 que, ap\363s a detec\347\343o de falha do l\355der, os sobreviventes escolham o maior) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 398.9 Tm (NodeID ativo, divulguem o novo coordenador e permitam novas opera\347\365es. O novo l\355der deve recuperar) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 385.6 Tm (as entradas ausentes dispon\355veis nas r\351plicas sobreviventes antes de atender novas opera\347\365es.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 367.3 Tm (A integra\347\343o TCP C4 documentada para bash runc4.sh passou build estrito com -Werror, teste local do) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 354.0 Tm (log e 11 verifica\347\365es TCP com tr\352s Super Peers e um Peer. O cen\341rio observou a prioridade pelo maior) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 340.7 Tm (NodeID, ANNOUNCE replicado, encerramento do l\355der, detec\347\343o FAILED, reelei\347\343o, preserva\347\343o dos logs) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 327.4 Tm (sobreviventes e uma nova opera\347\343o no coordenador eleito. Isso demonstra o cen\341rio de falha por) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 314.1 Tm (parada testado; n\343o comprova toler\342ncia a parti\347\365es ou consenso forte.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 295.8 Tm (tests/c4/run.sh tamb\351m passou 4/4 verifica\347\365es ap\363s recompila\347\343o, mas suas chamadas a put e state) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 282.5 Tm (s\343o rejeitadas pela CLI e seus erros s\343o ignorados. Por isso, o PASS gen\351rico de SMR/log desse) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 269.2 Tm (roteiro n\343o \351 evid\352ncia de PUT replicado. O script foi mantido sem altera\347\343o.) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 230.9 Tm (Limites e trabalho futuro) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 208.9 m 88.0 208.9 l S
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 202.9 Tm (- A cobertura de elei\347\343o usa tr\352s Super Peers e falha por parada. Parti\347\365es de rede e) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 189.6 Tm (grupos maiores com atrasos n\343o foram validados.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 171.3 Tm (- O termo da elei\347\343o n\343o \351 persistido; um rein\355cio pode perder o hist\363rico da rodada.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 153.0 Tm (- A elei\347\343o e a replica\347\343o n\343o formam consenso distribu\355do com qu\363rum. O l\355der pode) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 139.7 Tm (aplicar localmente uma opera\347\343o antes de receber todas as confirma\347\365es.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 121.4 Tm (- Metas de disponibilidade de 99,5%, recupera\347\343o abaixo de cinco segundos em geral e) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 108.1 Tm (consist\352ncia forte n\343o foram demonstradas.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 89.8 Tm (- 2PC \(PREPARE/COMMIT/ABORT\) e IST pertencem ao Checkpoint 5 e permanecem pendentes.) Tj ET
+endstream
+endobj
+11 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 10 0 R >>
+endobj
+12 0 obj
+<< /Length 1858 >>
+stream
+0.780 0.830 0.880 RG 0.7 w 52.0 779.0 m 543.0 779.0 l S
+0.200 0.310 0.420 rg BT /F2 7.5 Tf 1 0 0 1 52.0 790.0 Tm (GUIA T\311CNICO | PROGRAMA\307\303O DISTRIBU\315DA) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 736.0 Tm (Comandos de execu\347\343o) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 714.0 m 88.0 714.0 l S
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 708.0 Tm (Na raiz do reposit\363rio, a integra\347\343o C4 espec\355fica \351 executada com:) Tj ET
+0.950 0.960 0.970 rg 52.0 670.5 491.0 24.2 re f
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 680.7 Tm (bash runc4.sh) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 670.5 Tm (O roteiro de testes C4 dispon\355vel em tests/c4 pode ser executado com:) Tj ET
+0.950 0.960 0.970 rg 52.0 633.0 491.0 24.2 re f
+0.170 0.220 0.270 rg BT /F3 7.2 Tf 1 0 0 1 61.0 643.2 Tm (bash tests/c4/run.sh) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 633.0 Tm (Os resultados dos dois roteiros devem ser lidos separadamente, considerando as limita\347\365es de) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 619.7 Tm (cobertura descritas acima.) Tj ET
+0.820 0.850 0.880 RG 0.5 w 52.0 43.0 m 543.0 43.0 l S
+0.380 0.430 0.480 rg BT /F1 7.3 Tf 1 0 0 1 52.0 29.0 Tm (Checkpoint 4 \227 participa\347\343o do Aluno 1) Tj ET
+0.380 0.430 0.480 rg BT /F1 7.3 Tf 1 0 0 1 483.0 29.0 Tm (Pagina 2 de 4) Tj ET
+0.820 0.850 0.880 RG 0.5 w 52.0 43.0 m 543.0 43.0 l S
+0.380 0.430 0.480 rg BT /F1 7.3 Tf 1 0 0 1 52.0 29.0 Tm (Checkpoint 4 \227 participa\347\343o do Aluno 1) Tj ET
+0.380 0.430 0.480 rg BT /F1 7.3 Tf 1 0 0 1 483.0 29.0 Tm (Pagina 3 de 4) Tj ET
+0.820 0.850 0.880 RG 0.5 w 52.0 43.0 m 543.0 43.0 l S
+0.380 0.430 0.480 rg BT /F1 7.3 Tf 1 0 0 1 52.0 29.0 Tm (Checkpoint 4 \227 participa\347\343o do Aluno 1) Tj ET
+0.380 0.430 0.480 rg BT /F1 7.3 Tf 1 0 0 1 483.0 29.0 Tm (Pagina 4 de 4) Tj ET
+endstream
+endobj
+13 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 12 0 R >>
+endobj
+xref
+0 14
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000141 00000 n 
+0000000238 00000 n 
+0000000340 00000 n 
+0000000435 00000 n 
+0000001999 00000 n 
+0000002145 00000 n 
+0000007780 00000 n 
+0000007926 00000 n 
+0000013974 00000 n 
+0000014122 00000 n 
+0000016032 00000 n 
+trailer
+<< /Size 14 /Root 1 0 R >>
+startxref
+16180
+%%EOF

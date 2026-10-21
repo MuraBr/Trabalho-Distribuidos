@@ -1,0 +1,46 @@
+// Teste automatizado
+
+make
+bash tests/c3/run.sh
+
+tem que dar PASS: 5 e FAIL: 0 (demora uns 30s)
+o "Killed" no meio é normal, é o script matando o SP3 de propósito
+
+conferir que nao passou por acaso (tem que sair vazio):
+grep -E "Tipos:|Uso:" /tmp/bittorrent-tests/c3.log
+
+
+// Teste manual
+
+[Servidor] -> Sobe os 5 SPs e fica olhando só as mudanças de estado
+
+    for p in 5101 5102 5103 5104 5105; do bin/node --config tests/config/c3.conf --port $p >> /tmp/anel.log 2>&1 & done
+    tail -f /tmp/anel.log | grep -E "started|SUSPECT|FAILED|REMOVED|ALIVE"
+
+
+[Cliente] -> espera uns 10s pro anel se acertar
+
+    ver o anel (successor, predecessor, finger table e a lista de membros da Luana):
+    bin/client --cmd topology --host 127.0.0.1 --port 5101
+
+    lookup:
+    bin/client --cmd lookup --object-id $(printf 'ab%.0s' {1..32}) --host 127.0.0.1 --port 5101
+
+    lookup com o NodeID do SP2 (Deve dar Owner: SP2):
+    ID=$(grep -A1 "Node SP2" /tmp/anel.log | grep -o "[0-9a-f]\{64\}")
+    bin/client --cmd lookup --object-id $ID --host 127.0.0.1 --port 5101
+
+    derrubar o SP3:
+    pkill -9 -f "port 5103"
+
+no Servidor, depois de uns 15-18s aparece SP3 SUSPECT e SP3 FAILED
+uns 15s depois aparece SP3 REMOVED
+cada linha sai 4 vezes, uma por SP vivo
+
+rodar o topology de novo, o SP3 sumiu do anel:
+bin/client --cmd topology --host 127.0.0.1 --port 5101
+
+
+// Limpeza
+
+pkill -f bin/node; rm -f /tmp/anel.log

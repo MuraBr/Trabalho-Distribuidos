@@ -1,15 +1,16 @@
-CC ?= gcc
-CFLAGS ?= -std=c11 -Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion
-LDLIBS ?= -pthread -lz
+# Curso de Ciência da Computação
+# Prof. Dr. Rubens Barbosa Filho
+#Ano: 2015
 
-.PHONY: all clean
+CC ?= gcc
+CFLAGS ?= -std=c11 -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Wpedantic -O2 -I../../include
 
 all: test_protocol
 
-test_protocol: test_protocol.c ../../network.c ../../network.h \
-               ../../protocol.c ../../protocol.h ../../common.h
-	$(CC) $(CFLAGS) -pthread -I../.. ../../network.c ../../protocol.c \
-		test_protocol.c -o $@ $(LDLIBS)
+test_protocol: test_protocol.c ../../src/protocol.c
+	$(CC) $(CFLAGS) -o test_protocol test_protocol.c ../../src/protocol.c
 
 clean:
 	rm -f test_protocol
+
+.PHONY: all clean

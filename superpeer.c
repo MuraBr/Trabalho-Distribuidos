@@ -755,7 +755,7 @@ static void handle_client(void *context, int client_fd)
             free(payload);
             if (sent < 0) { message_free(&message); break; }
         }
-        else if (message.header.message_type == M_ELECTION || message.header.message_type == M_COORDINATOR || message.header.message_type == M_SNAPSHOT || message.header.message_type == M_STATE_TRANSFER)
+        else if (message.header.message_type == M_ELECTION || message.header.message_type == M_COORDINATOR || message.header.message_type == M_SNAPSHOT || message.header.message_type == M_STATE_TRANSFER || message.header.message_type == M_PREPARE || message.header.message_type == M_COMMIT || message.header.message_type == M_ABORT || message.header.message_type == M_IST_REQUEST)
         {
             uint8_t *payload = NULL;
             uint32_t size = 0U;

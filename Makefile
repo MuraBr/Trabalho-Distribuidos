@@ -12,7 +12,7 @@ CPPFLAGS += -I$(CURDIR)/.deps/usr/include -I$(CURDIR)/.deps/usr/include/x86_64-l
 endif
 LDFLAGS ?=
 
-.PHONY: all clean test test-aluno2 test-c2 test-c4-local test-c4 deps
+.PHONY: all clean test test-aluno2 test-c2 test-c4-local test-c4 test-c5 deps
 
 # Headers oficiais locais, sem sudo; somente para Debian/Ubuntu sem pacotes -dev.
 deps:
@@ -66,8 +66,23 @@ test-c4-local: $(BIN_DIR)/test_c4_log
 test-c4: all test-c4-local
 	python3 tests/c4/integration.py --bin-dir "$(BIN_DIR)"
 
+$(BIN_DIR)/test_cache_lfu: storage.c content.c compression.c metadata.c tests/c5/test_cache_lfu.c storage.h | $(BIN_DIR)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -pthread -I. storage.c content.c compression.c metadata.c tests/c5/test_cache_lfu.c -o $@ $(LDLIBS) $(LZ4_LIB)
+
+.PHONY: test-c5-local
+test-c5-local: $(BIN_DIR)/test_cache_lfu $(BIN_DIR)/test_transaction_journal
+	$(BIN_DIR)/test_cache_lfu
+	$(BIN_DIR)/test_transaction_journal
+
+.PHONY: test-c5
+test-c5: all test-c5-local
+	python3 tests/c5/transaction_integration.py --bin-dir "$(BIN_DIR)" --config tests/config/c5.conf
+
+$(BIN_DIR)/test_transaction_journal: protocol.c network.c tests/c5/test_transaction_journal.c c4_log.c c4_log.h protocol.h network.h | $(BIN_DIR)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -pthread -I. protocol.c network.c c4_log.c tests/c5/test_transaction_journal.c -o $@ $(LDLIBS)
+
 clean:
-	rm -f $(BIN_DIR)/peer $(BIN_DIR)/superpeer $(BIN_DIR)/node $(BIN_DIR)/client $(BIN_DIR)/test_metadata $(BIN_DIR)/test_node_superpeer $(BIN_DIR)/test_transfer_negative $(BIN_DIR)/test_storage_atomic $(BIN_DIR)/test_chord $(BIN_DIR)/test_membership $(BIN_DIR)/test_control $(BIN_DIR)/test_c4_log
+	rm -f $(BIN_DIR)/peer $(BIN_DIR)/superpeer $(BIN_DIR)/node $(BIN_DIR)/client $(BIN_DIR)/test_metadata $(BIN_DIR)/test_node_superpeer $(BIN_DIR)/test_transfer_negative $(BIN_DIR)/test_storage_atomic $(BIN_DIR)/test_chord $(BIN_DIR)/test_membership $(BIN_DIR)/test_control $(BIN_DIR)/test_c4_log $(BIN_DIR)/test_cache_lfu $(BIN_DIR)/test_transaction_journal
 	$(MAKE) -C tests/c1 clean
 
 # API local do aluno 2: não depende de sockets nem altera executáveis versionados.

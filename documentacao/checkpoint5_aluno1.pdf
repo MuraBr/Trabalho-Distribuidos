@@ -1,0 +1,187 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [7 0 R 9 0 R 11 0 R 13 0 R] /Count 4 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier /Encoding /WinAnsiEncoding >>
+endobj
+6 0 obj
+<< /Length 1546 >>
+stream
+1.000 1.000 1.000 rg 0.0 0.0 595.0 842.0 re f
+0.100 0.280 0.440 rg 0.0 0.0 16.0 842.0 re f
+0.230 0.360 0.490 rg BT /F2 8.5 Tf 1 0 0 1 52.0 790.0 Tm (TRABALHO DE PROGRAMACAO DISTRIBUIDA) Tj ET
+0.100 0.420 0.620 RG 2.0 w 52.0 770.0 m 543.0 770.0 l S
+0.080 0.200 0.320 rg BT /F2 25.0 Tf 1 0 0 1 52.0 672.0 Tm (Checkpoint 5 \227 Implementa\347\343o do) Tj ET
+0.080 0.200 0.320 rg BT /F2 25.0 Tf 1 0 0 1 52.0 639.0 Tm (Aluno 1) Tj ET
+0.080 0.490 0.680 RG 4.0 w 52.0 590.0 m 130.0 590.0 l S
+0.230 0.310 0.390 rg BT /F1 12.0 Tf 1 0 0 1 52.0 561.0 Tm (Cache local LFU de chunks no Peer | explica\347\343o de responsabilidades,) Tj ET
+0.230 0.310 0.390 rg BT /F1 12.0 Tf 1 0 0 1 52.0 516.0 Tm (fluxo, decis\365es e evid\352ncias) Tj ET
+0.940 0.960 0.980 rg 52.0 184.0 491.0 75.0 re f
+0.080 0.370 0.550 rg BT /F2 9.0 Tf 1 0 0 1 68.0 235.0 Tm (GUIA EXPLICATIVO) Tj ET
+0.200 0.260 0.320 rg BT /F1 9.0 Tf 1 0 0 1 68.0 216.0 Tm (Fluxos, m\363dulos, fun\347\365es, decis\365es, evid\352ncias e pend\352ncias) Tj ET
+0.350 0.400 0.450 rg BT /F1 8.0 Tf 1 0 0 1 68.0 198.0 Tm (Leitura baseada no c\363digo e na documenta\347\343o do reposit\363rio) Tj ET
+0.250 0.320 0.400 rg BT /F2 9.0 Tf 1 0 0 1 52.0 72.0 Tm (Revis\343o: 05/11/2026) Tj ET
+0.350 0.400 0.450 rg BT /F1 8.0 Tf 1 0 0 1 52.0 52.0 Tm (Uso did\341tico: implementa\347\343o atual separada de requisitos e trabalho futuro) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 770.0 Tm (Cache local LFU de chunks no Peer | explica\347\343o de responsabilidades, fluxo, decis\365es e evid\352ncias) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 6 0 R >>
+endobj
+8 0 obj
+<< /Length 5284 >>
+stream
+0.780 0.830 0.880 RG 0.7 w 52.0 779.0 m 543.0 779.0 l S
+0.200 0.310 0.420 rg BT /F2 7.5 Tf 1 0 0 1 52.0 790.0 Tm (GUIA T\311CNICO | PROGRAMA\307\303O DISTRIBU\315DA) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 736.0 Tm (1. Escopo desta parte) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 714.0 m 88.0 714.0 l S
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 708.0 Tm (No C5, a parte do Aluno 1 implementa cache local de chunks comprimidos no armazenamento do Peer. A) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 694.7 Tm (finalidade \351 evitar leituras repetidas do disco quando downloads solicitam novamente o mesmo chunk.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 681.4 Tm (O cache atua no caminho de leitura do Peer; n\343o substitui os arquivos persistidos e n\343o altera o) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 668.1 Tm (formato das mensagens de rede.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 649.8 Tm (Arquivos principais: storage.c e storage.h implementam o cache e sua API; peer.c usa essa API ao) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 636.5 Tm (atender M_DOWNLOAD_REQ e registra hit, miss e frequ\352ncia. Os testes locais est\343o em) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 623.2 Tm (tests/c5/test_cache_lfu.c; o teste de integra\347\343o de rede est\341 em) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 609.9 Tm (tests/c5/transaction_integration.py.) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 571.6 Tm (2. Dados armazenados e chave) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 549.6 m 88.0 549.6 l S
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 543.6 Tm (Cada item em mem\363ria cont\351m o ObjectID do documento, o \355ndice do chunk, os bytes comprimidos e o) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 530.3 Tm (descritor necess\341rio para servir o chunk. A identidade da entrada \351 o par \(ObjectID, \355ndice\),) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 517.0 Tm (portanto chunks diferentes do mesmo documento ocupam entradas diferentes.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 498.7 Tm (O cache guarda os bytes comprimidos j\341 persistidos. Em um hit, o Peer evita a leitura do arquivo do) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 485.4 Tm (chunk em objects e pode responder usando a c\363pia em mem\363ria. A resposta continua passando pelo) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 472.1 Tm (protocolo normal, com descritor e valida\347\365es previstas no caminho de transfer\352ncia.) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 433.8 Tm (3. Configura\347\343o de capacidade) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 411.8 m 88.0 411.8 l S
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 405.8 Tm (PEER_CACHE_BYTES define o limite de bytes de cache por processo Peer. O padr\343o \351 16 MiB; valor zero) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 392.5 Tm (desativa o armazenamento no cache. A capacidade considera o tamanho das c\363pias dos chunks, e a) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 379.2 Tm (implementa\347\343o tamb\351m trata a reconfigura\347\343o sem deixar entradas incompat\355veis com o limite atual.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 360.9 Tm (Essa configura\347\343o \351 local ao Peer. Ela n\343o \351 enviada ao Super Peer e n\343o modifica) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 347.6 Tm (tests/config/c5.conf.) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 309.3 Tm (4. Pol\355tica LFU e evic\347\343o) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 287.3 m 88.0 287.3 l S
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 281.3 Tm (Em cada acesso, a frequ\352ncia da entrada \351 atualizada. Quando uma nova c\363pia n\343o cabe no limite, a) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 268.0 Tm (implementa\347\343o escolhe uma entrada de menor frequ\352ncia \(Least Frequently Used\). Se houver empate,) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 254.7 Tm (remove a que est\341 h\341 mais tempo sem acesso, usando o instante de \372ltimo uso como crit\351rio LRU de) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 241.4 Tm (desempate.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 223.1 Tm (A remo\347\343o afeta apenas a c\363pia em mem\363ria. Os arquivos de chunks e manifests dur\341veis continuam em) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 209.8 Tm (objects; uma leitura posterior de uma entrada removida volta ao armazenamento persistente e pode) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 196.5 Tm (popular o cache novamente. Com capacidade zero, a leitura segue pelo armazenamento sem reter uma) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 183.2 Tm (entrada.) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 144.9 Tm (5. Caminho de leitura no Peer) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 122.9 m 88.0 122.9 l S
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 116.9 Tm (- O cliente envia M_DOWNLOAD_REQ com ObjectID e \355ndice do chunk.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 98.6 Tm (- peer.c chama storage_read_chunk_with_cache_info, que procura a chave composta no cache.) Tj ET
+endstream
+endobj
+9 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 8 0 R >>
+endobj
+10 0 obj
+<< /Length 5124 >>
+stream
+0.780 0.830 0.880 RG 0.7 w 52.0 779.0 m 543.0 779.0 l S
+0.200 0.310 0.420 rg BT /F2 7.5 Tf 1 0 0 1 52.0 790.0 Tm (GUIA T\311CNICO | PROGRAMA\307\303O DISTRIBU\315DA) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 756.0 Tm (- Em caso de hit, recebe uma c\363pia de bytes pertencente ao chamador e atualiza a) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 742.7 Tm (frequ\352ncia/rec\352ncia.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 724.4 Tm (- Em caso de miss, a fun\347\343o l\352 o chunk dur\341vel e, se houver capacidade, conserva uma c\363pia) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 711.1 Tm (comprimida no cache.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 692.8 Tm (- O Peer responde pelo protocolo de transfer\352ncia j\341 existente e libera a c\363pia tempor\341ria) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 679.5 Tm (conforme a API.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 661.2 Tm (- O log do Peer informa LFU CACHE HIT ou MISS, o \355ndice e a frequ\352ncia observada. A) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 647.9 Tm (evic\347\343o registra o \355ndice e a frequ\352ncia removidos.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 629.6 Tm (O chamador recebe mem\363ria pr\363pria, n\343o um ponteiro interno que poderia ser invalidado por uma) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 616.3 Tm (evic\347\343o concorrente. O estado e as estat\355sticas do cache s\343o protegidos para acesso concorrente) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 603.0 Tm (entre workers.) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 564.7 Tm (6. API e estat\355sticas) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 542.7 m 88.0 542.7 l S
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 536.7 Tm (storage_read_chunk_with_cache_info executa a leitura e retorna ao chamador os dados, tamanho,) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 523.4 Tm (descritor e informa\347\365es de hit/miss e frequ\352ncia. StorageCacheStats, exposta por) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 510.1 Tm (storage_get_cache_stats, agrega informa\347\365es do cache sem exigir que a camada de armazenamento) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 496.8 Tm (exponha suas estruturas privadas.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 478.5 Tm (As estat\355sticas de frequ\352ncia e hit/miss ajudam a observar o comportamento do cache, enquanto os) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 465.2 Tm (logs de evic\347\343o mostram qual entrada foi removida. A API local de armazenamento \351 distinta da) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 451.9 Tm (integra\347\343o TCP: o teste unit\341rio cobre diretamente o m\363dulo; o teste de integra\347\343o verifica o) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 438.6 Tm (comportamento atrav\351s de Peer e cliente reais.) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 400.3 Tm (7. Testes e evid\352ncias) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 378.3 m 88.0 378.3 l S
+0.100 0.390 0.550 rg BT /F2 12.0 Tf 1 0 0 1 52.0 358.3 Tm (Teste local) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 339.3 Tm (make test-c5 compila com C2x e avisos estritos tratados como erros e executa test_cache_lfu. O) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 326.0 Tm (resultado registrado em 05/11/2026 foi aprovado. Os cen\341rios cobertos incluem:) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 307.7 Tm (- miss inicial, hit subsequente e aumento de frequ\352ncia;) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 289.4 Tm (- escolha LFU e desempate pela rec\352ncia;) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 271.1 Tm (- capacidade insuficiente e capacidade zero;) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 252.8 Tm (- leitura novamente a partir do armazenamento dur\341vel depois da evic\347\343o;) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 234.5 Tm (- reconfigura\347\343o concorrente do cache.) Tj ET
+0.100 0.390 0.550 rg BT /F2 12.0 Tf 1 0 0 1 52.0 202.2 Tm (Integra\347\343o pela rede) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 183.2 Tm (tests/c5/transaction_integration.py, executado pelo alvo make test-c5, faz dois downloads do mesmo) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 169.9 Tm (chunk via TCP, compara os arquivos baixados byte a byte e verifica no log do Peer o MISS seguido de) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 156.6 Tm (HIT com frequ\352ncia 2. A sa\355da reportou sucesso para o cen\341rio integrado de C5, incluindo tamb\351m) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 143.3 Tm (verifica\347\365es do protocolo de transa\347\365es do Super Peer.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 125.0 Tm (O teste local demonstra as regras da API de cache; o teste TCP demonstra que o caminho real do) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 111.7 Tm (download usa o cache. Os dois n\355veis s\343o complementares.) Tj ET
+endstream
+endobj
+11 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 10 0 R >>
+endobj
+12 0 obj
+<< /Length 2104 >>
+stream
+0.780 0.830 0.880 RG 0.7 w 52.0 779.0 m 543.0 779.0 l S
+0.200 0.310 0.420 rg BT /F2 7.5 Tf 1 0 0 1 52.0 790.0 Tm (GUIA T\311CNICO | PROGRAMA\307\303O DISTRIBU\315DA) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 736.0 Tm (8. Limites e leitura correta do resultado) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 714.0 m 88.0 714.0 l S
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 708.0 Tm (O cache \351 vol\341til e local ao processo: reiniciar um Peer remove as entradas de mem\363ria, e o conte\372do) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 694.7 Tm (dur\341vel continua sendo a fonte de recupera\347\343o. A evid\352ncia C5 comprova os cen\341rios citados, mas n\343o) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 681.4 Tm (representa benchmark de throughput nem prova formal de aus\352ncia de condi\347\365es de corrida para toda) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 668.1 Tm (carga poss\355vel.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 649.8 Tm (Esta documenta\347\343o descreve a parte do Aluno 1. O journal dur\341vel, o 2PC e a transfer\352ncia) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 636.5 Tm (incremental de estado do Super Peer pertencem \340 parte do Aluno 2 e est\343o explicados no guia C5) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 623.2 Tm (correspondente.) Tj ET
+0.820 0.850 0.880 RG 0.5 w 52.0 43.0 m 543.0 43.0 l S
+0.380 0.430 0.480 rg BT /F1 7.3 Tf 1 0 0 1 52.0 29.0 Tm (Checkpoint 5 \227 Implementa\347\343o do Aluno 1) Tj ET
+0.380 0.430 0.480 rg BT /F1 7.3 Tf 1 0 0 1 483.0 29.0 Tm (Pagina 2 de 4) Tj ET
+0.820 0.850 0.880 RG 0.5 w 52.0 43.0 m 543.0 43.0 l S
+0.380 0.430 0.480 rg BT /F1 7.3 Tf 1 0 0 1 52.0 29.0 Tm (Checkpoint 5 \227 Implementa\347\343o do Aluno 1) Tj ET
+0.380 0.430 0.480 rg BT /F1 7.3 Tf 1 0 0 1 483.0 29.0 Tm (Pagina 3 de 4) Tj ET
+0.820 0.850 0.880 RG 0.5 w 52.0 43.0 m 543.0 43.0 l S
+0.380 0.430 0.480 rg BT /F1 7.3 Tf 1 0 0 1 52.0 29.0 Tm (Checkpoint 5 \227 Implementa\347\343o do Aluno 1) Tj ET
+0.380 0.430 0.480 rg BT /F1 7.3 Tf 1 0 0 1 483.0 29.0 Tm (Pagina 4 de 4) Tj ET
+endstream
+endobj
+13 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 12 0 R >>
+endobj
+xref
+0 14
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000141 00000 n 
+0000000238 00000 n 
+0000000340 00000 n 
+0000000435 00000 n 
+0000002032 00000 n 
+0000002178 00000 n 
+0000007513 00000 n 
+0000007659 00000 n 
+0000012835 00000 n 
+0000012983 00000 n 
+0000015139 00000 n 
+trailer
+<< /Size 14 /Root 1 0 R >>
+startxref
+15287
+%%EOF

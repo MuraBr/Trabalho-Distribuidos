@@ -209,6 +209,8 @@ int protocol_validate_header(const Header *header)
     case M_CHORD_PREDECESSOR:
     case M_CHORD_NOTIFY:
     case M_CHORD_FINGER:
+    case M_IST_REQUEST:
+    case M_IST_BATCH:
         break;
     default:
         return PROTOCOL_ERROR;

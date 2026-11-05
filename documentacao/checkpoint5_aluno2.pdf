@@ -1,0 +1,201 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [7 0 R 9 0 R 11 0 R 13 0 R] /Count 4 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier /Encoding /WinAnsiEncoding >>
+endobj
+6 0 obj
+<< /Length 1550 >>
+stream
+1.000 1.000 1.000 rg 0.0 0.0 595.0 842.0 re f
+0.100 0.280 0.440 rg 0.0 0.0 16.0 842.0 re f
+0.230 0.360 0.490 rg BT /F2 8.5 Tf 1 0 0 1 52.0 790.0 Tm (TRABALHO DE PROGRAMACAO DISTRIBUIDA) Tj ET
+0.100 0.420 0.620 RG 2.0 w 52.0 770.0 m 543.0 770.0 l S
+0.080 0.200 0.320 rg BT /F2 25.0 Tf 1 0 0 1 52.0 672.0 Tm (Checkpoint 5 \227 Implementa\347\343o do) Tj ET
+0.080 0.200 0.320 rg BT /F2 25.0 Tf 1 0 0 1 52.0 639.0 Tm (Aluno 2) Tj ET
+0.080 0.490 0.680 RG 4.0 w 52.0 590.0 m 130.0 590.0 l S
+0.230 0.310 0.390 rg BT /F1 12.0 Tf 1 0 0 1 52.0 561.0 Tm (Journal dur\341vel, Two-Phase Commit e Incremental State Transfer |) Tj ET
+0.230 0.310 0.390 rg BT /F1 12.0 Tf 1 0 0 1 52.0 516.0 Tm (explica\347\343o t\351cnica e evid\352ncias) Tj ET
+0.940 0.960 0.980 rg 52.0 184.0 491.0 75.0 re f
+0.080 0.370 0.550 rg BT /F2 9.0 Tf 1 0 0 1 68.0 235.0 Tm (GUIA EXPLICATIVO) Tj ET
+0.200 0.260 0.320 rg BT /F1 9.0 Tf 1 0 0 1 68.0 216.0 Tm (Fluxos, m\363dulos, fun\347\365es, decis\365es, evid\352ncias e pend\352ncias) Tj ET
+0.350 0.400 0.450 rg BT /F1 8.0 Tf 1 0 0 1 68.0 198.0 Tm (Leitura baseada no c\363digo e na documenta\347\343o do reposit\363rio) Tj ET
+0.250 0.320 0.400 rg BT /F2 9.0 Tf 1 0 0 1 52.0 72.0 Tm (Revis\343o: 05/11/2026) Tj ET
+0.350 0.400 0.450 rg BT /F1 8.0 Tf 1 0 0 1 52.0 52.0 Tm (Uso did\341tico: implementa\347\343o atual separada de requisitos e trabalho futuro) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 770.0 Tm (Journal dur\341vel, Two-Phase Commit e Incremental State Transfer | explica\347\343o t\351cnica e evid\352ncias) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 6 0 R >>
+endobj
+8 0 obj
+<< /Length 5238 >>
+stream
+0.780 0.830 0.880 RG 0.7 w 52.0 779.0 m 543.0 779.0 l S
+0.200 0.310 0.420 rg BT /F2 7.5 Tf 1 0 0 1 52.0 790.0 Tm (GUIA T\311CNICO | PROGRAMA\307\303O DISTRIBU\315DA) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 736.0 Tm (1. Escopo e m\363dulos) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 714.0 m 88.0 714.0 l S
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 708.0 Tm (No C5, a parte do Aluno 2 coordena a publica\347\343o de ANNOUNCE entre Super Peers com Two-Phase Commit) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 694.7 Tm (\(2PC\), registra decis\365es dur\341veis em um journal lateral e recupera diferen\347as de cat\341logo com) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 681.4 Tm (Incremental State Transfer \(IST\).) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 663.1 Tm (Os m\363dulos centrais s\343o c4_cluster.c \(coordena\347\343o e replica\347\343o\), c4_log.c/c4_log.h \(log de opera\347\365es) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 649.8 Tm (C4 e journal C5\), rpc.c/rpc.h \(requisi\347\365es correlacionadas com prazo\), protocol.c/protocol.h) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 636.5 Tm (\(mensagens TCP\) e superpeer.c \(handlers e integra\347\343o com o diret\363rio\). O teste local do journal est\341) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 623.2 Tm (em tests/c5/test_transaction_journal.c; a integra\347\343o TCP est\341 em) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 609.9 Tm (tests/c5/transaction_integration.py.) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 571.6 Tm (2. Journal .txn e durabilidade) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 549.6 m 88.0 549.6 l S
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 543.6 Tm (O formato existente de opera\347\365es C4LG permanece inalterado. A decis\343o C5 \351 guardada em um sidecar) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 530.3 Tm (append-only .txn, com identificador C5TJ, tipo de registro \(PREPARE, COMMIT ou ABORT\), tamanho,) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 517.0 Tm (CRC32 e payload. PREPARE inclui a entrada C4LG; COMMIT registra a decis\343o associada; ABORT registra) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 503.7 Tm (o TransactionID como tombstone. Cada registro \351 sincronizado com fsync antes de a opera\347\343o avan\347ar.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 485.4 Tm (Na inicializa\347\343o, o journal \351 validado. Se existir COMMIT dur\341vel cuja entrada ainda n\343o foi anexada) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 472.1 Tm (ao log C4, a recupera\347\343o reaplica a entrada antes da reconstru\347\343o do cat\341logo. Reexecu\347\343o de entrada) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 458.8 Tm (id\352ntica \351 tratada como replay idempotente; conte\372do divergente, corrup\347\343o ou truncamento inv\341lido \351) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 445.5 Tm (rejeitado. Um tombstone ABORT impede que PREPARE atrasado reabra a transa\347\343o.) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 407.2 Tm (3. ANNOUNCE coordenado por 2PC) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 385.2 m 88.0 385.2 l S
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 379.2 Tm (O ANNOUNCE C2 \351 transformado em uma entrada C4LogEntry com propriet\341rio, bytes do an\372ncio, \355ndice,) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 365.9 Tm (vers\343o, TransactionID e CRC. O fluxo evita tornar o an\372ncio vis\355vel antes de haver uma decis\343o) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 352.6 Tm (COMMIT.) Tj ET
+0.100 0.390 0.550 rg BT /F2 12.0 Tf 1 0 0 1 52.0 320.3 Tm (Fase de prepara\347\343o) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 301.3 Tm (- O coordenador grava PREPARE no journal local.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 283.0 Tm (- Envia M_PREPARE \(tipo 10\) \340s r\351plicas ativas capturadas para a opera\347\343o, carregando a) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 269.7 Tm (entrada C4LG codificada.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 251.4 Tm (- Cada r\351plica valida a origem, o estado ativo e a identidade do coordenador reconhecido;) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 238.1 Tm (valida tamb\351m transa\347\343o, \355ndice/vers\343o e CRC.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 219.8 Tm (- A r\351plica persiste PREPARE antes de responder voto positivo. Nenhum metadado ANNOUNCE \351) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 206.5 Tm (publicado nessa fase.) Tj ET
+0.100 0.390 0.550 rg BT /F2 12.0 Tf 1 0 0 1 52.0 174.2 Tm (Decis\343o e propaga\347\343o) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 155.2 Tm (Ap\363s votos positivos, o coordenador persiste COMMIT. A aplica\347\343o da entrada no log C4 e o callback) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 141.9 Tm (que atualiza o diret\363rio tornam o ANNOUNCE vis\355vel. Em seguida, envia M_COMMIT \(tipo 11\) e aguarda) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 128.6 Tm (confirma\347\365es das r\351plicas capturadas antes de responder ao Peer de origem.) Tj ET
+endstream
+endobj
+9 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 8 0 R >>
+endobj
+10 0 obj
+<< /Length 5685 >>
+stream
+0.780 0.830 0.880 RG 0.7 w 52.0 779.0 m 543.0 779.0 l S
+0.200 0.310 0.420 rg BT /F2 7.5 Tf 1 0 0 1 52.0 790.0 Tm (GUIA T\311CNICO | PROGRAMA\307\303O DISTRIBU\315DA) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 756.0 Tm (Se houver voto negativo ou prazo excedido, registra ABORT e envia M_ABORT \(tipo 12\) aos) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 742.7 Tm (participantes contatados, inclusive aqueles que ainda n\343o responderam. O handler aceita fases) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 729.4 Tm (idempotentes; retransmiss\343o de COMMIT reencaminha a decis\343o para completar r\351plicas pendentes.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 716.1 Tm (Handlers exigem que o remetente seja Super Peer registrado e ativo e que corresponda ao l\355der) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 702.8 Tm (conhecido.) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 664.5 Tm (4. RPC e correla\347\343o de transa\347\365es) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 642.5 m 88.0 642.5 l S
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 636.5 Tm (O TransactionID \351 propagado sem ser substitu\355do entre ANNOUNCE, PREPARE e decis\343o. O RPC associa) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 623.2 Tm (resposta \340 requisi\347\343o e ao destino, aplica os prazos configurados e evita que respostas atrasadas) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 609.9 Tm (sejam confundidas com outra fase. Essa correla\347\343o permite repetir fases de forma idempotente e) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 596.6 Tm (identificar a transa\347\343o que deve ser persistida ou aplicada.) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 558.3 Tm (5. Transfer\352ncia Incremental de Estado \(IST\)) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 536.3 m 88.0 536.3 l S
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 530.3 Tm (IST copia apenas o sufixo de log que falta, em vez de enviar o cat\341logo inteiro. M_IST_REQUEST \(25\)) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 517.0 Tm (leva dois campos u64: \372ltimo \355ndice aplicado e vers\343o. M_IST_BATCH \(26\) cont\351m contagem u32 e) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 503.7 Tm (entradas C4LG prefixadas por seus tamanhos u32.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 485.4 Tm (O servidor limita cada resposta ao tamanho m\341ximo de payload do protocolo \(5 MiB\). O receptor valida) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 472.1 Tm (limites, CRC, transa\347\365es, ordem, \355ndice e vers\343o e aplica as entradas faltantes ao log e ao) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 458.8 Tm (cat\341logo. O cursor avan\347a a partir do \372ltimo registro confirmado, permitindo pedir o lote seguinte) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 445.5 Tm (sem duplicar estado. Se \355ndice/vers\343o indicam gap, a diverg\352ncia \351 detectada em vez de ser tratada) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 432.2 Tm (como estado atualizado.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 413.9 Tm (Sincroniza\347\343o ocorre quando o n\363 assume coordena\347\343o e durante a integra\347\343o de um seguidor via) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 400.6 Tm (M_COORDINATOR: o seguidor recupera o sufixo antes de confirmar a sincroniza\347\343o. M_SNAPSHOT e) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 387.3 Tm (M_STATE_TRANSFER existentes continuam dispon\355veis para os fluxos anteriores.) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 349.0 Tm (6. Testes locais) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 327.0 m 88.0 327.0 l S
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 321.0 Tm (make test-c5 compila os alvos sob flags estritas e executa test_transaction_journal. O teste) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 307.7 Tm (aprovado verifica o ciclo de vida e replay do journal, inclusive decis\365es persistidas e recupera\347\343o.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 294.4 Tm (O teste separado do Aluno 1, test_cache_lfu, tamb\351m \351 executado pelo alvo, mas n\343o \351 evid\352ncia da) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 281.1 Tm (implementa\347\343o do Aluno 2.) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 242.8 Tm (7. Teste integrado TCP e evid\352ncias) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 220.8 m 88.0 220.8 l S
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 214.8 Tm (O script tests/c5/transaction_integration.py inicializa processos com a configura\347\343o) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 201.5 Tm (tests/config/c5.conf e verifica:) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 183.2 Tm (- ANNOUNCE replicado por duas fases e recuperado por um Super Peer atrasado;) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 164.9 Tm (- replica\347\343o de duas entradas e sincroniza\347\343o incremental do n\363 atrasado;) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 146.6 Tm (- busca/estado do cat\341logo nos n\363s participantes;) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 128.3 Tm (- ABORT recebido diretamente por TCP, persist\352ncia do tombstone e rejei\347\343o de PREPARE) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 115.0 Tm (atrasado;) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 96.7 Tm (- pagina\347\343o IST com cursor, estado atual e detec\347\343o de gap;) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 65.0 78.4 Tm (- interoperabilidade com o Peer e repeti\347\343o de download byte a byte.) Tj ET
+endstream
+endobj
+11 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 10 0 R >>
+endobj
+12 0 obj
+<< /Length 4178 >>
+stream
+0.780 0.830 0.880 RG 0.7 w 52.0 779.0 m 543.0 779.0 l S
+0.200 0.310 0.420 rg BT /F2 7.5 Tf 1 0 0 1 52.0 790.0 Tm (GUIA T\311CNICO | PROGRAMA\307\303O DISTRIBU\315DA) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 756.0 Tm (A sa\355da registrada no teste integrado reportou: \2232PC/IST TCP: duas ANNOUNCE replicadas e recuperadas) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 742.7 Tm (pelo Super Peer atrasado; batch, cursor, estado atual e gap OK\224. O alvo make test-c5 foi executado) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 729.4 Tm (com sucesso em 05/11/2026. Essa evid\352ncia comprova os cen\341rios escritos no teste, n\343o todas as) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 716.1 Tm (falhas poss\355veis.) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 677.8 Tm (8. Runner original e runner de integra\347\343o) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 655.8 m 88.0 655.8 l S
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 649.8 Tm (tests/c5/run.sh e tests/config/c5.conf foram mantidos intactos, conforme orienta\347\343o do usu\341rio. O) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 636.5 Tm (runner original n\343o exercita corretamente a integra\347\343o C5 nesta \341rvore: tenta invocar) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 623.2 Tm (tests/generate_fixtures.sh diretamente, mas o arquivo n\343o tem permiss\343o de execu\347\343o; al\351m disso,) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 609.9 Tm (inicia somente Super Peers, sem os Peers necess\341rios ao upload, e cont\351m comandos que suprimem) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 596.6 Tm (erros. Por isso, o caminho de verifica\347\343o que passou foi make test-c5 \(e a c\363pia integrada) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 583.3 Tm (tests/c5/run_integrated.sh\), sem alterar o runner ou a configura\347\343o originais.) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 565.0 Tm (O teste integrado exercita ABORT por TCP e o tombstone, por\351m n\343o for\347a um voto negativo dentro da) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 551.7 Tm (chamada de coordena\347\343o c4_cluster_submit. IST foi verificado com p\341ginas sequenciais e recupera\347\343o) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 538.4 Tm (efetiva, mas n\343o se for\347ou um registro grande que exigisse m\372ltiplos lotes de 5 MiB.) Tj ET
+0.080 0.240 0.370 rg BT /F2 16.0 Tf 1 0 0 1 52.0 500.1 Tm (9. Limites conhecidos) Tj ET
+0.120 0.520 0.690 RG 1.5 w 52.0 478.1 m 88.0 478.1 l S
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 472.1 Tm (O l\355der aplica localmente antes de receber todas as confirma\347\365es de r\351plica; uma interrup\347\343o durante) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 458.8 Tm (a propaga\347\343o pode deixar logs de r\351plicas diferentes. O termo de elei\347\343o permanece em mem\363ria. A) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 445.5 Tm (su\355te cobre falhas por parada e recupera\347\343o dos cen\341rios descritos, mas n\343o comprova consist\352ncia) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 432.2 Tm (forte sob parti\347\343o, consenso/SMR completo, metas globais de disponibilidade, nem desempenho. Essas) Tj ET
+0.160 0.190 0.230 rg BT /F1 9.3 Tf 1 0 0 1 52.0 418.9 Tm (distin\347\365es s\343o importantes ao relatar o estado real do checkpoint.) Tj ET
+0.820 0.850 0.880 RG 0.5 w 52.0 43.0 m 543.0 43.0 l S
+0.380 0.430 0.480 rg BT /F1 7.3 Tf 1 0 0 1 52.0 29.0 Tm (Checkpoint 5 \227 Implementa\347\343o do Aluno 2) Tj ET
+0.380 0.430 0.480 rg BT /F1 7.3 Tf 1 0 0 1 483.0 29.0 Tm (Pagina 2 de 4) Tj ET
+0.820 0.850 0.880 RG 0.5 w 52.0 43.0 m 543.0 43.0 l S
+0.380 0.430 0.480 rg BT /F1 7.3 Tf 1 0 0 1 52.0 29.0 Tm (Checkpoint 5 \227 Implementa\347\343o do Aluno 2) Tj ET
+0.380 0.430 0.480 rg BT /F1 7.3 Tf 1 0 0 1 483.0 29.0 Tm (Pagina 3 de 4) Tj ET
+0.820 0.850 0.880 RG 0.5 w 52.0 43.0 m 543.0 43.0 l S
+0.380 0.430 0.480 rg BT /F1 7.3 Tf 1 0 0 1 52.0 29.0 Tm (Checkpoint 5 \227 Implementa\347\343o do Aluno 2) Tj ET
+0.380 0.430 0.480 rg BT /F1 7.3 Tf 1 0 0 1 483.0 29.0 Tm (Pagina 4 de 4) Tj ET
+endstream
+endobj
+13 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 12 0 R >>
+endobj
+xref
+0 14
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000141 00000 n 
+0000000238 00000 n 
+0000000340 00000 n 
+0000000435 00000 n 
+0000002036 00000 n 
+0000002182 00000 n 
+0000007471 00000 n 
+0000007617 00000 n 
+0000013354 00000 n 
+0000013502 00000 n 
+0000017732 00000 n 
+trailer
+<< /Size 14 /Root 1 0 R >>
+startxref
+17880
+%%EOF

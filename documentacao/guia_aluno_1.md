@@ -2,6 +2,12 @@
 
 Programação Distribuída | visão de implementação e integração | revisão de 20/10/2026
 
+## Atualização C5 — cache de chunks LFU — 04/11/2026
+
+`storage.c` agora conserva em memória cópias comprimidas dos chunks lidos para download. A chave combina ObjectID e índice do chunk; a configuração `PEER_CACHE_BYTES` define o limite por processo, com padrão de 16 MiB e zero para desativar. `storage_read_chunk_with_cache_info` devolve uma cópia pertencente ao chamador e informa hit/miss e frequência observada, enquanto `StorageCacheStats` expõe estatísticas agregadas.
+
+Quando falta espaço, o cache remove o chunk com menor frequência de uso; se houver empate, remove o acessado há mais tempo. A evicção não apaga os arquivos persistidos em `objects`: uma leitura posterior volta ao armazenamento e repõe o cache. `make test-c5` passou testes locais para LFU, evicção, leitura durável e reconfiguração concorrente. A integração TCP também fez dois downloads do mesmo chunk, comparou os arquivos e verificou MISS seguido de HIT com frequência incrementada. A implementação de 2PC/IST do Super Peer é explicada separadamente em `explicacao_codigo_aluno_2.md` e `documentacao/checkpoint5_implementacao.md`.
+
 ## 1. Objetivo e leitura do estado
 
 Este guia acompanha o código e os registros do projeto. Ele explica os fluxos que estão implementados, as responsabilidades atribuídas ao Aluno 1, as escolhas feitas e as diferenças entre o comportamento atual e o objetivo geral do trabalho. “Esperado” descreve o contrato do checkpoint; “implementado” descreve apenas o que o código e as evidências disponíveis sustentam.

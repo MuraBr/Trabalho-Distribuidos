@@ -8,6 +8,14 @@
 
 typedef struct C4Log C4Log;
 
+typedef enum
+{
+    C4_TXN_UNKNOWN,
+    C4_TXN_PREPARED,
+    C4_TXN_COMMITTED,
+    C4_TXN_ABORTED
+} C4TransactionState;
+
 typedef struct
 {
     uint64_t index;
@@ -22,6 +30,11 @@ int c4_log_open(const char *path, C4Log **output);
 void c4_log_close(C4Log *log);
 int c4_log_append(C4Log *log, const uint8_t transaction_id[16], uint64_t version, const uint8_t *payload, uint32_t payload_size);
 int c4_log_append_entry(C4Log *log, const C4LogEntry *entry);
+int c4_log_prepare(C4Log *log, const C4LogEntry *entry);
+int c4_log_commit(C4Log *log, const uint8_t transaction_id[16], C4LogEntry *output);
+int c4_log_abort(C4Log *log, const uint8_t transaction_id[16]);
+int c4_log_transaction_state(C4Log *log, const uint8_t transaction_id[16], C4TransactionState *output);
+int c4_log_get_prepared(C4Log *log, const uint8_t transaction_id[16], C4LogEntry *output);
 int c4_log_entry_encode(const C4LogEntry *entry, uint8_t **output, uint32_t *output_size);
 int c4_log_entry_decode(const uint8_t *bytes, uint32_t size, C4LogEntry *output);
 int c4_log_get(C4Log *log, uint64_t index, C4LogEntry *output);

@@ -1,5 +1,29 @@
 # Guia de apresentação — código do aluno 2
 
+## Checkpoint 5 — 04/11/2026
+
+### ANNOUNCE com 2PC
+
+O fluxo mantém o ANNOUNCE C2 e as funções já existentes: o coordenador cria uma entrada `C4LogEntry` com proprietário, bytes do anúncio, índice, versão, TransactionID e CRC. `c4_log_prepare` persiste a entrada no sidecar `.txn` antes de qualquer aplicação. O coordenador envia `M_PREPARE` (10) com o `C4LG` codificado; réplicas só aceitam a fase quando a origem está registrada, ativa e é o coordenador que conhecem. PREPARE não publica metadados.
+
+Depois de todos os votos positivos, `c4_log_commit` escreve a decisão COMMIT no journal e só então acrescenta o registro ao `c4-operation.log`; o callback `apply_c4_entry` publica o ANNOUNCE no diretório. O coordenador transmite `M_COMMIT` (11) e responde ao Peer após ACKs das réplicas capturadas. Em voto negativo ou timeout, registra ABORT e envia `M_ABORT` (12) a cada participante contatado. ABORT recebido sem PREPARE também grava tombstone, impedindo que um PREPARE atrasado reabra a mesma transação. Retransmissões de commit reencaminham a decisão para completar réplicas pendentes.
+
+O journal `.txn` é append-only: `C5TJ`, tipo (PREPARE/COMMIT/ABORT), tamanho, CRC32 e bytes da entrada ou TransactionID. Cada registro é sincronizado com `fsync`. O formato do arquivo `C4LG` permanece inalterado. Na abertura, o journal é validado; COMMIT cuja entrada ainda não está no `C4LG` é concluído antes de o cluster reaplicar o catálogo. Uma entrada idêntica no log é aceita como replay; journal truncado/corrompido ou conteúdo divergente é rejeitado.
+
+### Transferência incremental de estado (IST)
+
+Ao assumir o papel de coordenador, o nó busca sufixos de réplicas ativas; ao aceitar `M_COORDINATOR`, o seguidor busca as entradas que faltam antes de responder ACK. `M_IST_REQUEST` (25) leva dois u64: último índice e versão aplicados. `M_IST_BATCH` (26) responde com u32 de contagem e, para cada entrada, u32 de tamanho e bytes `C4LG`. O servidor limita cada resposta ao máximo do protocolo (5 MiB), preserva a ordem do log e devolve lote vazio quando o cursor já está atual. A próxima requisição usa o índice/versão final do lote anterior.
+
+O receptor decodifica o lote inteiro antes de acrescentar os registros, verificando tamanhos, CRC, sequência exata de índice e versão, e TransactionID não repetido. Cursor futuro, versão divergente, payload malformado ou registro inválido retorna erro. `M_SNAPSHOT` (18) e `M_STATE_TRANSFER` (19) continuam no protocolo para compatibilidade C4.
+
+### Cache LFU do Aluno 1
+
+O cache fica no módulo `storage.c`, sob a mesma proteção de concorrência do armazenamento. A chave é `(ObjectID, índice do chunk)` e o valor mantém uma cópia comprimida do chunk e seu descritor. `PEER_CACHE_BYTES` configura a capacidade do Peer; sem variável usa 16 MiB e valor zero desativa o cache. Cada requisição de leitura informa MISS/HIT e frequência. Ao exceder a capacidade, sai a frequência mais baixa e, em empate, o item menos recentemente usado. Evicção só libera a cópia em memória; o chunk durável continua disponível para nova leitura.
+
+**Verificações executadas:** `make test-c5` compilou com `-Werror`, passou testes locais do cache/journal, duas uploads ANNOUNCE, dois downloads repetidos com comparação byte a byte, HIT/MISS/frequency, três logs C4 idênticos e catch-up de um Super Peer iniciado depois dos commits. A integração também consultou metadados nos três nós e validou os cursores IST atual/futuro. `tests/c3/failures.py` passou 17 verificações e cobriu reabertura do journal. O `tests/c5/run.sh` fornecido foi executado sem alteração e falhou por limitações do próprio script; detalhes estão em `documentacao/checkpoint5_implementacao.md`.
+
+**Limites:** a integração envia `M_ABORT` por TCP a uma réplica sem PREPARE, confirma o tombstone e verifica que um PREPARE atrasado não altera o log; não induz voto negativo durante `c4_cluster_submit`. Uma execução de `tests/c3/failures.py` terminou com falha no upload de cinco Super Peers: os participantes não estavam todos alinhados ao coordenador C4 e a proposta foi abortada. O teste IST não força uma sequência cujo lote precise ultrapassar um payload de 5 MiB. 2PC clássico pode deixar participantes preparados se o coordenador cair antes de publicar a decisão. Partições, persistência do termo e compactação segura do journal não estão cobertas.
+
 ## Organização vigente C4 - 19/10/2026
 
 ### Eleição e replicação no Checkpoint 4

@@ -28,6 +28,7 @@
 #define MANIFEST_MAGIC "P2PDOC2\0"
 #define MANIFEST_MAGIC_SIZE 8U
 #define MANIFEST_VERSION 1U
+#define STORAGE_DEFAULT_CACHE_BYTES (16U * 1024U * 1024U)
 
 typedef struct
 {
@@ -38,6 +39,18 @@ typedef struct
     uint8_t hash[OBJECT_ID_SIZE];
     int present;
 } StoredChunk;
+
+typedef struct CacheEntry
+{
+    ObjectID id;
+    uint64_t index;
+    StoredChunk chunk;
+    uint8_t *data;
+    size_t size;
+    uint64_t frequency;
+    uint64_t last_access;
+    struct CacheEntry *next;
+} CacheEntry;
 
 typedef struct StoredDocument
 {
@@ -56,6 +69,9 @@ struct Storage
     NodeID owner;
     pthread_mutex_t mutex;
     StoredDocument *documents;
+    CacheEntry *cache;
+    StorageCacheStats cache_stats;
+    uint64_t cache_clock;
 };
 
 static StoredDocument *allocate_document(void)
@@ -70,6 +86,83 @@ static StoredDocument *allocate_document(void)
 static void release_document(StoredDocument *document)
 {
     if (document != NULL) { pthread_mutex_destroy(&document->mutex); free(document); }
+}
+
+static void cache_increment(uint64_t *value)
+{
+    if (*value < UINT64_MAX) ++*value;
+}
+
+static CacheEntry *cache_find_locked(Storage *storage, const ObjectID *id, uint64_t index)
+{
+    for (CacheEntry *entry = storage->cache; entry != NULL; entry = entry->next) if (entry->index == index && memcmp(entry->id.bytes, id->bytes, OBJECT_ID_SIZE) == 0) return entry;
+    return NULL;
+}
+
+static void cache_touch_locked(Storage *storage, CacheEntry *entry)
+{
+    if (storage->cache_clock < UINT64_MAX) ++storage->cache_clock;
+    entry->last_access = storage->cache_clock;
+    cache_increment(&entry->frequency);
+}
+
+static int cache_evict_one_locked(Storage *storage)
+{
+    CacheEntry *victim = NULL;
+    CacheEntry *victim_previous = NULL;
+    CacheEntry *previous = NULL;
+    for (CacheEntry *entry = storage->cache; entry != NULL; entry = entry->next)
+    {
+        if (victim == NULL || entry->frequency < victim->frequency || (entry->frequency == victim->frequency && entry->last_access < victim->last_access))
+        {
+            victim = entry;
+            victim_previous = previous;
+        }
+        previous = entry;
+    }
+    if (victim == NULL) return -1;
+    if (victim_previous == NULL) storage->cache = victim->next;
+    else victim_previous->next = victim->next;
+    storage->cache_stats.used_bytes -= victim->size;
+    --storage->cache_stats.entries;
+    cache_increment(&storage->cache_stats.evictions);
+    printf("LFU CACHE EVICT index=%" PRIu64 " frequency=%" PRIu64 "\n", victim->index, victim->frequency);
+    free(victim->data);
+    free(victim);
+    return 0;
+}
+
+static void cache_evict_to_capacity_locked(Storage *storage)
+{
+    while (storage->cache_stats.used_bytes > storage->cache_stats.capacity_bytes && cache_evict_one_locked(storage) == 0) { }
+}
+
+static void cache_store_locked(Storage *storage, const ObjectID *id, const StoredChunk *chunk, const uint8_t *data)
+{
+    CacheEntry *entry;
+    size_t size = chunk->compressed_size;
+    if (storage->cache_stats.capacity_bytes == 0U || size > storage->cache_stats.capacity_bytes || cache_find_locked(storage, id, chunk->index) != NULL) return;
+    while (storage->cache_stats.used_bytes > storage->cache_stats.capacity_bytes - size) if (cache_evict_one_locked(storage) < 0) return;
+    entry = calloc(1U, sizeof(*entry));
+    if (entry == NULL) return;
+    entry->data = malloc(size);
+    if (entry->data == NULL)
+    {
+        free(entry);
+        return;
+    }
+    memcpy(entry->data, data, size);
+    entry->id = *id;
+    entry->index = chunk->index;
+    entry->chunk = *chunk;
+    entry->size = size;
+    entry->frequency = 1U;
+    if (storage->cache_clock < UINT64_MAX) ++storage->cache_clock;
+    entry->last_access = storage->cache_clock;
+    entry->next = storage->cache;
+    storage->cache = entry;
+    storage->cache_stats.used_bytes += size;
+    ++storage->cache_stats.entries;
 }
 
 /* rename só é durável após sincronizar o diretório que contém a entrada. */
@@ -602,6 +695,7 @@ int storage_create(const char *root, const NodeID *owner, Storage **output)
     }
     strcpy(storage->root, root);
     storage->owner = *owner;
+    storage->cache_stats.capacity_bytes = STORAGE_DEFAULT_CACHE_BYTES;
     if (ensure_directory_tree(storage->root) < 0 || snprintf(path, sizeof(path), "%s/pending", storage->root) < 0 || ensure_directory_tree(path) < 0 || snprintf(path, sizeof(path), "%s/objects", storage->root) < 0 || ensure_directory_tree(path) < 0)
     {
         free(storage);
@@ -640,8 +734,39 @@ void storage_destroy(Storage *storage)
         release_document(document);
         document = next;
     }
+    CacheEntry *entry = storage->cache;
+    while (entry != NULL)
+    {
+        CacheEntry *next = entry->next;
+        free(entry->data);
+        free(entry);
+        entry = next;
+    }
     pthread_mutex_destroy(&storage->mutex);
     free(storage);
+}
+
+int storage_set_cache_capacity(Storage *storage, size_t capacity_bytes)
+{
+    int error;
+    if (storage == NULL) { errno = EINVAL; return -1; }
+    error = pthread_mutex_lock(&storage->mutex);
+    if (error != 0) { errno = error; return -1; }
+    storage->cache_stats.capacity_bytes = capacity_bytes;
+    cache_evict_to_capacity_locked(storage);
+    pthread_mutex_unlock(&storage->mutex);
+    return 0;
+}
+
+int storage_get_cache_stats(Storage *storage, StorageCacheStats *output)
+{
+    int error;
+    if (storage == NULL || output == NULL) { errno = EINVAL; return -1; }
+    error = pthread_mutex_lock(&storage->mutex);
+    if (error != 0) { errno = error; return -1; }
+    *output = storage->cache_stats;
+    pthread_mutex_unlock(&storage->mutex);
+    return 0;
 }
 
 int storage_begin(Storage *storage, const TransferDocument *document)
@@ -1022,27 +1147,21 @@ int storage_find(Storage *storage, TransferSelectorType type, const ObjectID *id
     return 0;
 }
 
-int storage_read_chunk(Storage *storage, const ObjectID *id, uint64_t index, TransferChunk *chunk, uint8_t **owned_data)
+static int storage_read_chunk_internal(Storage *storage, const ObjectID *id, uint64_t index, TransferChunk *chunk, uint8_t **owned_data, int *cache_hit, uint64_t *cache_frequency)
 {
     StoredDocument *stored;
     StoredChunk record;
+    CacheEntry *cached;
     char path[PATH_MAX];
     uint8_t *data;
     int fd;
     int error;
-
-    if (storage == NULL || id == NULL || chunk == NULL || owned_data == NULL)
-    {
-        errno = EINVAL;
-        return -1;
-    }
+    if (storage == NULL || id == NULL || chunk == NULL || owned_data == NULL) { errno = EINVAL; return -1; }
     *owned_data = NULL;
+    if (cache_hit != NULL) *cache_hit = 0;
+    if (cache_frequency != NULL) *cache_frequency = 0U;
     error = pthread_mutex_lock(&storage->mutex);
-    if (error != 0)
-    {
-        errno = error;
-        return -1;
-    }
+    if (error != 0) { errno = error; return -1; }
     stored = find_document(storage, id);
     if (stored == NULL || stored->state != TRANSFER_FINISHED || index >= stored->document.chunk_count)
     {
@@ -1051,31 +1170,49 @@ int storage_read_chunk(Storage *storage, const ObjectID *id, uint64_t index, Tra
         return -1;
     }
     record = stored->chunks[index];
-    if (chunk_path(storage, id, index, 1, path) < 0)
+    cached = cache_find_locked(storage, id, index);
+    if (cached != NULL)
     {
+        data = malloc(cached->size);
+        if (data == NULL) { pthread_mutex_unlock(&storage->mutex); return -1; }
+        memcpy(data, cached->data, cached->size);
+        record = cached->chunk;
+        cache_touch_locked(storage, cached);
+        if (cache_hit != NULL) *cache_hit = 1;
+        if (cache_frequency != NULL) *cache_frequency = cached->frequency;
+        cache_increment(&storage->cache_stats.hits);
         pthread_mutex_unlock(&storage->mutex);
-        return -1;
+        memset(chunk, 0, sizeof(*chunk));
+        chunk->id = *id;
+        chunk->index = record.index;
+        chunk->offset = record.offset;
+        chunk->raw_size = record.raw_size;
+        chunk->compressed_size = record.compressed_size;
+        memcpy(chunk->hash, record.hash, OBJECT_ID_SIZE);
+        chunk->data = data;
+        *owned_data = data;
+        return 0;
     }
+    cache_increment(&storage->cache_stats.misses);
+    if (chunk_path(storage, id, index, 1, path) < 0) { pthread_mutex_unlock(&storage->mutex); return -1; }
     pthread_mutex_unlock(&storage->mutex);
     data = malloc(record.compressed_size);
-    if (data == NULL)
-    {
-        return -1;
-    }
+    if (data == NULL) return -1;
     fd = open(path, O_RDONLY);
     if (fd < 0 || read_all_fd(fd, data, record.compressed_size) < 0)
     {
-        if (fd >= 0)
-        {
-            close(fd);
-        }
+        if (fd >= 0) close(fd);
         free(data);
         return -1;
     }
-    if (close(fd) < 0)
+    if (close(fd) < 0) { free(data); return -1; }
+    error = pthread_mutex_lock(&storage->mutex);
+    if (error == 0)
     {
-        free(data);
-        return -1;
+        cache_store_locked(storage, id, &record, data);
+        cached = cache_find_locked(storage, id, index);
+        if (cached != NULL && cache_frequency != NULL) *cache_frequency = cached->frequency;
+        pthread_mutex_unlock(&storage->mutex);
     }
     memset(chunk, 0, sizeof(*chunk));
     chunk->id = *id;
@@ -1087,6 +1224,16 @@ int storage_read_chunk(Storage *storage, const ObjectID *id, uint64_t index, Tra
     chunk->data = data;
     *owned_data = data;
     return 0;
+}
+
+int storage_read_chunk(Storage *storage, const ObjectID *id, uint64_t index, TransferChunk *chunk, uint8_t **owned_data)
+{
+    return storage_read_chunk_internal(storage, id, index, chunk, owned_data, NULL, NULL);
+}
+
+int storage_read_chunk_with_cache_info(Storage *storage, const ObjectID *id, uint64_t index, TransferChunk *chunk, uint8_t **owned_data, int *cache_hit, uint64_t *cache_frequency)
+{
+    return storage_read_chunk_internal(storage, id, index, chunk, owned_data, cache_hit, cache_frequency);
 }
 
 int storage_list(Storage *storage, TransferDocument **documents, size_t *count)

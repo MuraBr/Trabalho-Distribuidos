@@ -26,7 +26,7 @@ int rpc_encode_join_payload(const NodeConfig *config, uint8_t output[JOIN_PAYLOA
     return 0;
 }
 
-int rpc_call(const char *host, uint16_t port, const NodeID *source, const NodeID *destination, Message_Type type, const uint8_t *payload, uint32_t payload_size, Message *response)
+static int rpc_call_with_transaction(const char *host, uint16_t port, const NodeID *source, const NodeID *destination, Message_Type type, const uint8_t transaction_id[TRANSACTION_ID_SIZE], const uint8_t *payload, uint32_t payload_size, Message *response)
 {
     Message request;
     int socket_fd;
@@ -55,7 +55,8 @@ int rpc_call(const char *host, uint16_t port, const NodeID *source, const NodeID
     {
         memcpy(request.header.destination_node, destination->bytes, NODE_ID_SIZE);
     }
-    transfer_fill_transaction_id(request.header.transaction_id, request.header.source_node);
+    if (transaction_id == NULL) transfer_fill_transaction_id(request.header.transaction_id, request.header.source_node);
+    else memcpy(request.header.transaction_id, transaction_id, TRANSACTION_ID_SIZE);
     request.header.timestamp = (uint64_t)time(NULL);
     request.header.payload_size = payload_size;
     request.payload = (uint8_t *)payload;
@@ -85,6 +86,11 @@ cleanup:
         message_free(response);
     }
     return status;
+}
+
+int rpc_call(const char *host, uint16_t port, const NodeID *source, const NodeID *destination, Message_Type type, const uint8_t *payload, uint32_t payload_size, Message *response)
+{
+    return rpc_call_with_transaction(host, port, source, destination, type, NULL, payload, payload_size, response);
 }
 
 int rpc_decode_join_payload(const uint8_t *payload, size_t payload_size, NodeConfig *config)
@@ -139,6 +145,19 @@ int rpc_call_deadline(const char *host, uint16_t port, const NodeID *source, con
     int64_t previous = network_deadline_set(deadline);
     if (previous > 0 && previous < deadline) network_deadline_set(previous);
     int result = rpc_call(host, port, source, destination, type, payload, payload_size, response);
+    int error = errno;
+    network_deadline_set(previous);
+    errno = error;
+    return result;
+}
+
+int rpc_call_transaction_deadline(const char *host, uint16_t port, const NodeID *source, const NodeID *destination, Message_Type type, const uint8_t transaction_id[TRANSACTION_ID_SIZE], const uint8_t *payload, uint32_t payload_size, Message *response, unsigned timeout_ms)
+{
+    if (timeout_ms == 0U || transaction_id == NULL) { errno = EINVAL; return -1; }
+    int64_t deadline = network_monotonic_ms() + (int64_t)timeout_ms;
+    int64_t previous = network_deadline_set(deadline);
+    if (previous > 0 && previous < deadline) network_deadline_set(previous);
+    int result = rpc_call_with_transaction(host, port, source, destination, type, transaction_id, payload, payload_size, response);
     int error = errno;
     network_deadline_set(previous);
     errno = error;

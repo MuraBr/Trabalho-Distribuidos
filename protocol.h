@@ -53,6 +53,8 @@ typedef enum m_type
     M_CHORD_PREDECESSOR = 22,
     M_CHORD_NOTIFY = 23,
     M_CHORD_FINGER = 24,
+    M_IST_REQUEST = 25,
+    M_IST_BATCH = 26,
 } Message_Type;
 
 /* Representação em memória: a serialização define a disposição dos campos na rede. */

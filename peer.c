@@ -20,6 +20,7 @@
 #include <fcntl.h>
 #include <inttypes.h>
 #include <signal.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -45,6 +46,18 @@ typedef struct
 } PeerService;
 
 static int reconnect_service(void *context);
+
+static int configure_cache_capacity(Storage *storage)
+{
+    const char *text = getenv("PEER_CACHE_BYTES");
+    char *end;
+    unsigned long long parsed;
+    if (text == NULL) return 0;
+    errno = 0;
+    parsed = strtoull(text, &end, 10);
+    if (text[0] == '-' || errno != 0 || end == text || *end != '\0' || parsed > (unsigned long long)SIZE_MAX) { errno = EINVAL; return -1; }
+    return storage_set_cache_capacity(storage, (size_t)parsed);
+}
 
 static NodeID superpeer_identity(PeerService *service)
 {
@@ -228,14 +241,18 @@ static int handle_download(PeerService *service, int socket_fd, const Message *m
     uint8_t *owned_data = NULL;
     uint8_t *payload = NULL;
     uint32_t payload_size = 0U;
+    uint64_t cache_frequency = 0U;
+    int cache_hit = 0;
     int status;
 
-    if (transfer_decode_chunk_request(message->payload, message->header.payload_size, &id, &index) < 0 || storage_read_chunk(service->storage, &id, index, &chunk, &owned_data) < 0 || transfer_encode_chunk(&chunk, TRANSFER_DOWNLOAD_CHUNK, &payload, &payload_size) < 0)
+    if (transfer_decode_chunk_request(message->payload, message->header.payload_size, &id, &index) < 0 || storage_read_chunk_with_cache_info(service->storage, &id, index, &chunk, &owned_data, &cache_hit, &cache_frequency) < 0 || transfer_encode_chunk(&chunk, TRANSFER_DOWNLOAD_CHUNK, &payload, &payload_size) < 0)
     {
         free(owned_data);
         free(payload);
         return send_response(service, socket_fd, message, M_ERROR, NULL, 0U);
     }
+    printf("LFU CACHE %s index=%" PRIu64 " frequency=%" PRIu64 "\n", cache_hit ? "HIT" : "MISS", index, cache_frequency);
+    fflush(stdout);
     status = send_response(service, socket_fd, message, M_DOWNLOAD_REP, payload, payload_size);
     free(payload);
     free(owned_data);
@@ -320,6 +337,7 @@ static int initialize_service(PeerService *service, uint16_t local_port, const c
     {
         return -1;
     }
+    if (configure_cache_capacity(service->storage) < 0) { storage_destroy(service->storage); service->storage = NULL; return -1; }
     int error = pthread_mutex_init(&service->identity_mutex, NULL);
     if (error != 0) { storage_destroy(service->storage); errno = error; return -1; }
     if (heartbeat_create(&service->node, NULL, storage_path, NULL, service, &service->heartbeat) < 0) { pthread_mutex_destroy(&service->identity_mutex); storage_destroy(service->storage); return -1; }

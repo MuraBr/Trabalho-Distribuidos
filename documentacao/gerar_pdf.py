@@ -111,7 +111,7 @@ class PDFDocument:
         self._text(LEFT + 16, 235, "GUIA EXPLICATIVO", 9, "F2", (0.08, 0.37, 0.55))
         self._text(LEFT + 16, 216, "Fluxos, módulos, funções, decisões, evidências e pendências", 9, "F1", (0.20, 0.26, 0.32))
         self._text(LEFT + 16, 198, "Leitura baseada no código e na documentação do repositório", 8, "F1", (0.35, 0.40, 0.45))
-        self._text(LEFT, 72, "Revisão: 20/10/2026", 9, "F2", (0.25, 0.32, 0.40))
+        self._text(LEFT, 72, "Revisão: 05/11/2026", 9, "F2", (0.25, 0.32, 0.40))
         self._text(LEFT, 52, "Uso didático: implementação atual separada de requisitos e trabalho futuro", 8, "F1", (0.35, 0.40, 0.45))
 
     def ensure(self, height: float) -> None:

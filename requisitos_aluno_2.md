@@ -1,5 +1,11 @@
 # Requisitos do trabalho — Aluno 2
 
+## Compatibilidade do runner C5 — 06/11/2026
+
+Adicionada preparação explícita `source tests/c5/compat_env.sh`, seguida de `bash ./tests/c5/run.sh`. O bootstrap adapta somente esse runner, executando uma cópia byte a byte em área temporária com adaptadores NODE_BIN/CLIENT_BIN. Não altera o programa C, o runner ou a configuração originais. O controlador faz upload real com Peer ativo, dois downloads para exercitar o cache e entrada de Super Peer atrasado, verificando histórico recuperado e tráfego IST. Para a consulta final, cadastra explicitamente o endpoint real do Peer no nó atrasado, pois o diretório atual exige registro local; essa ação não é atribuída ao IST. Nenhum novo ANNOUNCE é enviado nessa etapa.
+
+**Evidências:** runner adaptado 5 PASS/0 FAIL mais verificações adicionais aprovadas; seis testes da camada (incluindo integração real e falha de nó) aprovados; `make test-c5` com build estrito aprovado em execução separada. As suítes compartilham portas fixas e não devem rodar simultaneamente. Os dados originais e as mudanças preexistentes do usuário foram preservados. A execução direta sem `source` mantém as incompatibilidades anteriores. Detalhes e limites em `tests/c5/COMPATIBILIDADE.md`.
+
 ## Checkpoint 5 vigente — 04/11/2026
 
 **Implementado e verificado:** ANNOUNCE C2 integrado ao 2PC do `c4_cluster.c`. O coordenador grava PREPARE local e envia `M_PREPARE` (10) com um registro `C4LG`; a resposta só ocorre após votos positivos e confirmação de `M_COMMIT` (11) por todos os Super Peers ativos capturados. Falha de voto/prazo grava `M_ABORT` (12) localmente e envia ABORT aos participantes consultados, inclusive sem voto. Os handlers exigem remetente Super Peer ativo e líder reconhecido. Fases repetidas preservam idempotência. O sidecar `.txn` tem registros `C5TJ`, tipo, tamanho, CRC32 e payload; cada PREPARE e decisão é sincronizada com `fsync`. O arquivo de operações `C4LG` e seu wire format não mudaram. COMMIT durável ausente do `C4LG` é reaplicado na abertura; ABORT mantém tombstone inclusive quando o participante não recebeu PREPARE.

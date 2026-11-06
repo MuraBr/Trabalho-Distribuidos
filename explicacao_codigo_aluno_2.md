@@ -1,5 +1,11 @@
 # Guia de apresentação — código do aluno 2
 
+## Preparação do runner C5 — 06/11/2026
+
+`tests/c5/compat_env.sh` prepara a sessão Bash; `compat_bootstrap.sh` intercepta somente a execução do runner original; `compat.py` controla o ambiente isolado e os adaptadores de nós e comandos. O runner e a configuração são copiados sem alteração de conteúdo para uma pasta temporária, evitando que o gerador modifique as fixtures do projeto. Os executáveis reais são compilados e seus fluxos TCP são exercitados; não são mensagens de sucesso simuladas.
+
+O teste original não inicia Peer, não baixa chunks e não inicia um Super Peer atrasado. A camada acrescenta essas ações explicitamente, verifica conteúdo dos downloads, eventos LFU, histórico e tráfego IST. O cadastro adicional do endpoint do Peer no nó atrasado é separado da recuperação de metadados: o diretório filtra proprietários sem registro local. Erros de adaptadores são conservados e fazem a camada falhar mesmo se o runner os ignorar com `|| true`. Consulte `tests/c5/COMPATIBILIDADE.md` para comandos, evidências e limitações. Essa compatibilidade não muda o contrato de produção de lookup ou JOIN.
+
 ## Checkpoint 5 — 04/11/2026
 
 ### ANNOUNCE com 2PC

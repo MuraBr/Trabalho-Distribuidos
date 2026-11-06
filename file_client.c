@@ -480,7 +480,7 @@ static int execute_download_workers(DownloadWork *work, size_t worker_count)
     return 0;
 }
 
-static int lookup_document(const FileSession *session, const char *host, uint16_t port, const char *selector, TransferLookupResult *result)
+int file_client_lookup(const FileSession *session, const char *selector, const char *host, uint16_t port, TransferLookupResult *result)
 {
     uint8_t *payload = NULL;
     uint32_t payload_size = 0U;
@@ -523,7 +523,7 @@ int file_client_download(const FileSession *session, const char *selector, const
 
     memset(&lookup, 0, sizeof(lookup));
     memset(&work, 0, sizeof(work));
-    if (lookup_document(session, superpeer_host, superpeer_port, selector, &lookup) < 0)
+    if (file_client_lookup(session, selector, superpeer_host, superpeer_port, &lookup) < 0)
     {
         return -1;
     }

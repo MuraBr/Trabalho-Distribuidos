@@ -111,9 +111,9 @@ try:
         match = re.search(r"ObjectID: ([0-9a-f]{64})", result.stdout)
         assert match, result.stdout + result.stderr
         object_ids.append(match.group(1))
-    transaction = re.compile(r"C5 PREPARE transaction=[0-9a-f]{32} index=2 version=2")
+    transaction = re.compile(r"PREPARE transaction=[0-9a-f]{32} index=2 version=2")
     wait_for(lambda: all(transaction.search(path.read_text(errors="replace")) for name, path in logs.items() if name.startswith("sp-")), "PREPARE recebido nos Super Peers ativos")
-    wait_for(lambda: all(len(re.findall(r"C5 COMMIT transaction=[0-9a-f]{32}", path.read_text(errors="replace"))) >= 2 for name, path in logs.items() if name.startswith("sp-")), "COMMIT aplicado nos Super Peers ativos")
+    wait_for(lambda: all(len(re.findall(r"COMMIT transaction=[0-9a-f]{32}", path.read_text(errors="replace"))) >= 2 for name, path in logs.items() if name.startswith("sp-")), "COMMIT aplicado nos Super Peers ativos")
     with socket.socket() as sock:
         sock.bind(("127.0.0.1", 0))
         download_peer_port = sock.getsockname()[1]
@@ -132,6 +132,7 @@ try:
     wait_for(common_leader, "convergência após entrada do Super Peer atrasado", timeout=35)
     late_log = root / ".superpeer_storage" / str(late_entry["port"]) / "c4-operation.log"
     wait_for(lambda: late_log.exists() and late_log.stat().st_size > 0, "recuperação do log no Super Peer atrasado", timeout=35)
+    wait_for(lambda: "IST BATCH APPLIED" in logs[f"sp-{late_entry['port']}"] .read_text(errors="replace"), "lote IST aplicado pelo Super Peer atrasado", timeout=35)
     committed_logs = [root / ".superpeer_storage" / str(entry["port"]) / "c4-operation.log" for entry in entries]
     wait_for(lambda: all(path.exists() and path.stat().st_size == committed_logs[0].stat().st_size for path in committed_logs), "catch-up do mesmo número de bytes")
     assert len({path.read_bytes() for path in committed_logs}) == 1, "logs C4 divergiram após IST"
@@ -169,6 +170,23 @@ try:
     assert kind == 26 and batch == struct.pack("!I", 0), "resposta para réplica atual deveria ser lote vazio"
     kind, _ = ist_request(source_id, target_id, target_entry["host"], target_entry["port"], 3, 3)
     assert kind == 2, "gap de índice deveria ser rejeitado"
+
+    direct_sample = root / "superpeer-direct-upload.pdf"
+    direct_sample.write_bytes(b"%PDF-1.4\nUpload direto para o Super Peer.\n%%EOF\n")
+    direct_upload = subprocess.run([str(bins / "client"), "--cmd", "upload", "--file", str(direct_sample), "--host", entries[0]["host"], "--port", str(entries[0]["port"])], cwd=root, env=env, text=True, capture_output=True, timeout=30)
+    assert direct_upload.returncode == 0, direct_upload.stdout + direct_upload.stderr
+    assert "Upload completed" in direct_upload.stdout, direct_upload.stdout
+    for _ in range(2):
+        direct_lookup = subprocess.run([str(bins / "client"), "--cmd", "lookup", "--name", direct_sample.name, "--host", entries[0]["host"], "--port", str(entries[0]["port"])], cwd=root, env=env, text=True, capture_output=True, timeout=10)
+        assert direct_lookup.returncode == 0, direct_lookup.stdout + direct_lookup.stderr
+        assert "Lookup concluido" in direct_lookup.stdout and direct_sample.name in direct_lookup.stdout, direct_lookup.stdout
+    direct_output = root / "superpeer-direct-download.pdf"
+    direct_download = subprocess.run([str(bins / "client"), "--cmd", "download", "--file", direct_sample.name, "--output", str(direct_output), "--host", entries[0]["host"], "--port", str(entries[0]["port"])], cwd=root, env=env, text=True, capture_output=True, timeout=15)
+    assert direct_download.returncode == 0, direct_download.stdout + direct_download.stderr
+    assert direct_output.read_bytes() == direct_sample.read_bytes(), "download servido pelo Super Peer divergiu do upload"
+    source_log = logs[f"sp-{entries[0]['port']}"].read_text(errors="replace")
+    assert "LFU CACHE MISS index=0 frequency=1" in source_log and "LFU CACHE HIT index=0 frequency=2" in source_log, source_log
+
     print(f"2PC/IST TCP: duas ANNOUNCE replicadas e recuperadas pelo Super Peer atrasado; batch, cursor, estado atual e gap OK")
 finally:
     for process in processes:

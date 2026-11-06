@@ -9,6 +9,7 @@
 #include "chord_network.h"
 #include "network.h"
 #include "node.h"
+#include "file_client.h"
 #include "protocol.h"
 #include "rpc.h"
 #include "remote_error.h"
@@ -440,9 +441,36 @@ cleanup:
 
 #define DEFAULT_SUPERPEER_HOST "127.0.0.1"
 #define DEFAULT_SUPERPEER_PORT 55101U
+#define DEFAULT_CLIENT_SUPERPEER_PORT 5101U
 #define DEFAULT_PEER_HOST "127.0.0.1"
 #define DEFAULT_PEER_PORT 55102U
 static uint16_t local_peer_port = DEFAULT_PEER_PORT;
+
+/* Cria uma identidade temporária para operações de cliente direto ao Super Peer. */
+static int initialize_command_session(FileSession *session)
+{
+    NodeConfig config;
+    Node local_node;
+    if (session == NULL || node_config_init(&config, DEFAULT_PEER_HOST, 1U) < 0 || node_init(&local_node, &config) < 0) return -1;
+    session->source = local_node.id;
+    session->output = stdout;
+    session->directory = ".";
+    return 0;
+}
+
+/* Mostra a resposta de metadados; o servidor aquece a cache ao responder M_LOOKUP. */
+static int print_document_lookup(FileSession *session, const char *selector, const char *host, uint16_t port)
+{
+    TransferLookupResult result;
+    char object_hex[OBJECT_ID_HEX_SIZE];
+    NodeID object_node;
+    if (file_client_lookup(session, selector, host, port, &result) < 0) return -1;
+    memcpy(object_node.bytes, result.document.id.bytes, NODE_ID_SIZE);
+    if (node_id_to_hex(&object_node, object_hex, sizeof(object_hex)) < 0) { transfer_lookup_result_free(&result); return -1; }
+    printf("Lookup concluido\nFile: %s\nObjectID: %s\nSize: %" PRIu64 " bytes\nChunks: %" PRIu64 "\n", result.document.name, object_hex, result.document.file_size, result.document.chunk_count);
+    transfer_lookup_result_free(&result);
+    return 0;
+}
 
 static int parse_port(const char *text, uint16_t *port)
 {
@@ -675,7 +703,7 @@ static int option_command(int argc, char **argv)
     if (command != NULL && (strcmp(command, "upload") == 0 || strcmp(command, "download") == 0))
     {
         if (host == NULL) host = "127.0.0.1";
-        if (port == 0U) port = strcmp(command, "upload") == 0 ? DEFAULT_PEER_PORT : DEFAULT_SUPERPEER_PORT;
+        if (port == 0U) port = DEFAULT_CLIENT_SUPERPEER_PORT;
     }
     if (command == NULL || host == NULL || port == 0U)
     {
@@ -689,26 +717,37 @@ static int option_command(int argc, char **argv)
     }
     if (strcmp(command, "lookup") == 0)
     {
-        if (file != NULL || output != NULL || object_id == NULL || strlen(object_id) != NODE_ID_SIZE * 2U) { errno = EINVAL; return -1; }
+        if (output != NULL || (file == NULL) == (object_id == NULL)) { errno = EINVAL; return -1; }
+        if (file != NULL)
+        {
+            FileSession session;
+            if (initialize_command_session(&session) < 0) return -1;
+            return print_document_lookup(&session, file, host, port);
+        }
+        if (strlen(object_id) != NODE_ID_SIZE * 2U) { errno = EINVAL; return -1; }
         return lookup_command(host, port, object_id);
     }
     if (strcmp(command, "upload") == 0)
     {
+        FileSession session;
         if (file == NULL)
         {
             errno = EINVAL;
             return -1;
         }
-        return local_control_command(local_peer_port, 1, file, NULL, host, port);
+        if (initialize_command_session(&session) < 0) return -1;
+        return file_client_upload(&session, file, host, port);
     }
     if (strcmp(command, "download") == 0)
     {
+        FileSession session;
         if (file == NULL)
         {
             errno = EINVAL;
             return -1;
         }
-        return local_control_command(local_peer_port, 0, file, output, host, port);
+        if (initialize_command_session(&session) < 0) return -1;
+        return file_client_download(&session, file, output, host, port);
     }
     if (file != NULL || output != NULL)
     {

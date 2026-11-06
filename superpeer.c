@@ -16,6 +16,7 @@
 #include "protocol.h"
 #include "rpc.h"
 #include "remote_error.h"
+#include "storage.h"
 #include "superpeer.h"
 #include "transfer_protocol.h"
 
@@ -48,6 +49,7 @@ typedef struct
     SuperPeer *superpeer;
     MetadataStore *metadata;
     Directory *directory;
+    Storage *storage;
     Chord *chord;
     Heartbeat *heartbeat;
     C4Cluster *c4;
@@ -96,6 +98,44 @@ static int parse_port(const char *text, uint16_t *port)
     }
 
     *port = (uint16_t)value;
+    return 0;
+}
+
+/* Lê o limite da cache do Super Peer; o padrão de Storage é 16 MiB. */
+static int configure_superpeer_cache(Storage *storage)
+{
+    const char *text = getenv("PEER_CACHE_BYTES");
+    char *end = NULL;
+    unsigned long long capacity;
+    if (text == NULL) return 0;
+    if (text[0] == '\0' || text[0] == '-') { errno = EINVAL; return -1; }
+    errno = 0;
+    capacity = strtoull(text, &end, 10);
+    if (errno != 0 || end == text || *end != '\0' || capacity > SIZE_MAX) { errno = EINVAL; return -1; }
+    return storage_set_cache_capacity(storage, (size_t)capacity);
+}
+
+/* Mantém chunks do Super Peer em diretório separado do journal C4. */
+static int initialize_superpeer_storage(PeerContext *peer, uint16_t local_port)
+{
+    char base[512];
+    char root[600];
+    int length = snprintf(base, sizeof(base), ".superpeer_storage/%u", (unsigned)local_port);
+    if (length < 0 || (size_t)length >= sizeof(base)) { errno = ENAMETOOLONG; return -1; }
+    if (app_config.data_dir[0] != '\0')
+    {
+        if (strlen(app_config.data_dir) >= sizeof(base)) { errno = ENAMETOOLONG; return -1; }
+        strcpy(base, app_config.data_dir);
+    }
+    length = snprintf(root, sizeof(root), "%s/content", base);
+    if (length < 0 || (size_t)length >= sizeof(root)) { errno = ENAMETOOLONG; return -1; }
+    if (storage_create(root, &peer->local_node.id, &peer->storage) < 0) return -1;
+    if (configure_superpeer_cache(peer->storage) < 0)
+    {
+        storage_destroy(peer->storage);
+        peer->storage = NULL;
+        return -1;
+    }
     return 0;
 }
 
@@ -595,6 +635,45 @@ static int handle_announcement(PeerContext *peer, const Message *message)
     return process_announcement(peer, &owner, announcement, announcement_size, transaction_id);
 }
 
+/* Persiste operações de upload no Super Peer e anuncia o conteúdo após o COMMIT local. */
+static int handle_client_store(PeerContext *peer, const Message *message)
+{
+    uint8_t operation;
+    if (peer == NULL || message == NULL || message->payload == NULL || message->header.payload_size == 0U) { errno = EBADMSG; return -1; }
+    operation = message->payload[0];
+    if (operation == TRANSFER_STORE_ANNOUNCE) return handle_announcement(peer, message);
+    if (operation == TRANSFER_STORE_BEGIN)
+    {
+        TransferDocument document;
+        return transfer_decode_document(message->payload, message->header.payload_size, TRANSFER_STORE_BEGIN, &document) == 0 ? storage_begin(peer->storage, &document) : -1;
+    }
+    if (operation == TRANSFER_STORE_CHUNK)
+    {
+        TransferChunk chunk;
+        int status = transfer_decode_chunk(message->payload, message->header.payload_size, TRANSFER_STORE_CHUNK, &chunk);
+        if (status == 0) status = storage_put_chunk(peer->storage, &chunk);
+        return status;
+    }
+    if (operation == TRANSFER_STORE_COMMIT)
+    {
+        ObjectID id;
+        TransferDocument document;
+        MetadataChunk *chunks = NULL;
+        uint8_t *announcement = NULL;
+        uint32_t announcement_size = 0U;
+        int status = transfer_decode_object_operation(message->payload, message->header.payload_size, TRANSFER_STORE_COMMIT, &id);
+        if (status == 0) status = storage_commit(peer->storage, &id, &document);
+        if (status == 0) status = storage_descriptors(peer->storage, &id, &chunks);
+        if (status == 0) status = transfer_encode_announcement(&document, chunks, &announcement, &announcement_size);
+        if (status == 0) status = process_announcement(peer, &peer->local_node.id, announcement, announcement_size, message->header.transaction_id);
+        free(chunks);
+        free(announcement);
+        return status;
+    }
+    errno = ENOTSUP;
+    return -1;
+}
+
 static int answer_lookup(PeerContext *peer, int client_fd, const Message *message)
 {
     TransferSelectorType type;
@@ -611,11 +690,52 @@ static int answer_lookup(PeerContext *peer, int client_fd, const Message *messag
         status = send_reply(peer, client_fd, message, M_ERROR, NULL, 0U, 0);
         goto cleanup;
     }
+    TransferDocument local_document;
+    if (result.document.chunk_count > 0U && storage_find(peer->storage, TRANSFER_SELECTOR_OBJECT_ID, &result.document.id, NULL, &local_document) == 0)
+    {
+        TransferChunk chunk;
+        uint8_t *owned_data = NULL;
+        int cache_hit = 0;
+        uint64_t frequency = 0U;
+        if (storage_read_chunk_with_cache_info(peer->storage, &result.document.id, 0U, &chunk, &owned_data, &cache_hit, &frequency) == 0)
+        {
+            printf("LFU CACHE %s index=0 frequency=%" PRIu64 "\n", cache_hit ? "HIT" : "MISS", frequency);
+            fflush(stdout);
+        }
+        free(owned_data);
+    }
     status = send_reply(peer, client_fd, message, M_DOWNLOAD_REP, payload, payload_size, 0);
 
 cleanup:
     free(payload);
     transfer_lookup_result_free(&result);
+    return status;
+}
+
+/* Lê chunks do Super Peer pelo cache ou pelo armazenamento durável e responde via TCP. */
+static int answer_chunk_download(PeerContext *peer, int client_fd, const Message *message)
+{
+    ObjectID id;
+    uint64_t index;
+    TransferChunk chunk;
+    uint8_t *owned_data = NULL;
+    uint8_t *payload = NULL;
+    uint32_t payload_size = 0U;
+    int cache_hit = 0;
+    uint64_t frequency = 0U;
+    int status = -1;
+    if (transfer_decode_chunk_request(message->payload, message->header.payload_size, &id, &index) < 0 || storage_read_chunk_with_cache_info(peer->storage, &id, index, &chunk, &owned_data, &cache_hit, &frequency) < 0 || transfer_encode_chunk(&chunk, TRANSFER_DOWNLOAD_CHUNK, &payload, &payload_size) < 0)
+    {
+        status = send_reply(peer, client_fd, message, M_ERROR, NULL, 0U, 0);
+        goto cleanup;
+    }
+    printf("LFU CACHE %s index=%" PRIu64 " frequency=%" PRIu64 "\n", cache_hit ? "HIT" : "MISS", index, frequency);
+    fflush(stdout);
+    status = send_reply(peer, client_fd, message, M_DOWNLOAD_REP, payload, payload_size, 0);
+
+cleanup:
+    free(payload);
+    free(owned_data);
     return status;
 }
 
@@ -660,7 +780,7 @@ static void handle_client(void *context, int client_fd)
         printf(", payload=%" PRIu32 " bytes, ip_origem=%s\n", message.header.payload_size, source_ip);
         funlockfile(stdout);
         fflush(stdout);
-        if ((message.header.message_type == M_LOOKUP || message.header.message_type == M_STORE) && (node_id_is_zero(message.header.source_node) || memcmp(message.header.destination_node, peer->local_node.id.bytes, NODE_ID_SIZE) != 0))
+        if ((message.header.message_type == M_LOOKUP || message.header.message_type == M_STORE || message.header.message_type == M_DOWNLOAD_REQ) && (node_id_is_zero(message.header.source_node) || memcmp(message.header.destination_node, peer->local_node.id.bytes, NODE_ID_SIZE) != 0))
         {
             errno = EACCES;
             (void)send_reply(peer, client_fd, &message, M_ERROR, NULL, 0U, 0);
@@ -731,7 +851,7 @@ static void handle_client(void *context, int client_fd)
         }
         else if (message.header.message_type == (uint8_t)M_STORE && message.header.payload_size > 0U)
         {
-            Message_Type response_type = handle_announcement(peer, &message) == 0 ? M_ACK : M_ERROR;
+            Message_Type response_type = handle_client_store(peer, &message) == 0 ? M_ACK : M_ERROR;
 
             if (send_reply(peer, client_fd, &message, response_type, NULL, 0U, 0) < 0)
             {
@@ -742,6 +862,14 @@ static void handle_client(void *context, int client_fd)
         else if (message.header.message_type == (uint8_t)M_LOOKUP)
         {
             if (answer_lookup(peer, client_fd, &message) < 0)
+            {
+                message_free(&message);
+                break;
+            }
+        }
+        else if (message.header.message_type == (uint8_t)M_DOWNLOAD_REQ)
+        {
+            if (answer_chunk_download(peer, client_fd, &message) < 0)
             {
                 message_free(&message);
                 break;
@@ -1088,13 +1216,22 @@ static int superpeer_run(int argc, char **argv)
         superpeer_destroy(peer.superpeer);
         return EXIT_FAILURE;
     }
+    if (initialize_superpeer_storage(&peer, arguments.local_port) < 0)
+    {
+        perror("storage initialization");
+        directory_destroy(peer.directory);
+        metadata_destroy(peer.metadata);
+        chord_destroy(peer.chord);
+        superpeer_destroy(peer.superpeer);
+        return EXIT_FAILURE;
+    }
 
     char membership_directory[512];
     (void)snprintf(membership_directory, sizeof(membership_directory), ".superpeer_storage/%u", (unsigned)arguments.local_port);
     if (app_config.data_dir[0] != '\0') strcpy(membership_directory, app_config.data_dir);
     if (heartbeat_create(&peer.local_node, peer.superpeer, membership_directory, membership_failure, &peer, &peer.heartbeat) < 0)
     {
-        perror("membership initialization"); directory_destroy(peer.directory); metadata_destroy(peer.metadata); chord_destroy(peer.chord); superpeer_destroy(peer.superpeer); return EXIT_FAILURE;
+        perror("membership initialization"); storage_destroy(peer.storage); directory_destroy(peer.directory); metadata_destroy(peer.metadata); chord_destroy(peer.chord); superpeer_destroy(peer.superpeer); return EXIT_FAILURE;
     }
     char c4_log_path[600];
     if (snprintf(c4_log_path, sizeof(c4_log_path), "%s/c4-operation.log", membership_directory) >= (int)sizeof(c4_log_path) || c4_cluster_create(&peer.local_node, peer.superpeer, c4_log_path, apply_c4_entry, &peer, &peer.c4) < 0)
@@ -1103,6 +1240,7 @@ static int superpeer_run(int argc, char **argv)
         directory_destroy(peer.directory);
         heartbeat_destroy(peer.heartbeat);
         metadata_destroy(peer.metadata);
+        storage_destroy(peer.storage);
         chord_destroy(peer.chord);
         superpeer_destroy(peer.superpeer);
         return EXIT_FAILURE;
@@ -1118,6 +1256,7 @@ static int superpeer_run(int argc, char **argv)
         c4_cluster_destroy(peer.c4);
         heartbeat_destroy(peer.heartbeat);
         metadata_destroy(peer.metadata);
+        storage_destroy(peer.storage);
         chord_destroy(peer.chord);
         superpeer_destroy(peer.superpeer);
         return EXIT_FAILURE;
@@ -1141,6 +1280,7 @@ static int superpeer_run(int argc, char **argv)
         c4_cluster_destroy(peer.c4);
         heartbeat_destroy(peer.heartbeat);
         metadata_destroy(peer.metadata);
+        storage_destroy(peer.storage);
         chord_destroy(peer.chord);
         superpeer_destroy(peer.superpeer);
         return EXIT_FAILURE;
@@ -1189,6 +1329,7 @@ static int superpeer_run(int argc, char **argv)
     c4_cluster_destroy(peer.c4);
     directory_destroy(peer.directory);
     metadata_destroy(peer.metadata);
+    storage_destroy(peer.storage);
     chord_destroy(peer.chord);
     superpeer_destroy(peer.superpeer);
     printf("Peer encerrado.\n");

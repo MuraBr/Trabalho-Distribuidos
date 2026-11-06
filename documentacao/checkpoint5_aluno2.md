@@ -4,9 +4,11 @@ Journal durável, Two-Phase Commit e Incremental State Transfer | explicação t
 
 ## 1. Escopo e módulos
 
-No C5, a parte do Aluno 2 coordena a publicação de ANNOUNCE entre Super Peers com Two-Phase Commit (2PC), registra decisões duráveis em um journal lateral e recupera diferenças de catálogo com Incremental State Transfer (IST).
+No C5, a parte do Aluno 2 coordena a publicação de ANNOUNCE entre Super Peers com Two-Phase Commit (2PC), registra decisões duráveis em um journal lateral, recupera diferenças de catálogo com Incremental State Transfer (IST) e integra os Super Peers ao fluxo de armazenamento e atendimento de clientes.
 
 Os módulos centrais são `c4_cluster.c` (coordenação e replicação), `c4_log.c`/`c4_log.h` (log de operações C4 e journal C5), `rpc.c`/`rpc.h` (requisições correlacionadas com prazo), `protocol.c`/`protocol.h` (mensagens TCP) e `superpeer.c` (handlers e integração com o diretório). O teste local do journal está em `tests/c5/test_transaction_journal.c`; a integração TCP está em `tests/c5/transaction_integration.py`.
+
+O Super Peer também mantém um `Storage` durável próprio. O cliente pode enviar upload diretamente a ele; depois de persistir o documento, o Super Peer publica o ANNOUNCE pelo fluxo C4/2PC. Consultas `lookup --name` podem aquecer a cache lendo o primeiro chunk, e downloads recebem os chunks diretamente do Super Peer. Essa integração usa `peer.c`, `file_client.c` e `storage.c`.
 
 ## 2. Journal `.txn` e durabilidade
 
@@ -62,9 +64,9 @@ A saída registrada no teste integrado reportou: “2PC/IST TCP: duas ANNOUNCE r
 
 ## 8. Runner original e runner de integração
 
-`tests/c5/run.sh` e `tests/config/c5.conf` foram mantidos intactos, conforme orientação do usuário. O runner original não exercita corretamente a integração C5 nesta árvore: tenta invocar `tests/generate_fixtures.sh` diretamente, mas o arquivo não tem permissão de execução; além disso, inicia somente Super Peers, sem os Peers necessários ao upload, e contém comandos que suprimem erros. Por isso, o caminho de verificação que passou foi `make test-c5` (e a cópia integrada `tests/c5/run_integrated.sh`), sem alterar o runner ou a configuração originais.
+`tests/c5/run.sh` e `tests/config/c5.conf` foram mantidos intactos, conforme orientação do usuário. O runner original inicia apenas Super Peers e usa o cliente para upload e lookup. A CLI agora encaminha esse fluxo ao armazenamento local do Super Peer. Em 06/11/2026, `bash tests/c5/run.sh` passou as cinco verificações: PREPARE, decisão COMMIT/ABORT, cache LFU, IST e ausência de crash/deadlock. `bash tests/c5/run_integrated.sh` também passou com compilação estrita `-Werror`, testes locais de cache/journal e integração TCP.
 
-O teste integrado exercita ABORT por TCP e o tombstone, porém não força um voto negativo dentro da chamada de coordenação `c4_cluster_submit`. IST foi verificado com páginas sequenciais e recuperação efetiva, mas não se forçou um registro grande que exigisse múltiplos lotes de 5 MiB.
+O teste integrado exercita ABORT por TCP e o tombstone, porém não força um voto negativo dentro da chamada de coordenação `c4_cluster_submit`. IST foi verificado com páginas sequenciais e recuperação efetiva, mas não se forçou um registro grande que exigisse múltiplos lotes de 5 MiB. A integração também envia um PDF sintético diretamente ao Super Peer, consulta duas vezes por nome e baixa o arquivo, comparando bytes. A primeira consulta registra MISS e a segunda HIT da cache LFU. O teste exige `IST BATCH APPLIED` no log do Super Peer atrasado, confirmando aplicação de lote real.
 
 ## 9. Limites conhecidos
 

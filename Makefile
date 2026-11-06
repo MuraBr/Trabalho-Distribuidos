@@ -29,11 +29,11 @@ $(BIN_DIR):
 
 
 $(BIN_DIR)/superpeer: membership.c gossip.c heartbeat.c c4_cluster.c c4_cluster.h c4_log.c c4_log.h app_config.c app_config.h transfer_types.h remote_error.h network.c network.h concurrent_server.c concurrent_server.h protocol.c protocol.h transfer_protocol.c transfer_protocol.h chord.c chord.h chord_network.c chord_network.h \
-                      node.c node.h common.h metadata.c metadata.h directory.c directory.h \
+                      node.c node.h common.h metadata.c metadata.h directory.c directory.h storage.c storage.h content.c content.h compression.c compression.h \
                       superpeer.c superpeer.h rpc.c rpc.h | $(BIN_DIR)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -pthread membership.c gossip.c heartbeat.c c4_cluster.c c4_log.c app_config.c network.c concurrent_server.c protocol.c node.c chord.c chord_network.c \
-		transfer_protocol.c rpc.c metadata.c directory.c superpeer.c \
-		-o $@ $(LDLIBS)
+		transfer_protocol.c rpc.c metadata.c directory.c content.c compression.c storage.c superpeer.c \
+		-o $@ $(LDLIBS) $(LZ4_LIB)
 
 $(BIN_DIR)/peer: membership.c gossip.c heartbeat.c app_config.c app_config.h transfer_types.h remote_error.h network.c network.h concurrent_server.c concurrent_server.h protocol.c protocol.h transfer_protocol.c transfer_protocol.h \
                  compression.c compression.h content.c content.h storage.c storage.h rpc.c rpc.h \

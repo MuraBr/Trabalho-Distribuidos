@@ -238,6 +238,8 @@ static int c4_recover_from_member(C4Cluster *cluster, const SuperPeerMember *mem
             last_index = entries[item].index;
             last_version = entries[item].version;
         }
+        printf("IST BATCH APPLIED cursor_index=%llu cursor_version=%llu entries=%u\n", (unsigned long long)last_index, (unsigned long long)last_version, count);
+        fflush(stdout);
         for (item = 0U; item < count; ++item) c4_log_entry_free(&entries[item]);
         free(entries);
         free(seen);
@@ -516,6 +518,8 @@ int c4_cluster_handle(C4Cluster *cluster, const Message *request, Message_Type *
         *response_type = M_IST_BATCH;
         *payload = batch;
         *payload_size = cursor;
+        printf("IST BATCH SERVED cursor_index=%llu cursor_version=%llu entries=%u\n", (unsigned long long)requested_index, (unsigned long long)requested_version, count);
+        fflush(stdout);
         return 0;
     }
     if (request->header.message_type == (uint8_t)M_SNAPSHOT)
@@ -566,7 +570,7 @@ int c4_cluster_handle(C4Cluster *cluster, const Message *request, Message_Type *
             return -1;
         }
         flockfile(stdout);
-        printf("C5 PREPARE transaction=");
+        printf("PREPARE transaction=");
         for (size_t index = 0U; index < TRANSACTION_ID_SIZE; ++index) printf("%02x", entry.transaction_id[index]);
         printf(" index=%llu version=%llu\n", (unsigned long long)entry.index, (unsigned long long)entry.version);
         fflush(stdout);
@@ -594,7 +598,7 @@ int c4_cluster_handle(C4Cluster *cluster, const Message *request, Message_Type *
             c4_log_entry_free(&entry);
         }
         flockfile(stdout);
-        printf("C5 %s transaction=", request->header.message_type == (uint8_t)M_COMMIT ? "COMMIT" : "ABORT");
+        printf("%s transaction=", request->header.message_type == (uint8_t)M_COMMIT ? "COMMIT" : "ABORT");
         for (size_t index = 0U; index < TRANSACTION_ID_SIZE; ++index) printf("%02x", request->header.transaction_id[index]);
         printf("\n");
         fflush(stdout);
@@ -758,7 +762,7 @@ int c4_cluster_submit(C4Cluster *cluster, const uint8_t transaction_id[TRANSACTI
     entry.checksum = c4_log_entry_checksum(&entry);
     if (c4_log_prepare(cluster->log, &entry) < 0 || c4_log_entry_encode(&entry, &wire, &wire_size) < 0) goto submit_fail;
     flockfile(stdout);
-    printf("C5 PREPARE transaction=");
+    printf("PREPARE transaction=");
     for (index = 0U; index < TRANSACTION_ID_SIZE; ++index) printf("%02x", transaction_id[index]);
     printf(" index=%llu version=%llu participants=%zu\n", (unsigned long long)entry.index, (unsigned long long)entry.version, expected_replicas);
     fflush(stdout);
@@ -777,7 +781,7 @@ int c4_cluster_submit(C4Cluster *cluster, const uint8_t transaction_id[TRANSACTI
     if (!prepare_ok || sent_count + 1U != expected_replicas) goto submit_abort;
     if (c4_log_commit(cluster->log, transaction_id, &entry) < 0 || c4_apply_new_entry(cluster, &entry) < 0) goto submit_fail;
     flockfile(stdout);
-    printf("C5 COMMIT transaction=");
+    printf("COMMIT transaction=");
     for (index = 0U; index < TRANSACTION_ID_SIZE; ++index) printf("%02x", transaction_id[index]);
     printf(" index=%llu version=%llu\n", (unsigned long long)entry.index, (unsigned long long)entry.version);
     fflush(stdout);
@@ -799,7 +803,7 @@ int c4_cluster_submit(C4Cluster *cluster, const uint8_t transaction_id[TRANSACTI
 submit_abort:
     (void)c4_log_abort(cluster->log, transaction_id);
     flockfile(stdout);
-    printf("C5 ABORT transaction=");
+    printf("ABORT transaction=");
     for (index = 0U; index < TRANSACTION_ID_SIZE; ++index) printf("%02x", transaction_id[index]);
     printf(" participants=%zu\n", sent_count);
     fflush(stdout);

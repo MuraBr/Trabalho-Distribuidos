@@ -148,10 +148,11 @@ wait_any_log() {
 
 # Roda `bin/client --cmd state` no host do nó (cliente de um comando só) e imprime a saída.
 node_state_text() {
-    local name="$1" h abs
+    local name="$1" h abs data_dir
     h="${NODE_HOST[$name]}"
     abs="$(host_abs "$h")"
-    REXEC_TIMEOUT=20 rexec "$h" "'$abs/bin/client' --cmd state --host '$(node_ip "$name")' --port ${NODE_PORT[$name]}"
+    data_dir="$abs/run/$name/.superpeer_storage/${NODE_PORT[$name]}"
+    REXEC_TIMEOUT=20 rexec "$h" "'$abs/bin/client' --cmd state --data-dir '$data_dir'"
 }
 
 # cl_assert_state <SP> <LogIndex> <Objects> <nomes...>
@@ -170,16 +171,19 @@ cl_assert_state() {
 
 # --- coordenador e comandos de cliente ----------------------------------
 
-# Nome do Super Peer que anunciou "highest NodeID wins" mais recentemente em algum log.
+# Nome do maior NodeID que anunciou a coordenação nos logs atuais.
 find_coordinator() {
-    local name
+    local LC_ALL=C name id best_name="" best_id=""
     for name in "${NODE_LIST[@]}"; do
-        if logical_log <"$(node_log "$name")" 2>/dev/null | grep -qx 'highest NodeID wins'; then
-            printf '%s' "$name"
-            return 0
+        id="$(node_id_hex "$name")"
+        [[ "$id" =~ ^[0-9a-f]{64}$ ]] || continue
+        if logical_log <"$(node_log "$name")" 2>/dev/null | grep -Eq "^C4 COORDINATOR NodeID=${id}([[:space:]]|$)" && [[ -z "$best_id" || "$id" > "$best_id" ]]; then
+            best_name="$name"
+            best_id="$id"
         fi
     done
-    return 1
+    [[ -n "$best_name" ]] || return 1
+    printf '%s' "$best_name"
 }
 
 # cdo <cliente> <linha...>: executa e falha o cenário se o rc não for 0.

@@ -51,6 +51,8 @@ typedef struct
     Directory *directory;
     Storage *storage;
     Chord *chord;
+    NodeID logged_successor;
+    int successor_logged;
     Heartbeat *heartbeat;
     C4Cluster *c4;
 } PeerContext;
@@ -639,7 +641,12 @@ static int handle_announcement(PeerContext *peer, const Message *message)
 static int handle_client_store(PeerContext *peer, const Message *message)
 {
     uint8_t operation;
+    NodeID source_id;
+    SuperPeerMember source;
     if (peer == NULL || message == NULL || message->payload == NULL || message->header.payload_size == 0U) { errno = EBADMSG; return -1; }
+    memcpy(source_id.bytes, message->header.source_node, NODE_ID_SIZE);
+    /* Mensagens encaminhadas por Super Peers começam com o NodeID do dono, não com um opcode de transferência. */
+    if (superpeer_find_member(peer->superpeer, &source_id, &source) == 0 && source.node.role == NODE_ROLE_SUPERPEER) return handle_announcement(peer, message);
     operation = message->payload[0];
     if (operation == TRANSFER_STORE_ANNOUNCE) return handle_announcement(peer, message);
     if (operation == TRANSFER_STORE_BEGIN)
@@ -1130,6 +1137,19 @@ static void membership_failure(void *context, const SuperPeerMember *member)
     else if (member->local_registration) (void)metadata_remove_peer(peer->metadata, &member->node.id);
 }
 
+/* Registra o sucessor Chord apenas quando a identidade do vizinho muda. */
+static void log_chord_successor(PeerContext *peer)
+{
+    ChordPeer successor;
+    if (chord_get_successor(peer->chord, &successor) < 0 || (peer->successor_logged && node_id_equal(&peer->logged_successor, &successor.id))) return;
+    peer->logged_successor = successor.id;
+    peer->successor_logged = 1;
+    printf("Successor -> %s:%u NodeID=", successor.config.ip, (unsigned)successor.config.port);
+    print_node_id(successor.id.bytes);
+    putchar('\n');
+    fflush(stdout);
+}
+
 static void refresh_chord_membership(PeerContext *peer)
 {
     ChordPeer neighbor;
@@ -1300,6 +1320,7 @@ static int superpeer_run(int argc, char **argv)
         (void)sleep(1U);
     }
     if (!chord_joined) { fprintf(stderr, "Nao foi possivel entrar no anel Chord.\n"); g_running = 0; }
+    log_chord_successor(&peer);
 
     if (heartbeat_start(peer.heartbeat) < 0) { perror("heartbeat start"); g_running = 0; }
     else { printf("GOSSIP/heartbeat ativo\n"); fflush(stdout); }
@@ -1318,6 +1339,7 @@ static int superpeer_run(int argc, char **argv)
             finger_index = (finger_index + 1U) % CHORD_FINGER_COUNT;
         }
         network_deadline_set(previous_deadline);
+        log_chord_successor(&peer);
         (void)sleep(1U);
     }
 

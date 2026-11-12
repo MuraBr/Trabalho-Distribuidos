@@ -50,7 +50,10 @@ host m3  aluno@lab-pc3.local  ip=192.168.18.13  sps=2  clients=10
 host m4  aluno@192.168.18.14  sp_ports=5201,5202,5203
 ```
 
-Os nomes são globais (`SP1`…`SPn`, `C1`…`Cm`). As portas vêm do arquivo: pela base,
+Os nomes são globais (`SP1`…`SPn`, `C1`…`Cm`). A eleição Bully do programa compara os
+NodeIDs anunciados pelos Super Peers; o campo numérico de prioridade no roster não
+determina o coordenador. O harness lê os NodeIDs nos logs e espera que o maior vença.
+As portas vêm do arquivo: pela base,
 por `sp_ports=` ou por linhas `node` avulsas. O roster dos Super Peers e o `.conf` de
 cada cliente são **gerados** em `tests/cluster/out/stage/<host>/` e enviados às
 máquinas; ninguém edita esses arquivos. Detalhes de cada diretiva estão em
@@ -87,13 +90,13 @@ Limites que o `check` e a leitura do arquivo impõem:
 ## Comandos do cliente
 
 Os mesmos em modo interativo (`bin/client --interactive`), em lote
-(`bin/client --batch arquivo`, `-` lê da stdin; `--keep-going` não para no primeiro
-erro) e nos arquivos de `batch/`:
+(`bin/client --batch arquivo`, `-` lê da stdin; `--keep-going` continua após erro)
+e nos arquivos de `batch/`:
 
 ```text
 upload <arquivo>            download <nome> <saída>
-lookup <nome|object-id>     put <nome> <valor...>
-state [host porta]          ping|join|leave [host porta]
+lookup <nome|object-id>     topology
+ping|join|leave [host porta]
 sleep <segundos>            help | quit
 ```
 
@@ -113,7 +116,7 @@ ficam em `../files/` (por exemplo `upload ../files/documento_a.pdf`).
 
 ```text
 cluster> C1 upload ../files/documento_a.pdf     # envia a C1 e mostra a saída e o rc
-cluster> C1,C5 state                            # vários clientes de uma vez
+cluster> C1,C5 topology                         # vários clientes de uma vez
 cluster> @SP2 kill                              # kill -9 do Super Peer SP2 (também stop, start)
 cluster> status
 ```

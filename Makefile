@@ -12,7 +12,7 @@ CPPFLAGS += -I$(CURDIR)/.deps/usr/include -I$(CURDIR)/.deps/usr/include/x86_64-l
 endif
 LDFLAGS ?=
 
-.PHONY: all clean test test-aluno2 test-c2 test-c4-local test-c4 test-c5 deps
+.PHONY: all clean test test-aluno2 test-c2 test-c4-local test-c4 test-c5 test-peer-session deps
 
 # Headers oficiais locais, sem sudo; somente para Debian/Ubuntu sem pacotes -dev.
 deps:
@@ -38,10 +38,13 @@ $(BIN_DIR)/superpeer: membership.c gossip.c heartbeat.c c4_cluster.c c4_cluster.
 $(BIN_DIR)/peer: membership.c gossip.c heartbeat.c app_config.c app_config.h transfer_types.h remote_error.h network.c network.h concurrent_server.c concurrent_server.h protocol.c protocol.h transfer_protocol.c transfer_protocol.h \
                  compression.c compression.h content.c content.h storage.c storage.h rpc.c rpc.h \
                  node.c node.h metadata.c metadata.h \
-                 file_client.c file_client.h local_control.c local_control.h peer.c | $(BIN_DIR)
+                 file_client.c file_client.h local_control.c local_control.h c4_log.c c4_log.h peer.c | $(BIN_DIR)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -pthread -I. membership.c gossip.c heartbeat.c app_config.c network.c concurrent_server.c protocol.c transfer_protocol.c compression.c content.c \
-		storage.c rpc.c node.c metadata.c file_client.c local_control.c peer.c \
+		storage.c rpc.c node.c metadata.c file_client.c local_control.c c4_log.c peer.c \
 		-o $@ $(LDLIBS) $(LZ4_LIB)
+
+test-peer-session: $(BIN_DIR)/client
+	bash tests/peer/test_session.sh
 
 $(BIN_DIR)/node: $(BIN_DIR)/superpeer Makefile | $(BIN_DIR)
 	ln -sf superpeer $@
@@ -49,7 +52,7 @@ $(BIN_DIR)/node: $(BIN_DIR)/superpeer Makefile | $(BIN_DIR)
 $(BIN_DIR)/client: $(BIN_DIR)/peer Makefile | $(BIN_DIR)
 	ln -sf peer $@
 
-test: all test-aluno2 test-c3-membership
+test: all test-aluno2 test-c3-membership test-peer-session
 	$(MAKE) -C tests/c1
 	./tests/c1/test_protocol
 	$(MAKE) test-c2

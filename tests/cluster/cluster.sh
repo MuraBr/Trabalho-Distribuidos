@@ -77,7 +77,7 @@ cmd_list() {
         printf '  %-6s %-6s %-21s prioridade %s\n' "$name" "${NODE_HOST[$name]}" "$(node_endpoint "$name")" "${NODE_PRIO[$name]}"
     done
     echo "Clientes (${#CLIENT_LIST[@]}): ${CLIENT_LIST[0]:-}..${CLIENT_LIST[-1]:-} (use 'client status' para o detalhe)"
-    echo "Coordenador esperado (maior prioridade): $(node_highest)"
+    echo "Eleição: vence o maior NodeID anunciado pelo programa"
 }
 
 cmd_check() {

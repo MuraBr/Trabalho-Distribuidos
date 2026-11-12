@@ -264,18 +264,6 @@ node_by_endpoint() {
     return 1
 }
 
-# Nó de maior prioridade: é quem vence o Bully quando todos estão vivos.
-node_highest() {
-    local name best="" bestp=-1
-    for name in "${NODE_LIST[@]}"; do
-        if ((NODE_PRIO[$name] > bestp)); then
-            best="$name"
-            bestp="${NODE_PRIO[$name]}"
-        fi
-    done
-    printf '%s' "$best"
-}
-
 # Nome lógico do host de um nó ou cliente.
 proc_host() {
     local name="$1"
@@ -324,24 +312,18 @@ conf_write_roster() {
     } >"$out"
 }
 
-# .conf de type=peer: o Super Peer de entrada vem primeiro no bootstrap, seguido de
-# outros (até CONFIG_BOOTSTRAP_MAX = 8) para o cliente continuar se o primeiro cair.
+# .conf no formato reconhecido por app_config_load, com o Super Peer de entrada.
 conf_write_client_conf() {
-    local client="$1" out="$2" entry boot name n=1
+    local client="$1" out="$2" entry host port
 
     entry="${CLIENT_SP[$client]}"
-    boot="$(node_endpoint "$entry")"
-    for name in "${NODE_LIST[@]}"; do
-        ((n >= 8)) && break
-        [[ "$name" == "$entry" ]] && continue
-        boot+=",$(node_endpoint "$name")"
-        n=$((n + 1))
-    done
+    host="$(node_ip "$entry")"
+    port="${NODE_PORT[$entry]}"
     {
         echo "# Gerado por tests/cluster/cluster.sh. Não edite."
         echo "ip=${HOST_IP[${CLIENT_HOST[$client]}]}"
         echo "port=${CLIENT_PORT[$client]}"
-        echo "type=peer"
-        echo "bootstrap=$boot"
+        echo "superpeer-host=$host"
+        echo "superpeer-port=$port"
     } >"$out"
 }

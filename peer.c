@@ -6,6 +6,7 @@
 #include <pthread.h>
 
 #include "concurrent_server.h"
+#include "c4_log.h"
 #include "chord_network.h"
 #include "network.h"
 #include "node.h"
@@ -15,11 +16,13 @@
 #include "remote_error.h"
 #include "storage.h"
 #include "transfer_protocol.h"
+#include "wire.h"
 
 #include <errno.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <inttypes.h>
+#include <limits.h>
 #include <signal.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -638,7 +641,14 @@ static int lookup_command(const char *host, uint16_t port, const char *object_id
         if (status < 0) return -1;
         if (complete)
         {
-            printf("Lookup concluido em %u saltos\nOwner: %s:%u NodeID=", hop + 1U, next.ip, (unsigned)next.port);
+            printf("Lookup path:");
+            for (size_t path_index = 0U; path_index < visited_count; ++path_index)
+            {
+                char path_node[NODE_ID_SIZE * 2U + 1U];
+                if (node_id_to_hex(&visited[path_index], path_node, sizeof(path_node)) < 0) return -1;
+                printf(" %s", path_node);
+            }
+            printf(" -> %s:%u\nLookup concluido em %u saltos\nOwner: %s:%u NodeID=", next.ip, (unsigned)next.port, hop + 1U, next.ip, (unsigned)next.port);
             for (size_t i = 0U; i < NODE_ID_SIZE; ++i) printf("%02x", (unsigned)owner.id.bytes[i]);
             putchar('\n');
             return 0;
@@ -647,6 +657,83 @@ static int lookup_command(const char *host, uint16_t port, const char *object_id
         port = next.port;
     }
     errno = ELOOP;
+    return -1;
+}
+
+typedef struct
+{
+    char name[METADATA_NAME_SIZE];
+    uint64_t version;
+} ClientStateObject;
+
+/* Lê o log C4 local em modo somente leitura para os asserts do cluster.sh. */
+static int client_state_command(const char *directory)
+{
+    char path[600];
+    FILE *file;
+    ClientStateObject *objects = NULL;
+    size_t object_count = 0U;
+    size_t object_capacity = 0U;
+    uint64_t last_index = 0U;
+    if (directory == NULL || directory[0] == '\0' || snprintf(path, sizeof(path), "%s/c4-operation.log", directory) >= (int)sizeof(path)) { errno = EINVAL; return -1; }
+    file = fopen(path, "rb");
+    if (file == NULL) return -1;
+    for (;;)
+    {
+        uint8_t header[C4_LOG_HEADER_SIZE];
+        size_t header_size = fread(header, 1U, sizeof(header), file);
+        if (header_size == 0U && feof(file)) break;
+        if (header_size != sizeof(header)) { errno = EBADMSG; goto state_fail; }
+        uint32_t payload_size = wire_get_u32(header + 36U);
+        if (payload_size > MAX_PAYLOAD_SIZE || payload_size > UINT32_MAX - C4_LOG_HEADER_SIZE) { errno = EMSGSIZE; goto state_fail; }
+        uint32_t encoded_size = C4_LOG_HEADER_SIZE + payload_size;
+        uint8_t *encoded = malloc(encoded_size);
+        if (encoded == NULL) goto state_fail;
+        memcpy(encoded, header, sizeof(header));
+        if (payload_size > 0U && fread(encoded + C4_LOG_HEADER_SIZE, 1U, payload_size, file) != payload_size) { free(encoded); errno = EBADMSG; goto state_fail; }
+        C4LogEntry entry;
+        if (c4_log_entry_decode(encoded, encoded_size, &entry) < 0) { free(encoded); goto state_fail; }
+        free(encoded);
+        if (entry.index != last_index + 1U || entry.payload_size <= NODE_ID_SIZE) { c4_log_entry_free(&entry); errno = EBADMSG; goto state_fail; }
+        uint64_t version = entry.version;
+        TransferDocument document;
+        MetadataChunk *chunks = NULL;
+        if (transfer_decode_announcement(entry.payload + NODE_ID_SIZE, entry.payload_size - NODE_ID_SIZE, &document, &chunks) < 0) { c4_log_entry_free(&entry); goto state_fail; }
+        free(chunks);
+        c4_log_entry_free(&entry);
+        size_t object_index = 0U;
+        while (object_index < object_count && strcmp(objects[object_index].name, document.name) != 0) ++object_index;
+        if (object_index == object_count)
+        {
+            if (object_count == object_capacity)
+            {
+                size_t next_capacity = object_capacity == 0U ? 8U : object_capacity * 2U;
+                if (next_capacity < object_capacity || next_capacity > SIZE_MAX / sizeof(*objects)) { errno = EOVERFLOW; goto state_fail; }
+                ClientStateObject *next = realloc(objects, next_capacity * sizeof(*objects));
+                if (next == NULL) goto state_fail;
+                objects = next;
+                object_capacity = next_capacity;
+            }
+            strcpy(objects[object_count].name, document.name);
+            object_index = object_count++;
+        }
+        objects[object_index].version = version;
+        ++last_index;
+    }
+    if (ferror(file)) { errno = EIO; goto state_fail; }
+    fclose(file);
+    printf("LogIndex %llu\nObjects: %zu\n", (unsigned long long)last_index, object_count);
+    for (size_t i = 0U; i < object_count; ++i) printf("%s v%llu\n", objects[i].name, (unsigned long long)objects[i].version);
+    free(objects);
+    return 0;
+
+state_fail:
+    {
+        int saved_errno = errno;
+        fclose(file);
+        free(objects);
+        errno = saved_errno;
+    }
     return -1;
 }
 
@@ -700,6 +787,7 @@ static int option_command(int argc, char **argv)
             return -1;
         }
     }
+    if (command != NULL && strcmp(command, "state") == 0) return client_state_command(app_config.data_dir);
     if (command != NULL && (strcmp(command, "upload") == 0 || strcmp(command, "download") == 0))
     {
         if (host == NULL) host = "127.0.0.1";
@@ -757,14 +845,130 @@ static int option_command(int argc, char **argv)
     return legacy_command(command, host, port);
 }
 
+/* Divide uma linha de sessão em argumentos, respeitando aspas duplas e escapes. */
+static int tokenize_session_line(char *line, char *arguments[], size_t capacity)
+{
+    char *read_cursor = line;
+    char *write_cursor = line;
+    size_t count = 0U;
+    while (*read_cursor != '\0')
+    {
+        while (*read_cursor == ' ' || *read_cursor == '\t' || *read_cursor == '\r' || *read_cursor == '\n') ++read_cursor;
+        if (*read_cursor == '\0' || *read_cursor == '#') break;
+        if (count == capacity) { errno = E2BIG; return -1; }
+        arguments[count++] = write_cursor;
+        int quoted = 0;
+        while (*read_cursor != '\0')
+        {
+            char current = *read_cursor++;
+            if (current == '"') { quoted = !quoted; continue; }
+            if (current == '\\' && *read_cursor != '\0' && (quoted || *read_cursor == ' ' || *read_cursor == '\t' || *read_cursor == '"' || *read_cursor == '\\')) current = *read_cursor++;
+            else if (!quoted && (current == ' ' || current == '\t' || current == '\r' || current == '\n')) break;
+            *write_cursor++ = current;
+        }
+        if (quoted) { errno = EINVAL; return -1; }
+        *write_cursor++ = '\0';
+    }
+    return (int)count;
+}
+
+/* Executa comandos do harness com a identidade e o destino da sessão atuais. */
+static int run_session_command(FileSession *session, char *const arguments[], int count, const char *host, uint16_t port)
+{
+    if (count == 0) return 0;
+    const char *command = arguments[0];
+    if (strcmp(command, "help") == 0)
+    {
+        puts("upload <arquivo> | download <nome> <saida> | lookup <nome|object-id>");
+        puts("ping|join|leave [host porta] | topology | sleep <segundos> | quit");
+        return 0;
+    }
+    if (strcmp(command, "upload") == 0 && count == 2) return file_client_upload(session, arguments[1], host, port);
+    if (strcmp(command, "download") == 0 && (count == 2 || count == 3)) return file_client_download(session, arguments[1], count == 3 ? arguments[2] : NULL, host, port);
+    if (strcmp(command, "lookup") == 0 && count == 2)
+    {
+        if (strlen(arguments[1]) == NODE_ID_SIZE * 2U) return lookup_command(host, port, arguments[1]);
+        return print_document_lookup(session, arguments[1], host, port);
+    }
+    if (strcmp(command, "topology") == 0 && count == 1) return topology_command(host, port);
+    if ((strcmp(command, "ping") == 0 || strcmp(command, "join") == 0 || strcmp(command, "leave") == 0) && (count == 1 || count == 3))
+    {
+        uint16_t target_port = port;
+        if (count == 3 && parse_port(arguments[2], &target_port) < 0) return -1;
+        return legacy_command(command, count == 3 ? arguments[1] : host, target_port);
+    }
+    if (strcmp(command, "sleep") == 0 && count == 2)
+    {
+        char *end = NULL;
+        errno = 0;
+        unsigned long seconds = strtoul(arguments[1], &end, 10);
+        if (errno != 0 || end == arguments[1] || *end != '\0' || seconds > 86400UL) { errno = EINVAL; return -1; }
+        while (seconds > 0UL) seconds = sleep((unsigned int)(seconds > UINT_MAX ? UINT_MAX : seconds));
+        return 0;
+    }
+    errno = EINVAL;
+    return -1;
+}
+
+/* Mantém uma identidade única durante a sessão e emite marcadores para o harness. */
+static int run_client_session(FILE *input, int interactive, int keep_going)
+{
+    NodeConfig config;
+    Node local_node;
+    FileSession session;
+    char node_hex[NODE_ID_SIZE * 2U + 1U];
+    char *line = NULL;
+    size_t line_capacity = 0U;
+    unsigned long command_number = 0UL;
+    int final_status = 0;
+    if (node_config_init(&config, app_config.advertised, app_config.port) < 0 || node_init(&local_node, &config) < 0 || node_id_to_hex(&local_node.id, node_hex, sizeof(node_hex)) < 0) return -1;
+    session.source = local_node.id;
+    session.output = stdout;
+    session.directory = ".";
+    printf("NodeID: %s\n[ready]\n", node_hex);
+    fflush(stdout);
+    while (1)
+    {
+        char *arguments[64];
+        if (interactive && isatty(STDIN_FILENO)) { fputs("client> ", stdout); fflush(stdout); }
+        ssize_t length = getline(&line, &line_capacity, input);
+        if (length < 0) break;
+        int count = tokenize_session_line(line, arguments, sizeof(arguments) / sizeof(arguments[0]));
+        if (count == 0) continue;
+        int parse_error = count < 0 ? errno : 0;
+        ++command_number;
+        if (count == 1 && (strcmp(arguments[0], "quit") == 0 || strcmp(arguments[0], "exit") == 0))
+        {
+            printf("[done %lu rc=0]\n[bye]\n", command_number);
+            fflush(stdout);
+            free(line);
+            return interactive ? 0 : final_status;
+        }
+        errno = parse_error;
+        int command_status = count < 0 ? -1 : run_session_command(&session, arguments, count, app_config.superpeer, app_config.superpeer_port);
+        int command_rc = command_status == 0 ? 0 : 1;
+        if (command_rc != 0) { int saved_errno = errno == 0 ? EIO : errno; fprintf(stderr, "comando: %s\n", strerror(saved_errno)); final_status = 1; }
+        printf("[done %lu rc=%d]\n", command_number, command_rc);
+        fflush(stdout);
+        if (command_rc != 0 && !keep_going) break;
+    }
+    if (interactive) puts("[bye]");
+    fflush(stdout);
+    free(line);
+    return interactive ? 0 : final_status;
+}
+
 static void usage(const char *program)
 {
-    fprintf(stderr, "Uso:\n  %s serve <porta-peer> <host-superpeer> <porta-superpeer>\n  %s upload <arquivo.pdf> [<host-peer> <porta-peer>]\n  %s download <nome-ou-objectid> [<destino>] [<host-superpeer> <porta-superpeer>]\n  %s benchmark <arquivo.pdf>\n  %s --cmd <ping|join|leave|upload|download|topology|lookup> --host <ip> --port <porta> [--file <arquivo>] [--object-id <sha256>] [--output <destino>]\n", program, program, program, program, program);
+    fprintf(stderr, "Uso:\n  %s serve <porta-peer> <host-superpeer> <porta-superpeer>\n  %s upload <arquivo.pdf> [<host-peer> <porta-peer>]\n  %s download <nome-ou-objectid> [<destino>] [<host-superpeer> <porta-superpeer>]\n  %s benchmark <arquivo.pdf>\n  %s --cmd <ping|join|leave|upload|download|topology|lookup|state> --host <ip> --port <porta> [--file <arquivo>] [--object-id <sha256>] [--output <destino>] [--data-dir <diretorio>]\n", program, program, program, program, program);
 }
 
 int main(int argc, char **argv)
 {
     int result = -1;
+    int interactive = 0;
+    int batch_keep_going = 0;
+    const char *batch_path = NULL;
 
     if (app_config_load(&argc, argv, 0) < 0) { perror("config"); return EXIT_FAILURE; }
     (void)signal(SIGPIPE, SIG_IGN);
@@ -779,6 +983,43 @@ int main(int argc, char **argv)
             argv[argc] = NULL;
             --i;
         }
+    }
+    for (int i = 1; i < argc; ++i)
+    {
+        if (strcmp(argv[i], "--interactive") == 0)
+        {
+            interactive = 1;
+            for (int j = i; j + 1 < argc; ++j) argv[j] = argv[j + 1];
+            argv[--argc] = NULL;
+            --i;
+        }
+        else if (strcmp(argv[i], "--batch") == 0)
+        {
+            if (i + 1 >= argc || batch_path != NULL) { errno = EINVAL; goto failure; }
+            batch_path = argv[i + 1];
+            for (int j = i; j + 2 < argc; ++j) argv[j] = argv[j + 2];
+            argc -= 2;
+            argv[argc] = NULL;
+            --i;
+        }
+        else if (strcmp(argv[i], "--keep-going") == 0)
+        {
+            batch_keep_going = 1;
+            for (int j = i; j + 1 < argc; ++j) argv[j] = argv[j + 1];
+            argv[--argc] = NULL;
+            --i;
+        }
+    }
+    if (interactive || batch_path != NULL)
+    {
+        FILE *input = stdin;
+        if (interactive && batch_path != NULL) { errno = EINVAL; goto failure; }
+        if (batch_path != NULL && strcmp(batch_path, "-") != 0 && (input = fopen(batch_path, "r")) == NULL) goto failure;
+        (void)setvbuf(stdout, NULL, _IOLBF, 0U);
+        result = run_client_session(input, interactive, interactive || batch_keep_going);
+        if (input != stdin) fclose(input);
+        if (result == 0) return EXIT_SUCCESS;
+        goto failure;
     }
     if (argc >= 2 && strcmp(argv[1], "--cmd") == 0)
     {

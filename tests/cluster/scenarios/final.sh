@@ -132,7 +132,11 @@ if [[ "$OWNER" == "$COORD" ]]; then
         [[ "$n" != "$OWNER" ]] && ALIVE+=("$n")
     done
     KILL_MS="$(now_ms)"
-    wait_any_log '^highest NodeID wins$' 90 "algum Super Peer vivo vencer a nova eleição" "${ALIVE[@]}"
+    RECOORD="$(highest_node_id "${ALIVE[@]}")" || die "não consegui determinar o maior NodeID entre os Super Peers vivos"
+    RECOORD_HEX="$(node_id_hex "$RECOORD")"
+    REELECTION_PATTERN="^C4 COORDINATOR NodeID=${RECOORD_HEX}([[:space:]]|$)"
+    PRIOR_COORDINATIONS="$(count_lines "$(node_log "$RECOORD")" "$REELECTION_PATTERN")"
+    wait_count "$(node_log "$RECOORD")" "$REELECTION_PATTERN" "$PRIOR_COORDINATIONS" 90 "$RECOORD (maior NodeID vivo) vencer a nova eleição"
     metric "reeleição (kill do coordenador até a vitória)" "$(fmt_s $(($(now_ms) - KILL_MS)))" "detecção ~15 s + eleição < 5 s"
 fi
 sleep 3

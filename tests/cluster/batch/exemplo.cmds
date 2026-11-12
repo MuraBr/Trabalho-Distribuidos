@@ -3,5 +3,5 @@
 # Linhas em branco e iniciadas por # são ignoradas. A sessão continua aberta no fim.
 upload ../files/documento_a.pdf
 lookup documento_a.pdf
-state
+topology
 download documento_a.pdf baixado.bin

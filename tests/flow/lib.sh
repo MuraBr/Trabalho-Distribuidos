@@ -67,7 +67,7 @@ wait_log() {
     say "  padrão: $pattern"
     start=$(date +%s)
     while true; do
-        if logical_log <"$file" | grep -Eq "$pattern"; then
+        if logical_log <"$file" | grep -E "$pattern" >/dev/null; then
             break
         fi
         now=$(date +%s)

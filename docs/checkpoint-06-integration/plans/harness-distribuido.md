@@ -29,9 +29,12 @@ texto original deste plano:
 - **Senhas.** `cluster.sh copy-keys` copia a chave ssh com `ssh-copy-id` e `sshpass`,
   perguntando a senha (ou lendo `$SSHPASS`). A senha nunca é gravada. Depois disso todo o
   harness usa `BatchMode`.
-- **Clientes.** `bin/client` ganhou `--interactive` e `--batch` (código em
-  `src/peer/peer.c` e `src/peer/session.c`, com testes em `tests/peer/test_session.c`).
-  O modo `--cmd` não mudou.
+- **Clientes.** A implementação atual de `bin/client --interactive` e `--batch` está
+  em `peer.c`, com teste em `tests/peer/test_session.sh`; o modo one-shot continua.
+  A sessão cobre upload, download, lookup, topology, ping, join, leave, sleep e help.
+  `state` e `put` ainda não estão implementados como comandos de sessão. O `--cmd state`
+  auxiliar lê o log C4 local em modo somente leitura; não consulta o estado via rede. O
+  smoke real no laboratório ainda não foi executado com esta implementação.
 - **Espelho de log.** Um espelho por máquina, com lock, no lugar de um por processo, para
   caber 33 processos por máquina. As vidas de um processo são separadas por um marcador
   no próprio `proc.log`.
@@ -132,8 +135,9 @@ Regras:
 - O `cluster.sh` **gera** o roster no formato que o código já lê
   (`nome,superpeer,ip,porta,id,prioridade`, `id` sequencial de 8 dígitos hex) em
   `tests/cluster/out/roster.conf` e o copia para `run/roster.conf` de todas as
-  máquinas. Para cada cliente gera um `.conf` de `type=peer` com `bootstrap=` no
-  Super Peer de entrada.
+  máquinas. Para cada cliente gera um `.conf` com `ip`, `port`, `superpeer-host` e
+  `superpeer-port`, opções aceitas pelo carregador atual; o cliente usa o Super Peer
+  de entrada configurado, sem failover pela lista de alternativas.
 
 ## 2. Estrutura de arquivos proposta
 
@@ -212,7 +216,7 @@ ssh <host> 'tail -n +1 -F run/<nome>/proc.log' | stamp_stream >> logs/<nome>.<vi
 
 ## 4. Clientes persistentes
 
-### 4.1 Lado do binário (`bin/client`) — **exige autorização de código**
+### 4.1 Lado do binário (`bin/client`)
 
 Hoje o `main` de `src/peer/peer.c` faz `getopt_long`, despacha um `cmd_*` e sai.
 Como cada `cmd_*` já devolve `int`, o modo sessão é um laço novo em cima deles:
@@ -222,11 +226,11 @@ Como cada `cmd_*` já devolve `int`, o modo sessão é um laço novo em cima del
 - `--batch ARQUIVO` (`-b`; `-` lê da stdin): mesma execução, sem prompt, termina no
   fim do arquivo. Sai com código diferente de zero se algum comando falhou.
   `--keep-going` continua depois de erro; o padrão é parar no primeiro.
-- Gramática de linha, igual à CLI atual mas sem os `--`:
-  `upload <arquivo>`, `download <nome> <saida>`, `lookup <nome|object-id>`,
-  `put <nome> <valor>`, `state [host porta]`, `ping|join|leave [host porta]`,
-  `sleep <segundos>`, `help`, `quit`. Linhas vazias e iniciadas por `#` são ignoradas.
-  `--host` / `--port` da partida valem como Super Peer padrão da sessão.
+- Gramática de linha implementada: `upload <arquivo>`, `download <nome> <saida>`,
+  `lookup <nome|object-id>`, `topology`, `ping|join|leave [host porta]`,
+  `sleep <segundos>`, `help`, `quit`. Linhas vazias e iniciadas por `#` são ignoradas;
+  aspas duplas agrupam argumentos. `put`, `state` e os atalhos `-I`/`-b` permanecem
+  pendentes. O `.conf` fornece o Super Peer padrão da sessão.
 - **NodeID de sessão:** gerado uma vez, impresso na partida (`NodeID: <hex>`) e usado
   em todos os comandos.
 - **Marcadores para o harness** (stdout, sempre com flush; o cliente passa a usar
@@ -360,15 +364,18 @@ quit                                        # fecha tudo que o console abriu
 `<Cliente>>` e `@<Nó>` são o único jeito de falar com os processos; assim o mesmo
 vocabulário vale no console, nos cenários e na documentação.
 
-## 8. Mudanças de código que precisam de autorização
+## 8. Mudanças de código autorizadas e pendências
 
-A mudança 1 foi autorizada e feita (e a 2 junto com ela). A 3 não foi feita: as portas
-únicas bastam.
+A sessão persistente foi autorizada pelo pedido de adaptação do cliente e implementada
+em `peer.c`; o teste local de marcadores passou. O `--cmd state --data-dir` também foi
+implementado como leitura somente local do log C4 para o assert do harness. O smoke
+distribuído ainda não foi repetido com essa versão. Permanecem pendentes os comandos de
+sessão `state` e `put`. A mudança 3 não foi feita: as portas únicas bastam.
 
 | # | Mudança | Arquivos | Necessidade |
 | --- | --- | --- | --- |
-| 1 | Modo `--interactive` e `--batch`, NodeID de sessão, marcadores `[ready]`, `[done N rc=R]`, `[bye]`, `setvbuf` de linha | `src/peer/peer.c` (possivelmente um módulo novo `src/peer/session.c` + header em `include/peer/`, e `Makefile`) | **Obrigatória** para clientes persistentes |
-| 2 | Testes do parser de linha da sessão | `tests/peer/` | Recomendada |
+| 1 | Modo `--interactive` e `--batch`, NodeID de sessão, marcadores `[ready]`, `[done N rc=R]`, `[bye]`, saída em linhas | `peer.c`, `tests/peer/test_session.sh`, `Makefile` | Implementada localmente; smoke distribuído pendente |
+| 2 | Testes de comandos e parser da sessão | `tests/peer/test_session.sh` | Help, erro, marcadores e encerramento cobertos localmente |
 | 3 | `node_roster_load` casar por `ip` + `porta` (ou por `--name`) | `src/common/config.c`, `src/superpeer/superpeer.c`, testes | **Opcional.** Só se a equipe quiser a mesma porta em máquinas diferentes. Sem isso, portas únicas resolvem |
 
 Se for feita a mudança 1, documentar com Doxygen em pt-br (skill `c-api-docs`).

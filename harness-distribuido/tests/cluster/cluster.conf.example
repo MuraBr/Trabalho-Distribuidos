@@ -1,0 +1,33 @@
+# Topologia do cluster de teste do CP6. Copie para cluster.conf e ajuste.
+# cluster.conf fica fora do git (tem IPs e usuários da equipe).
+#
+# Cada host gera sozinho `sps` Super Peers e `clients` clientes. Os nomes são
+# globais (SP1..SPn, C1..Cm) e as portas saem das bases abaixo. O roster dos
+# Super Peers e o .conf de cada cliente são GERADOS a partir deste arquivo
+# (tests/cluster/out/stage/<host>/) e enviados às máquinas.
+#
+# Atenção: o roster identifica cada Super Peer só pela porta, então as portas dos
+# Super Peers precisam ser únicas no cluster inteiro, mesmo em máquinas diferentes.
+# O parser aceita no máximo 64 Super Peers (cerca de 21 máquinas com 3 cada).
+
+# ---- padrões ------------------------------------------------------------
+set sp_per_host        3
+set clients_per_host   30
+set sp_port_base       5100      # SP k (global, a partir de 1) usa a porta base+k
+set client_port_base   9000      # só entra na identidade do cliente; ele não escuta
+set remote_dir         ~/bittorrent-project
+set ssh_opts           -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=5
+
+# ---- máquinas -----------------------------------------------------------
+# host <apelido> <usuario@endereco | local> [ip=IP] [dir=DIR] [sps=N] [clients=N] [sp_ports=P1,P2,P3]
+# ip=   IP que as OUTRAS máquinas usam para chegar nesta (padrão: o endereço do alvo ssh)
+# dir=  onde fica o projeto naquela máquina (padrão: remote_dir)
+# sp_ports=  portas dos Super Peers desta máquina, no lugar da base+k
+host m1  aluno@192.168.18.11
+host m2  aluno@192.168.18.12
+host m3  aluno@lab-pc3.local   ip=192.168.18.13
+# host m4  aluno@192.168.18.14  sps=2 clients=10 dir=/opt/bt
+
+# ---- avulsos (opcional) ---------------------------------------------------
+# node   <nome> superpeer <host> <porta> [prioridade]
+# client <nome> <host> [super-peer-de-entrada] [port=P]

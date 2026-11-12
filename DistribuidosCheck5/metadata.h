@@ -1,0 +1,57 @@
+#ifndef METADATA_H
+#define METADATA_H
+
+#include "node.h"
+
+#define OBJECT_ID_SIZE 32U
+#define OBJECT_ID_HEX_SIZE 65U
+#define METADATA_NAME_SIZE 256U
+/* Convenção de integração: 4 MiB de conteúdo original por chunk. */
+#define METADATA_CHUNK_SIZE UINT64_C(4194304)
+
+typedef struct { uint8_t bytes[OBJECT_ID_SIZE]; } ObjectID;
+typedef struct MetadataStore MetadataStore;
+typedef struct {
+    uint8_t object_id[32];
+    char filename[256];
+    uint64_t size;
+    uint32_t chunk_count;
+    uint8_t **chunk_hashes;
+    uint32_t version;
+    uint32_t owner;
+} FileMetadata;
+
+typedef struct
+{
+    uint64_t index, offset;
+    uint32_t raw_size, compressed_size;
+    uint8_t hash[OBJECT_ID_SIZE];
+} MetadataChunk;
+
+int metadata_announce(MetadataStore *store, const FileMetadata *document, const MetadataChunk *chunks, const NodeID *owner);
+int metadata_find_name(MetadataStore *store, const char *name, ObjectID *id);
+int metadata_chunk_descriptor(MetadataStore *store, const ObjectID *id, uint64_t index, MetadataChunk *output);
+int metadata_remove_peer(MetadataStore *store, const NodeID *peer);
+/* Libera os hashes devolvidos por metadata_find_document; aceita documento sem hashes. */
+void file_metadata_free(FileMetadata *document);
+
+/* Retornos: 0 em sucesso, -1 com errno em erro. Saídas preservadas em erro, salvo indicação. */
+/* SHA-256 em leitura incremental; o chamador deve impedir alterações no arquivo durante a leitura. */
+int object_id_file(const char *path, ObjectID *output, uint64_t *file_size);
+int object_id_to_hex(const ObjectID *id, char *output, size_t capacity);
+/* Cada instância é independente; create zera output em erro. */
+int metadata_create(MetadataStore **output);
+/* Encerrar e aguardar todas as threads usuárias antes de destruir. */
+void metadata_destroy(MetadataStore *store);
+/* Registro idempotente por ID/tamanho; nomes alternativos preservam o primeiro nome. Tamanho divergente: EEXIST. */
+int metadata_register_document(MetadataStore *store, const ObjectID *id, const char *name, uint64_t file_size);
+/* Devolve cópia independente; após sucesso, chamar file_metadata_free(output). */
+int metadata_find_document(MetadataStore *store, const ObjectID *id, FileMetadata *output);
+int metadata_remove_document(MetadataStore *store, const ObjectID *id);
+/* Índice começa em zero. Registro repetido do mesmo peer é idempotente. Não valida membership. */
+int metadata_register_chunk(MetadataStore *store, const ObjectID *id, uint64_t chunk_index, const NodeID *peer);
+int metadata_unregister_chunk(MetadataStore *store, const ObjectID *id, uint64_t chunk_index, const NodeID *peer);
+/* Retorna cópia consistente alocada; liberar com free(). Sem peers: NULL/0. Ordem não definida. */
+int metadata_chunk_peers(MetadataStore *store, const ObjectID *id, uint64_t chunk_index, NodeID **output, size_t *count);
+
+#endif

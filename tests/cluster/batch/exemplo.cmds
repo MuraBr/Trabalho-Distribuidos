@@ -1,0 +1,7 @@
+# Lote de comandos para um cliente: cluster.sh client batch C1 tests/cluster/batch/exemplo.cmds
+# O cliente roda dentro de run/<nome>/, então os arquivos de teste ficam em ../files/.
+# Linhas em branco e iniciadas por # são ignoradas. A sessão continua aberta no fim.
+upload ../files/documento_a.pdf
+lookup documento_a.pdf
+state
+download documento_a.pdf baixado.bin

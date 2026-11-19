@@ -51,8 +51,8 @@ phase "Chord: lookup pelo ObjectID de A"
 OID="$(client_output "$C1" 1 | sed -n 's/^ObjectID: //p' | head -n1)"
 [[ "${#OID}" -eq 64 ]] || die "não achei o ObjectID de A na saída do upload de $C1"
 cdo "$C1" lookup "$OID"
-client_log_has "$C1" "Lookup path:" || die "lookup sem 'Lookup path:'"
-OWNER_EP="$(sed -E 's/^[0-9:.]+ //' "$(client_log "$C1")" | sed -n 's/^Owner: //p' | tail -n1)"
+logical_log <"$(client_log "$C1")" | grep -q '^Lookup path:' || die "lookup sem 'Lookup path:'"
+OWNER_EP="$(sed -E 's/^[0-9:.]+ //' "$(client_log "$C1")" | sed -n 's/^Owner: \([^ ]*\).*/\1/p' | tail -n1)"
 OWNER="$(node_by_endpoint "$OWNER_EP")" || die "dono $OWNER_EP não é um Super Peer do cluster"
 say "ObjectID $OID pertence a $OWNER ($OWNER_EP)"
 phase_done "dono: $OWNER"
@@ -60,12 +60,14 @@ phase_done "dono: $OWNER"
 phase "Gossip e detecção: kill -9 de $VICTIM"
 KILL_MS="$(now_ms)"
 node_kill "$VICTIM"
-wait_log "$(node_log "$COORD")" "^(SUSPECT|FAILED) .*$(node_endpoint "$VICTIM")\$" 40 "$COORD marcar $VICTIM como SUSPECT ou FAILED"
-SUSPECT_MS="$(stamp_ms "$(node_log "$COORD")" "^SUSPECT .*$(node_endpoint "$VICTIM")\$")"
+FAILURE_PATTERN="^Membership $(node_id_hex "$VICTIM") .* -> (SUSPECT|FAILED) role=SP incarnation="
+wait_log "$(node_log "$COORD")" "$FAILURE_PATTERN" 40 "$COORD marcar $VICTIM como SUSPECT ou FAILED"
+SUSPECT_MS="$(stamp_ms "$(node_log "$COORD")" "$FAILURE_PATTERN")"
 [[ -n "$SUSPECT_MS" ]] && metric "detecção (kill até SUSPECT no coordenador)" "$(fmt_s $((SUSPECT_MS - KILL_MS)))" "~15 s (heartbeat 5 s, timeout 15 s)"
 phase_done
 
 phase "2PC com um participante fora: uploads de D e E (YES esperados: $((N - 2)))"
+wait_log "$(node_log "$COORD")" "^Membership $(node_id_hex "$VICTIM") SUSPECT -> FAILED role=SP incarnation=" 40 "$COORD excluir $VICTIM do conjunto C4"
 for l in d e; do
     cdo "$C1" upload "$(client_file "$C1" "documento_${l}.pdf")"
 done
@@ -81,16 +83,13 @@ done
 phase_done
 
 phase "IST: $VICTIM volta e recebe A até E"
+IST_START="$(now_ms)"
 node_start "$VICTIM" >/dev/null || die "não consegui subir $VICTIM de novo"
-wait_log "$(node_log "$VICTIM")" '^version 0 -> 5$' 60 "IST de $VICTIM anunciar version 0 -> 5"
-assert_lines_in_order "$(node_log "$VICTIM")" \
-    "IST" "version 0 -> 5" "STATE_TRANSFER" \
-    "LOG #1" "STORE documento_a.pdf" "LOG #2" "STORE documento_b.pdf" \
-    "LOG #3" "STORE documento_c.pdf" "LOG #4" "STORE documento_d.pdf" \
-    "LOG #5" "STORE documento_e.pdf"
-IST_START="$(stamp_ms "$(node_log "$VICTIM")" '^IST$')"
-IST_END="$(stamp_ms "$(node_log "$VICTIM")" '^STORE documento_e.pdf$')"
-[[ -n "$IST_START" && -n "$IST_END" ]] && metric "IST (IST até STORE do último log)" "$(fmt_s $((IST_END - IST_START)))" "< 2 s (RNF-008)"
+IST_PATTERN='^IST BATCH APPLIED cursor_index=5 cursor_version=5 entries=2$'
+wait_log "$(node_log "$VICTIM")" "$IST_PATTERN" 60 "$VICTIM aplicar o lote IST até o índice 5"
+assert_log_sequence "$(node_log "$VICTIM")" "${NAMES_ALL[@]}"
+IST_END="$(stamp_ms "$(node_log "$VICTIM")" "$IST_PATTERN")"
+[[ -n "$IST_START" && -n "$IST_END" ]] && metric "IST (retorno até lote aplicado)" "$(fmt_s $((IST_END - IST_START)))" "< 2 s (RNF-008)"
 cl_assert_state "$VICTIM" 5 5 "${NAMES_ALL[@]}"
 phase_done
 
@@ -98,10 +97,10 @@ phase "Cache LFU em $E1: duas consultas de A"
 cdo "$C1" lookup documento_a.pdf
 cdo "$C1" lookup documento_a.pdf
 mirror_sync "${NODE_LIST[@]}" || die "espelho de log atrasado"
-assert_lines_in_order "$(node_log "$E1")" "cache miss" "LFU frequency 1" "cache hit" "LFU frequency 2"
+assert_lines_in_order "$(node_log "$E1")" "LFU CACHE MISS index=0 frequency=1" "LFU CACHE HIT index=0 frequency=2"
 for n in "${NODE_LIST[@]}"; do
     [[ "$n" == "$E1" ]] && continue
-    assert_exact_absent "$(node_log "$n")" "cache hit"
+    assert_exact_absent "$(node_log "$n")" "LFU CACHE HIT index=0 frequency=2"
 done
 phase_done "miss e frequência 1, depois hit e frequência 2"
 

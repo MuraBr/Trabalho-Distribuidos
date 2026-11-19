@@ -34,7 +34,7 @@ texto original deste plano:
   A sessão cobre upload, download, lookup, topology, ping, join, leave, sleep e help.
   `state` e `put` ainda não estão implementados como comandos de sessão. O `--cmd state`
   auxiliar lê o log C4 local em modo somente leitura; não consulta o estado via rede. O
-  smoke real no laboratório ainda não foi executado com esta implementação.
+  `smoke` local foi executado com a implementação atual; o teste entre máquinas físicas do laboratório ainda está pendente.
 - **Espelho de log.** Um espelho por máquina, com lock, no lugar de um por processo, para
   caber 33 processos por máquina. As vidas de um processo são separadas por um marcador
   no próprio `proc.log`.
@@ -43,7 +43,7 @@ texto original deste plano:
 - **Cenários.** `smoke`, `final`, `carga` e `professor` (encaixe). O `carga` põe todos os
   clientes para trabalhar ao mesmo tempo.
 
-Resultados dos ensaios, todos sem falha: `final` com 3 Super Peers numa máquina e com 6
+Resultados anteriores dos ensaios, todos sem falha: `final` com 3 Super Peers numa máquina e com 6
 em duas (via ssh), e `carga` com 60 clientes persistentes (30 por máquina) e 6 Super
 Peers, em ondas de 10 e com todos de uma vez, terminando com o mesmo `LogIndex 60` nos 6
 Super Peers. As máquinas desses ensaios eram duas "máquinas" simuladas (dois diretórios e
@@ -51,6 +51,8 @@ dois IPs de loopback acessados por ssh), não máquinas reais; o ensaio em máqu
 continua pendente. Uma métrica merece atenção: a eleição no boot levou de 5,0 a 5,5 s
 nos ensaios, contra o alvo de 5 s do RNF-010 (medida do primeiro log do primeiro nó até a
 vitória do coordenador, o que inclui a subida dos processos).
+
+Verificação posterior em 12/11/2026: checkout temporário, configuração de um host localhost, três Super Peers e dois clientes. `smoke` passou 9/9 e `carga` passou 9/9 após serializar submissões concorrentes no C4. `final` passou 18 verificações e falhou na recuperação do arquivo depois da queda do nó que o armazenava (`No data available`); replicação do conteúdo ainda é pendência. São processos distintos comunicando por TCP na mesma máquina, não evidência de comunicação entre computadores físicos. O cenário `professor` segue como encaixe sem testes concretos.
 
 ## O que existe hoje e o que isso impõe
 

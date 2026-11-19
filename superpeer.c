@@ -566,6 +566,14 @@ static int apply_c4_entry(void *context, const C4LogEntry *entry)
     }
     status = directory_announce(peer->directory, &document, chunks, &owner);
     free(chunks);
+    if (status == 0)
+    {
+        /* Expõe a aplicação local do registro para o harness verificar a ordem replicada. */
+        flockfile(stdout);
+        printf("LOG #%llu\nSTORE %s\n", (unsigned long long)entry->index, document.name);
+        fflush(stdout);
+        funlockfile(stdout);
+    }
     return status;
 }
 

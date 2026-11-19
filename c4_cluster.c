@@ -43,6 +43,7 @@ struct C4Cluster
     C4ApplyEntry apply;
     void *context;
     pthread_mutex_t mutex;
+    pthread_mutex_t submit_mutex;
     NodeID leader;
     uint64_t term;
     int election_requested;
@@ -358,10 +359,25 @@ int c4_cluster_create(const Node *local, SuperPeer *members, const char *log_pat
     cluster->apply = apply;
     cluster->context = context;
     mutex_status = pthread_mutex_init(&cluster->mutex, NULL);
-    if (mutex_status != 0 || c4_log_open(log_path, &cluster->log) < 0)
+    if (mutex_status != 0)
     {
-        int error = mutex_status != 0 ? mutex_status : errno;
-        if (mutex_status == 0) (void)pthread_mutex_destroy(&cluster->mutex);
+        free(cluster);
+        errno = mutex_status;
+        return -1;
+    }
+    mutex_status = pthread_mutex_init(&cluster->submit_mutex, NULL);
+    if (mutex_status != 0)
+    {
+        (void)pthread_mutex_destroy(&cluster->mutex);
+        free(cluster);
+        errno = mutex_status;
+        return -1;
+    }
+    if (c4_log_open(log_path, &cluster->log) < 0)
+    {
+        int error = errno;
+        (void)pthread_mutex_destroy(&cluster->submit_mutex);
+        (void)pthread_mutex_destroy(&cluster->mutex);
         free(cluster);
         errno = error;
         return -1;
@@ -374,6 +390,7 @@ int c4_cluster_create(const Node *local, SuperPeer *members, const char *log_pat
         {
             if (entry.payload != NULL) c4_log_entry_free(&entry);
             c4_log_close(cluster->log);
+            (void)pthread_mutex_destroy(&cluster->submit_mutex);
             (void)pthread_mutex_destroy(&cluster->mutex);
             free(cluster);
             return -1;
@@ -389,6 +406,7 @@ void c4_cluster_destroy(C4Cluster *cluster)
 {
     if (cluster == NULL) return;
     c4_log_close(cluster->log);
+    (void)pthread_mutex_destroy(&cluster->submit_mutex);
     (void)pthread_mutex_destroy(&cluster->mutex);
     free(cluster);
 }
@@ -689,7 +707,7 @@ int c4_cluster_tick(C4Cluster *cluster)
     return 0;
 }
 
-int c4_cluster_submit(C4Cluster *cluster, const uint8_t transaction_id[TRANSACTION_ID_SIZE], const NodeID *owner, const uint8_t *payload, uint32_t payload_size)
+static int c4_cluster_submit_serialized(C4Cluster *cluster, const uint8_t transaction_id[TRANSACTION_ID_SIZE], const NodeID *owner, const uint8_t *payload, uint32_t payload_size)
 {
     SuperPeerMember *members = NULL;
     size_t count = 0U;
@@ -762,6 +780,7 @@ int c4_cluster_submit(C4Cluster *cluster, const uint8_t transaction_id[TRANSACTI
     entry.checksum = c4_log_entry_checksum(&entry);
     if (c4_log_prepare(cluster->log, &entry) < 0 || c4_log_entry_encode(&entry, &wire, &wire_size) < 0) goto submit_fail;
     flockfile(stdout);
+    printf("PREPARE\n");
     printf("PREPARE transaction=");
     for (index = 0U; index < TRANSACTION_ID_SIZE; ++index) printf("%02x", transaction_id[index]);
     printf(" index=%llu version=%llu participants=%zu\n", (unsigned long long)entry.index, (unsigned long long)entry.version, expected_replicas);
@@ -776,11 +795,19 @@ int c4_cluster_submit(C4Cluster *cluster, const uint8_t transaction_id[TRANSACTI
         sent_members[sent_count++] = &members[index];
         message_init(&response);
         if (c4_rpc_transaction(cluster, &members[index], M_PREPARE, transaction_id, wire, wire_size, &response) < 0 || response.header.message_type != (uint8_t)M_ACK) prepare_ok = 0;
+        else
+        {
+            flockfile(stdout);
+            printf("YES\n");
+            fflush(stdout);
+            funlockfile(stdout);
+        }
         message_free(&response);
     }
     if (!prepare_ok || sent_count + 1U != expected_replicas) goto submit_abort;
     if (c4_log_commit(cluster->log, transaction_id, &entry) < 0 || c4_apply_new_entry(cluster, &entry) < 0) goto submit_fail;
     flockfile(stdout);
+    printf("COMMIT\n");
     printf("COMMIT transaction=");
     for (index = 0U; index < TRANSACTION_ID_SIZE; ++index) printf("%02x", transaction_id[index]);
     printf(" index=%llu version=%llu\n", (unsigned long long)entry.index, (unsigned long long)entry.version);
@@ -803,6 +830,7 @@ int c4_cluster_submit(C4Cluster *cluster, const uint8_t transaction_id[TRANSACTI
 submit_abort:
     (void)c4_log_abort(cluster->log, transaction_id);
     flockfile(stdout);
+    printf("ABORT\n");
     printf("ABORT transaction=");
     for (index = 0U; index < TRANSACTION_ID_SIZE; ++index) printf("%02x", transaction_id[index]);
     printf(" participants=%zu\n", sent_count);
@@ -823,6 +851,22 @@ submit_fail:
     if (entry.payload == operation) entry.payload = NULL;
     if (entry.payload != NULL) c4_log_entry_free(&entry);
     return -1;
+}
+
+/* Protege índice, versionamento e preparação local contra ANNOUNCEs simultâneos. */
+int c4_cluster_submit(C4Cluster *cluster, const uint8_t transaction_id[TRANSACTION_ID_SIZE], const NodeID *owner, const uint8_t *payload, uint32_t payload_size)
+{
+    int result;
+    int error;
+    int mutex_status;
+    if (cluster == NULL) { errno = EINVAL; return -1; }
+    mutex_status = pthread_mutex_lock(&cluster->submit_mutex);
+    if (mutex_status != 0) { errno = mutex_status; return -1; }
+    result = c4_cluster_submit_serialized(cluster, transaction_id, owner, payload, payload_size);
+    error = errno;
+    (void)pthread_mutex_unlock(&cluster->submit_mutex);
+    errno = error;
+    return result;
 }
 
 int c4_cluster_is_leader(C4Cluster *cluster)

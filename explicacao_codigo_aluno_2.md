@@ -1,6 +1,12 @@
 # Guia de apresentação — código do aluno 2
 
-## Cliente persistente para o harness CP6 — 12/11/2026
+## Cliente persistente e integração CP6 — 12/11/2026
+
+O harness abre o cliente com `--interactive` e envia comandos pela entrada padrão. O processo mantém o mesmo NodeID durante a sessão, responde `[ready]` ao iniciar e marca cada solicitação como `[done N rc=R]`; `[bye]` encerra a sessão. `--batch` usa os mesmos marcadores para uma sequência finita. O estado auxiliar `--cmd state --data-dir` lê o log C4 local, sem fazer consulta de rede.
+
+O envio de `M_STORE` entre Super Peers preserva o envelope do anúncio; o receptor encaminha esse caso para o handler de anúncio, em vez de interpretar os bytes do NodeID como opcode. O coordenador serializa `c4_cluster_submit` com mutex para evitar que clientes simultâneos misturem as operações PREPARE/COMMIT. A aplicação do registro C4 imprime marcadores `LOG #n` e `STORE nome`, que permitem ao harness conferir a aplicação em cada nó.
+
+**Verificação:** `smoke` local passou 9/9 e `carga` passou 9/9 (1 host localhost, 3 Super Peers, 2 clientes). `final` passou 18 verificações, incluindo eleição, 2PC, recuperação de log e download/chunks, mas falhou após derrubar o coordenador: o download do documento replicado respondeu `No data available`. O harness `professor` permanece sem casos implementados. Esses testes locais não substituem o teste em máquinas físicas do laboratório.
 
 `peer.c` mantém o modo de execução única que já existia e acrescenta `--interactive` e `--batch`. A sessão cria uma identidade local uma vez, lê uma linha por comando, e imprime `[ready]`, `[done N rc=R]` e `[bye]` para o harness controlar o processo pela FIFO. Aspas duplas agrupam argumentos com espaços; linhas vazias e comentários são ignorados. Upload, download, lookup, topology, ping, join, leave, help e sleep são aceitos. Cada operação de upload/download/lookup usa TCP para o Super Peer de entrada indicado no `.conf`; os marcadores são apenas controle local da sessão, não mensagens do protocolo.
 
